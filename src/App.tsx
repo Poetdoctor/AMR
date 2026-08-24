@@ -3,6 +3,7 @@ import { Layout } from '@/components/Layout'
 import Home from '@/pages/Home'
 import Learn from '@/pages/Learn'
 import Stories from '@/pages/Stories'
+import Story from '@/pages/Story'
 import Tool from '@/pages/Tool'
 import Community from '@/pages/Community'
 import Team from '@/pages/Team'
@@ -25,6 +26,7 @@ export default function App() {
           <Route index element={<Home />} />
           <Route path="/learn" element={<Learn />} />
           <Route path="/stories" element={<Stories />} />
+          <Route path="/stories/:slug" element={<Story />} />
           <Route path="/tool" element={<Tool />} />
           <Route path="/community" element={<Community />} />
           <Route path="/team" element={<Team />} />

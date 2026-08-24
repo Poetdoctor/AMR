@@ -169,6 +169,63 @@
     text-decoration-thickness: 2px;
   }
 
+  /* Rendered markdown from the content collections ----------------------- */
+  .markdown h2 {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: clamp(1.375rem, 2.4vw, 1.75rem);
+    line-height: 1.2;
+    color: var(--color-ink);
+    margin-top: 2.5em;
+  }
+  .markdown h3 {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 1.25rem;
+    line-height: 1.3;
+    color: var(--color-ink);
+    margin-top: 2em;
+  }
+  .markdown > :first-child {
+    margin-top: 0;
+  }
+  .markdown ul,
+  .markdown ol {
+    padding-left: 1.25rem;
+    list-style: disc;
+  }
+  .markdown ol {
+    list-style: decimal;
+  }
+  .markdown li + li {
+    margin-top: 0.5em;
+  }
+
+  /* Pull quote — the site's one voice-of-the-patient treatment. */
+  .markdown blockquote {
+    border-left: 2px solid var(--color-rust);
+    padding-left: 1.5rem;
+    margin-top: 2em;
+    margin-bottom: 2em;
+  }
+  .markdown blockquote p {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: clamp(1.25rem, 2.2vw, 1.5rem);
+    line-height: 1.35;
+    letter-spacing: -0.015em;
+    color: var(--color-ink);
+  }
+  .markdown blockquote p::before {
+    content: open-quote;
+  }
+  .markdown blockquote p::after {
+    content: close-quote;
+  }
+  .markdown blockquote {
+    quotes: '\201C' '\201D';
+  }
+
   /* Surfaces ------------------------------------------------------------- */
   .card {
     background-color: var(--color-paper);

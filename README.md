@@ -52,6 +52,7 @@ src/
   components/           Shared UI (header, footer, cards, callouts, layout)
   config/site.ts        The few outward-facing values the team sets once
   content/team/*.md     Team roster — a Decap CMS collection, not code
+  content/stories/*.md  Testimonial accounts, same collection pattern
   lib/                  Front-matter parsing and content loading
   pages/                One file per route
   styles/global.css     Design tokens and the shared component classes
@@ -98,6 +99,27 @@ cropping faces.
 
 Decap CMS (phase 4) will serve the editing UI at `/admin` and write to these
 same files. Until then, edit the markdown directly.
+
+### Story attribution
+
+`docs/content-spec.md` requires confirming that each interviewee consented to
+being named publicly on a website — not just to being interviewed — before their
+story goes live under their real name. That is a person's job, not a build step,
+so each story in `src/content/stories/*.md` carries an `attribution` field:
+
+| Value       | Effect                                                         |
+| ----------- | -------------------------------------------------------------- |
+| `name`      | Publishes under the real `name`, and shows the `context` line  |
+| `anonymous` | Publishes under `anonymousAs` instead; `context` is suppressed |
+| `withheld`  | Does not publish at all                                        |
+
+Both seeded stories default to `anonymous` pending that confirmation. Keep
+`anonymousAs` genuinely non-identifying: the Mission page already names Sunny Loo
+as a patient partner on the BC Antimicrobial Stewardship Program, so repeating
+that detail on an "anonymous" card would identify her immediately.
+
+Story bodies are written without names or pronouns so they read correctly under
+any of the three settings.
 
 ## Deploying
 

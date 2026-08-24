@@ -73,3 +73,84 @@ export function getTeam(): TeamMember[] {
 export function getAllTeamEntries(): TeamMember[] {
   return allTeam
 }
+
+/* -------------------------------------------------------------------------- */
+/*  Stories                                                                    */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * How a story may be attributed publicly.
+ *
+ * docs/content-spec.md requires confirming that each interviewee consented to
+ * public attribution *by name on a website* — not merely to being interviewed —
+ * before their story goes live under their real name. That check is a person's
+ * job, not a build step, so it is encoded as a field rather than left as a note
+ * someone has to remember.
+ *
+ *   'name'      — consent confirmed; publish under the person's name.
+ *   'anonymous' — publish the testimony under `anonymousAs` instead. Default.
+ *   'withheld'  — do not publish this story at all.
+ */
+export type Attribution = 'name' | 'anonymous' | 'withheld'
+
+export interface Story {
+  slug: string
+  /** The real name. Only ever shown when `attribution` is 'name'. */
+  name: string
+  /** What to call the person when publishing anonymously. */
+  anonymousAs: string
+  /** The name actually safe to render, given the attribution setting. */
+  displayName: string
+  attribution: Attribution
+  context: string
+  signatureQuote: string
+  summary: string
+  photo: string
+  order: number
+  body: string
+}
+
+function toAttribution(value: string): Attribution {
+  return value === 'name' || value === 'withheld' ? value : 'anonymous'
+}
+
+const storyFiles = import.meta.glob('/src/content/stories/*.md', {
+  query: '?raw',
+  import: 'default',
+  eager: true,
+}) as Record<string, string>
+
+function toStory(path: string, source: string): Story {
+  const { data, body } = parseFrontmatter(source)
+  const name = readString(data, 'name')
+  const anonymousAs = readString(data, 'anonymousAs') || 'A patient'
+  const attribution = toAttribution(readString(data, 'attribution'))
+  const orderRaw = Number(readString(data, 'order'))
+
+  return {
+    slug: fileSlug(path),
+    name,
+    anonymousAs,
+    displayName: attribution === 'name' ? name : anonymousAs,
+    attribution,
+    context: readString(data, 'context'),
+    signatureQuote: readString(data, 'signatureQuote'),
+    summary: readString(data, 'summary'),
+    photo: readString(data, 'photo'),
+    order: Number.isFinite(orderRaw) && orderRaw > 0 ? orderRaw : 999,
+    body,
+  }
+}
+
+const allStories: Story[] = Object.entries(storyFiles)
+  .map(([path, source]) => toStory(path, source))
+  .sort((a, b) => a.order - b.order || a.name.localeCompare(b.name))
+
+/** Stories cleared for publication, in reading order. */
+export function getStories(): Story[] {
+  return allStories.filter((story) => story.attribution !== 'withheld')
+}
+
+export function getStory(slug: string): Story | undefined {
+  return getStories().find((story) => story.slug === slug)
+}

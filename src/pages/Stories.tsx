@@ -1,18 +1,81 @@
-import { ComingSoon } from '@/components/ComingSoon'
+import { Link } from 'react-router-dom'
+import { Container } from '@/components/Container'
+import { PageHeader } from '@/components/PageHeader'
+import { Callout } from '@/components/Callout'
+import { StoryCard } from '@/components/StoryCard'
+import { getStories } from '@/lib/content'
 import { usePageTitle } from '@/lib/usePageTitle'
 
+/**
+ * Stories are a content collection (src/content/stories/*.md), edited through
+ * the CMS like Learn and the team roster. Whether a story appears here, and
+ * under whose name, is controlled by its `attribution` field — see
+ * lib/content.ts.
+ */
 export default function Stories() {
   usePageTitle('Stories')
+  const stories = getStories()
+
   return (
-    <ComingSoon
-      eyebrow="Stories"
-      title="In their own words"
-      subhead="Testimony from people living with resistant infections, and from the people caring for them."
-      summary={[
-        'Long-form accounts from patients who have lived with a resistant infection.',
-        'The parts that rarely make it into a chart: the waiting, the explaining, the distance it puts between people.',
-        'Published with consent, attributed the way each person asked to be attributed.',
-      ]}
-    />
+    <>
+      <PageHeader
+        eyebrow="Stories"
+        title="In their own words"
+        subhead="Accounts from people living with resistant infections. The quotes here are theirs, unedited; everything around them is ours."
+      />
+
+      <Container width="wide" className="py-16 md:py-24">
+        {stories.length > 0 ? (
+          <ul className="grid list-none gap-6 lg:grid-cols-2">
+            {stories.map((story) => (
+              <li key={story.slug} className="h-full">
+                <StoryCard story={story} />
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <div className="callout p-7 md:p-9">
+            <p className="eyebrow mb-4">Being prepared</p>
+            <p className="prose-amr">
+              These accounts are being readied for publication. They will appear here once the
+              people who gave them have confirmed how they want to be named.
+            </p>
+          </div>
+        )}
+      </Container>
+
+      <Container width="wide" className="pb-16 md:pb-24">
+        <h2 className="display-md text-ink">What came up in both</h2>
+        <div className="prose-amr mt-6 max-w-2xl">
+          <p>
+            Two people, two different conditions, and a set of experiences that kept overlapping.
+            Precautions arrived without explanation. Visitors had to gown and glove before coming
+            into the room. People began to describe themselves as dirty, or contagious, and pulled
+            away from partners and family out of fear of passing something on — a physical
+            precaution turning into a social one.
+          </p>
+          <p>
+            Both had found their own way through it, and neither had been offered one. And both told
+            us the same thing, separately: a community for people going through this does not
+            currently exist.
+          </p>
+        </div>
+
+        <Callout
+          title="That last part is why the Community section exists"
+          footer={
+            <Link className="btn btn-primary" to="/community">
+              Go to Community
+            </Link>
+          }
+        >
+          <p>
+            If you have lived through any of this, you are not the first — you have just never been
+            put in a room with the others. Post under any name you like. A person reads everything
+            before it appears.
+          </p>
+        </Callout>
+      </Container>
+    </>
   )
 }

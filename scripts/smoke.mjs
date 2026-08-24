@@ -24,6 +24,8 @@ const ROUTES = [
   '/mission',
   '/learn',
   '/stories',
+  '/stories/norma-washburn',
+  '/stories/sunny-loo',
   '/tool',
   '/community',
   '/no-such-page',
