@@ -1,0 +1,23 @@
+# macOS
+.DS_Store
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.ipynb_checkpoints/
+
+# R
+.Rhistory
+.RData
+.Rproj.user/
+
+# Editors
+.vscode/
+.idea/
+
+# Data / large outputs (uncomment as needed)
+# data/
+# *.csv
+# *.nii.gz
