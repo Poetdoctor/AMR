@@ -21,3 +21,18 @@ venv/
 # data/
 # *.csv
 # *.nii.gz
+
+# Node / Vite
+node_modules/
+dist/
+dist-ssr/
+*.local
+.vite/
+
+# Env
+.env
+.env.*
+!.env.example
+
+# TypeScript build info
+*.tsbuildinfo

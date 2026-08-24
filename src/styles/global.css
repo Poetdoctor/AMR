@@ -1,0 +1,230 @@
+@import 'tailwindcss';
+
+/* Self-hosted fonts — no external requests anywhere on this site. */
+@import '@fontsource-variable/fraunces';
+@import '@fontsource-variable/inter';
+
+/* ---------------------------------------------------------------------------
+   Design tokens.
+
+   The visual identity comes from the Team and Mission pages in
+   docs/content-spec.md: cream/beige ground, bold serif display headings,
+   rust/orange accents, card grids, soft rounded callout boxes. Every later
+   section (Learn, Stories, Tool, Community, Home) extends these tokens rather
+   than inventing its own styling.
+
+   Contrast: all text pairings below are >= 4.5:1 against their intended
+   surface. `--color-rust` is a FILL/border colour (cream on rust = 5.0:1);
+   `--color-rust-deep` is the TEXT accent (6.9:1 on cream, 6.1:1 on sand).
+   Do not set rust-as-text on a sand surface — it lands at 4.4:1.
+--------------------------------------------------------------------------- */
+@theme {
+  --color-cream: #faf5ea;
+  --color-cream-deep: #f4ecdb;
+  --color-paper: #fffdf7;
+  --color-sand: #f0e7d6;
+  --color-sand-line: #e2d5bd;
+
+  --color-ink: #231b12;
+  --color-ink-soft: #5a4c3e;
+  --color-ink-faint: #786650;
+
+  --color-rust: #b04a22;
+  --color-rust-deep: #8f3a16;
+  --color-rust-light: #e58a55;
+  --color-rust-wash: #f6e5d8;
+
+  --font-display: 'Fraunces Variable', 'Iowan Old Style', Georgia, 'Times New Roman', serif;
+  --font-sans:
+    'Inter Variable', -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+
+  --radius-card: 1.25rem;
+  --radius-callout: 1.5rem;
+
+  --shadow-card: 0 1px 2px rgb(35 27 18 / 0.04), 0 8px 24px -12px rgb(35 27 18 / 0.14);
+  --shadow-card-lift: 0 2px 4px rgb(35 27 18 / 0.05), 0 18px 40px -18px rgb(35 27 18 / 0.22);
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    background-color: var(--color-cream);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    font-synthesis-weight: none;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-family: var(--font-display);
+    font-variation-settings:
+      'SOFT' 0,
+      'WONK' 0,
+      'opsz' 32;
+    letter-spacing: -0.02em;
+    text-wrap: balance;
+  }
+
+  p {
+    text-wrap: pretty;
+  }
+
+  /* One visible, consistent focus ring for the whole site. */
+  :focus-visible {
+    outline: 3px solid var(--color-rust);
+    outline-offset: 3px;
+    border-radius: 4px;
+  }
+
+  ::selection {
+    background-color: var(--color-rust-light);
+    color: var(--color-ink);
+  }
+
+  /* Accessibility constraint: everything must be usable and readable with
+     motion off. Transitions collapse; nothing depends on animation to be
+     reachable or legible. */
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+@layer components {
+  /* Display heading scale ----------------------------------------------- */
+  .display-xl {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: clamp(2.5rem, 6.5vw, 4.5rem);
+    line-height: 1.02;
+    letter-spacing: -0.03em;
+  }
+  .display-lg {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: clamp(2rem, 4.6vw, 3.15rem);
+    line-height: 1.08;
+    letter-spacing: -0.028em;
+  }
+  .display-md {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: clamp(1.5rem, 2.8vw, 2rem);
+    line-height: 1.15;
+    letter-spacing: -0.02em;
+  }
+
+  .eyebrow {
+    font-family: var(--font-sans);
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--color-rust-deep);
+  }
+
+  .lede {
+    font-size: clamp(1.125rem, 1.8vw, 1.375rem);
+    line-height: 1.6;
+    color: var(--color-ink-soft);
+  }
+
+  /* Long-form prose ------------------------------------------------------ */
+  .prose-amr {
+    font-size: 1.0625rem;
+    line-height: 1.75;
+    color: var(--color-ink-soft);
+  }
+  .prose-amr > * + * {
+    margin-top: 1.15em;
+  }
+  .prose-amr strong {
+    color: var(--color-ink);
+    font-weight: 600;
+  }
+  .prose-amr a {
+    color: var(--color-rust-deep);
+    text-decoration: underline;
+    text-underline-offset: 0.2em;
+    text-decoration-thickness: 1px;
+  }
+  .prose-amr a:hover {
+    text-decoration-thickness: 2px;
+  }
+
+  /* Surfaces ------------------------------------------------------------- */
+  .card {
+    background-color: var(--color-paper);
+    border: 1px solid var(--color-sand-line);
+    border-radius: var(--radius-card);
+    box-shadow: var(--shadow-card);
+  }
+
+  .callout {
+    background-color: var(--color-sand);
+    border: 1px solid var(--color-sand-line);
+    border-radius: var(--radius-callout);
+  }
+
+  .rule {
+    height: 1px;
+    background-color: var(--color-sand-line);
+    border: 0;
+  }
+
+  /* Buttons -------------------------------------------------------------- */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    border-radius: 9999px;
+    font-weight: 600;
+    font-size: 0.9375rem;
+    padding: 0.75rem 1.5rem;
+    transition:
+      background-color 160ms ease,
+      color 160ms ease,
+      border-color 160ms ease,
+      transform 160ms ease;
+  }
+  .btn:active {
+    transform: translateY(1px);
+  }
+
+  .btn-primary {
+    background-color: var(--color-rust);
+    color: var(--color-cream);
+    border: 1px solid var(--color-rust);
+  }
+  .btn-primary:hover {
+    background-color: var(--color-rust-deep);
+    border-color: var(--color-rust-deep);
+  }
+
+  .btn-ghost {
+    background-color: transparent;
+    color: var(--color-ink);
+    border: 1px solid var(--color-sand-line);
+  }
+  .btn-ghost:hover {
+    background-color: var(--color-sand);
+    border-color: var(--color-ink-faint);
+  }
+}
