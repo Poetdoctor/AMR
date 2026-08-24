@@ -113,13 +113,15 @@ so each story in `src/content/stories/*.md` carries an `attribution` field:
 | `anonymous` | Publishes under `anonymousAs` instead; `context` is suppressed |
 | `withheld`  | Does not publish at all                                        |
 
-Both seeded stories default to `anonymous` pending that confirmation. Keep
-`anonymousAs` genuinely non-identifying: the Mission page already names Sunny Loo
-as a patient partner on the BC Antimicrobial Stewardship Program, so repeating
-that detail on an "anonymous" card would identify her immediately.
+Both seeded stories are set to `name`: the team confirmed that Norma Washburn
+and Sunny Loo consented to being named publicly. If that ever needs to be walked
+back, switch the field rather than editing the prose — and keep `anonymousAs`
+genuinely non-identifying, since the Mission page already names Sunny Loo as a
+patient partner on the BC Antimicrobial Stewardship Program.
 
-Story bodies are written without names or pronouns so they read correctly under
-any of the three settings.
+Story content comes from `docs/Web Content .pdf` ("AMR Beyond the Diagnosis").
+Everything presented as an interviewee's words is a verbatim quote from it; the
+connecting prose is the site's own voice, and the Stories page says so.
 
 ## Deploying
 
