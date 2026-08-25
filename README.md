@@ -46,7 +46,7 @@ Sections not yet built resolve to a stated "in progress" page rather than a
 ## Layout
 
 ```
-docs/content-spec.md    Source of truth for all copy — do not paraphrase it
+docs/                   Content spec and the two source interview documents
 scripts/smoke.mjs       Layout + a11y checks run in CI
 src/
   components/           Shared UI (header, footer, cards, callouts, layout)
@@ -186,7 +186,7 @@ back, switch the field rather than editing the prose — and keep `anonymousAs`
 genuinely non-identifying, since the Mission page already names Sunny Loo as a
 patient partner on the BC Antimicrobial Stewardship Program.
 
-Story content comes from `docs/Web Content .pdf` ("AMR Beyond the Diagnosis").
+Story content comes from [`docs/doc-a-amr-beyond-the-diagnosis.pdf`](docs/doc-a-amr-beyond-the-diagnosis.pdf).
 Everything presented as an interviewee's words is a verbatim quote from it; the
 connecting prose is the site's own voice, and the Stories page says so.
 
