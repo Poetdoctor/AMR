@@ -7,14 +7,16 @@ export function PageHeader({
   title,
   subhead,
   children,
+  className = '',
 }: {
   eyebrow?: string
   title: string
   subhead?: string
   children?: ReactNode
+  className?: string
 }) {
   return (
-    <header className="border-b border-sand-line bg-cream-deep py-16 md:py-24">
+    <header className={`border-b border-sand-line bg-cream-deep py-16 md:py-24 ${className}`}>
       <Container width="wide">
         {eyebrow ? <p className="eyebrow mb-5">{eyebrow}</p> : null}
         <h1 className="display-xl max-w-4xl text-ink">{title}</h1>

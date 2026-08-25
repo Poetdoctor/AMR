@@ -297,3 +297,77 @@
     border-color: var(--color-ink-faint);
   }
 }
+
+/* ---------------------------------------------------------------------------
+   Print.
+
+   The visit-prep sheet is meant to be walked into an appointment on paper, so
+   printing is a first-class output rather than an afterthought. Only the
+   composed sheet prints: the form, navigation, footer and buttons are dropped,
+   the sticky preview is released from its scroll box, and colours flatten to
+   black on white so it stays legible from any printer.
+--------------------------------------------------------------------------- */
+@media print {
+  @page {
+    margin: 18mm 16mm;
+  }
+
+  html,
+  body {
+    background: #fff !important;
+    color: #000 !important;
+  }
+
+  /* Anything a page decides should not go on paper. Marking it explicitly beats
+     guessing at selectors: the site header and footer carry it always, and the
+     Tool page adds it to its own header, intro and form so only the composed
+     sheet prints. The footer holds the site-wide disclaimer, which is why the
+     sheet renders its own copy — see components/tool/PrepSheet.tsx. */
+  .print-hide {
+    display: none !important;
+  }
+
+  main {
+    padding: 0 !important;
+  }
+
+  /* Release the preview from its card, sticky position and scroll box. */
+  .tool-preview,
+  .tool-preview * {
+    position: static !important;
+    max-height: none !important;
+    overflow: visible !important;
+  }
+
+  .tool-preview .card {
+    border: 0 !important;
+    box-shadow: none !important;
+    background: #fff !important;
+  }
+
+  .tool-preview .card > div {
+    padding: 0 !important;
+  }
+
+  .prep-sheet,
+  .prep-sheet * {
+    color: #000 !important;
+  }
+
+  .prep-sheet .eyebrow {
+    color: #000 !important;
+    border-bottom: 1px solid #999;
+    display: block;
+    padding-bottom: 2px;
+  }
+
+  /* Tick boxes must survive printers that drop background colours. */
+  .prep-sheet span[aria-hidden='true'] {
+    border: 1px solid #000 !important;
+  }
+
+  .prep-sheet li,
+  .prep-sheet section {
+    break-inside: avoid;
+  }
+}

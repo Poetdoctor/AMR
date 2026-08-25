@@ -25,7 +25,7 @@ export function SiteHeader() {
   useEffect(() => setOpen(false), [location.pathname])
 
   return (
-    <header className="sticky top-0 z-40 border-b border-sand-line bg-cream/90 backdrop-blur-sm">
+    <header className="print-hide sticky top-0 z-40 border-b border-sand-line bg-cream/90 backdrop-blur-sm">
       <Container width="wide">
         <div className="flex h-16 items-center justify-between gap-4 md:h-20">
           <Link to="/" className="group flex items-baseline gap-2.5">

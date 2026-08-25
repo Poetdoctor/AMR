@@ -132,6 +132,60 @@ try {
   }
   await reduced.close()
 
+  /*
+   * The Tool's hard constraint: nothing typed into it is ever sent anywhere.
+   * This drives the page the way a person would and fails if it makes a single
+   * request off-origin, grows a submittable <form>, writes to storage without
+   * being asked, or leaks a field value into the URL.
+   */
+  const tool = await browser.newPage()
+  await tool.setViewport(VIEWPORTS[1])
+  const offOrigin = []
+  tool.on('request', (r) => {
+    const url = r.url()
+    const local = url.startsWith(BASE) || url.startsWith('data:') || url.startsWith('blob:')
+    if (!local) offOrigin.push(url)
+  })
+  await tool.goto(`${BASE}/tool`, { waitUntil: 'networkidle0' })
+
+  const SECRET = 'private-health-detail-9137'
+  await tool.evaluate((text) => {
+    const field = document.querySelector('textarea')
+    const setter = Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value').set
+    setter.call(field, text)
+    field.dispatchEvent(new Event('input', { bubbles: true }))
+  }, SECRET)
+  const box = await tool.$('fieldset input[type=checkbox]')
+  if (box) await box.click()
+  await new Promise((r) => setTimeout(r, 400))
+
+  const toolState = await tool.evaluate(
+    (secret) => ({
+      forms: document.querySelectorAll('form').length,
+      url: location.href,
+      storage: (() => {
+        try {
+          return Object.keys(localStorage)
+        } catch {
+          return []
+        }
+      })(),
+      onSheet: (document.querySelector('.prep-sheet')?.innerText ?? '').includes(secret),
+    }),
+    SECRET,
+  )
+
+  if (offOrigin.length) fail(`/tool made off-origin request(s): ${offOrigin.join(', ')}`)
+  if (toolState.forms > 0)
+    fail(
+      `/tool has ${toolState.forms} <form> element(s) — a stray submit could put answers in a URL`,
+    )
+  if (toolState.url.includes(SECRET)) fail('/tool leaked a field value into the URL')
+  if (toolState.storage.length)
+    fail(`/tool wrote to storage without opt-in: ${toolState.storage.join(', ')}`)
+  if (!toolState.onSheet) fail('/tool did not carry typed text through to the printable sheet')
+  await tool.close()
+
   // The Decap CMS admin is not one of the site's own pages, so the assertions
   // above don't apply to it — but it does have to boot and find its config.
   const admin = await browser.newPage()

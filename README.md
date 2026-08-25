@@ -190,6 +190,38 @@ Story content comes from [`docs/doc-a-amr-beyond-the-diagnosis.pdf`](docs/doc-a-
 Everything presented as an interviewee's words is a verbatim quote from it; the
 connecting prose is the site's own voice, and the Stories page says so.
 
+## The visit-prep tool
+
+`/tool` is the one page on this site that holds anything private, so its
+constraint is absolute: nothing typed into it is ever sent anywhere.
+
+How that is enforced rather than merely intended:
+
+- **There is no network code in the feature.** No `fetch`, no `XMLHttpRequest`,
+  no `sendBeacon`, and no analytics anywhere on the site.
+- **There is no `<form>` element.** Nothing is ever submitted, and without one
+  there is no path by which a stray Enter key could put answers into a URL.
+- **Export is local only** — the browser's own print dialog, an in-memory Blob
+  download, and the clipboard.
+- **Saving to the browser is opt-in and off by default**, because the device is
+  often shared. Switching it off erases what was stored rather than just
+  stopping writes. See [`src/lib/visitPrepStorage.ts`](src/lib/visitPrepStorage.ts).
+
+`npm run smoke` drives the page the way a person would and fails if it makes a
+single off-origin request, grows a `<form>`, writes to storage without being
+asked, or leaks a field value into the URL. That check has been negative-tested:
+planting a `fetch` in the page makes it fail.
+
+Printing is a first-class output, not an afterthought — the whole point is
+walking into an appointment holding the sheet. Only the composed sheet prints;
+everything else carries a `print-hide` class. Marking what should not print
+beats guessing at selectors, and the printed sheet renders its own copy of the
+disclaimer because the site footer is one of the things hidden.
+
+If you add a question to the worksheet, add it to `QUESTION_GROUPS` in
+[`src/lib/visitPrep.ts`](src/lib/visitPrep.ts). Every question there traces back
+to something a patient or clinician actually said in the interviews.
+
 ## Deploying
 
 Configured for **either** host — pick one, delete the other config if you like.

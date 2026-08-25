@@ -29,7 +29,7 @@ const COLUMNS = [
 
 export function SiteFooter() {
   return (
-    <footer className="mt-24 border-t border-sand-line bg-cream-deep">
+    <footer className="print-hide mt-24 border-t border-sand-line bg-cream-deep">
       <Container width="wide">
         <div className="py-14 md:py-16">
           <Disclaimer className="mb-12" />
