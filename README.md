@@ -149,6 +149,12 @@ The site itself is static and cannot do that exchange, so a provider has to.
 1. Register a GitHub OAuth App: GitHub → Settings → Developer settings → OAuth
    Apps → New. Homepage URL is the deployed site; **Authorization callback URL**
    is `https://api.netlify.com/auth/done`.
+
+   The repo is private, so the token needs GitHub's `repo` scope. Netlify's
+   provider requests that scope for the `github` backend already — there is
+   nothing extra to configure, but it does mean each editor is asked to grant
+   private-repo access the first time they sign in.
+
 2. In Netlify: Site configuration → Access control → OAuth → Install provider →
    GitHub, and paste the client ID and secret from step 1.
 3. Visit `/admin` and click _Login with GitHub_.
