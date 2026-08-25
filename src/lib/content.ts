@@ -154,3 +154,68 @@ export function getStories(): Story[] {
 export function getStory(slug: string): Story | undefined {
   return getStories().find((story) => story.slug === slug)
 }
+
+/* -------------------------------------------------------------------------- */
+/*  Learn                                                                      */
+/* -------------------------------------------------------------------------- */
+
+export interface Article {
+  slug: string
+  title: string
+  summary: string
+  order: number
+  body: string
+  /** Rough reading time in minutes, from the body's word count. */
+  readingMinutes: number
+}
+
+const learnFiles = import.meta.glob('/src/content/learn/*.md', {
+  query: '?raw',
+  import: 'default',
+  eager: true,
+}) as Record<string, string>
+
+function toArticle(path: string, source: string): Article {
+  const { data, body } = parseFrontmatter(source)
+  const orderRaw = Number(readString(data, 'order'))
+  const words = body.split(/\s+/).filter(Boolean).length
+
+  return {
+    slug: fileSlug(path),
+    title: readString(data, 'title'),
+    summary: readString(data, 'summary'),
+    order: Number.isFinite(orderRaw) && orderRaw > 0 ? orderRaw : 999,
+    body,
+    readingMinutes: Math.max(1, Math.round(words / 200)),
+  }
+}
+
+const allArticles: Article[] = Object.entries(learnFiles)
+  .map(([path, source]) => toArticle(path, source))
+  .filter((article) => article.title !== '')
+  .sort((a, b) => a.order - b.order || a.title.localeCompare(b.title))
+
+export function getArticles(): Article[] {
+  return allArticles
+}
+
+export function getArticle(slug: string): Article | undefined {
+  return allArticles.find((article) => article.slug === slug)
+}
+
+/**
+ * Academic sources cited at the foot of the Learn landing page, from the works
+ * cited of the team's own narrative document.
+ */
+export const LEARN_SOURCES = [
+  {
+    citation:
+      'Crago, A.-L., Alexandre, S., Abdesselam, K., Gravel Tropper, D., Hartmann, M., Smith, G., & Lary, T. (2022). Understanding Canadians’ knowledge, attitudes and practices related to antimicrobial resistance and antibiotic use: Results from public opinion research. Canada Communicable Disease Report, 48(11/12).',
+    href: 'https://doi.org/10.14745/ccdr.v48i1112a08',
+  },
+  {
+    citation:
+      'Mellinghoff, S. C., Grossi, A. A., Recanatini, C., Breull-Wierschem, L., Salm, F., Gadebusch-Bondio, M., & Jung, N. (2026). The human cost of resistance: ethical implications of coping with isolation for multidrug resistant organisms. Clinical Microbiology and Infection, 32(8), 1244–1249.',
+    href: 'https://doi.org/10.1016/j.cmi.2026.05.043',
+  },
+] as const

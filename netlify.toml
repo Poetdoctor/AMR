@@ -5,9 +5,11 @@
 [build.environment]
   NODE_VERSION = "22"
 
-# Decap CMS is a static page; it must resolve before the SPA catch-all.
+# Decap CMS is its own built page, not an SPA route. Netlify serves existing
+# files (including /admin/config.yml) before applying redirects, so this only
+# catches the bare path and any client-side sub-paths.
 [[redirects]]
-  from = "/admin/*"
+  from = "/admin"
   to = "/admin/index.html"
   status = 200
 

@@ -53,6 +53,9 @@ src/
   config/site.ts        The few outward-facing values the team sets once
   content/team/*.md     Team roster — a Decap CMS collection, not code
   content/stories/*.md  Testimonial accounts, same collection pattern
+  content/learn/*.md    Learn articles, same collection pattern
+admin/                  The Decap CMS page, built as a second Vite entry
+public/admin/config.yml The CMS content model — fetched at runtime, not bundled
   lib/                  Front-matter parsing and content loading
   pages/                One file per route
   styles/global.css     Design tokens and the shared component classes
@@ -97,8 +100,66 @@ rewrites them on upload anyway. The portrait set is 420x280 (3:2) and the cards
 are sized to match it exactly, so replacements should keep that ratio to avoid
 cropping faces.
 
-Decap CMS (phase 4) will serve the editing UI at `/admin` and write to these
-same files. Until then, edit the markdown directly.
+### Editing through the CMS
+
+Decap CMS serves the editing UI at **`/admin`**. It writes markdown directly into
+`src/content/`, which commits to the repo and triggers a normal redeploy. Access
+control is repo access: anyone who is a collaborator on the GitHub repo can sign
+in. There is no separate user list.
+
+The content model lives in [`public/admin/config.yml`](public/admin/config.yml)
+and is fetched at runtime, so changing a field or a hint does not need a rebuild.
+
+Two things about this setup are deliberate and worth not undoing:
+
+- **Decap is bundled from npm, not loaded from a CDN.** The usual install is a
+  `<script src="https://unpkg.com/decap-cms...">` tag. Bundling it keeps the
+  promise that this site makes no third-party requests from any page. It builds
+  as a second Vite entry (`admin/index.html`), so the ~5 MB CMS bundle never
+  reaches the public site — the two share nothing but a JSX runtime chunk.
+- **`src/content` is excluded from Prettier.** Decap writes markdown in its own
+  style. If CI format-checked those files, every edit made through the CMS would
+  fail the build.
+
+`npm run test:content` guards the seam between the two: it round-trips awkward
+values through js-yaml (the library Decap serialises with) and back through
+`src/lib/frontmatter.ts`, and asserts that every field the loaders read is
+actually declared in `config.yml`. A field renamed on one side but not the other
+otherwise fails silently — the editor's change just has no effect.
+
+#### Editing locally, without GitHub
+
+```bash
+npx decap-server     # in one terminal
+npm run dev          # in another, then open http://localhost:5173/admin/
+```
+
+`local_backend: true` in the config makes `/admin` talk to that proxy and write
+to your working copy instead of committing. Without the proxy running you will
+see failed requests to `localhost:8081` in the console — that is expected, and it
+only happens on localhost.
+
+#### Making login work on the deployed site — one-time setup
+
+`backend: github` needs an OAuth client to exchange the GitHub login for a token.
+The site itself is static and cannot do that exchange, so a provider has to.
+
+**On Netlify** (simplest — it ships one):
+
+1. Register a GitHub OAuth App: GitHub → Settings → Developer settings → OAuth
+   Apps → New. Homepage URL is the deployed site; **Authorization callback URL**
+   is `https://api.netlify.com/auth/done`.
+2. In Netlify: Site configuration → Access control → OAuth → Install provider →
+   GitHub, and paste the client ID and secret from step 1.
+3. Visit `/admin` and click _Login with GitHub_.
+
+**On Vercel**, there is no built-in provider — you need to deploy a small OAuth
+proxy and point the config at it by adding `base_url` (and `auth_endpoint`) under
+`backend:` in `config.yml`. If nobody wants to maintain that, host on Netlify;
+this is the one thing the choice of host actually decides.
+
+Until step 2 is done, `/admin` loads and shows the login screen but cannot
+complete sign-in. Use `decap-server` locally in the meantime.
 
 ### Story attribution
 

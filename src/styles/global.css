@@ -216,11 +216,23 @@
     letter-spacing: -0.015em;
     color: var(--color-ink);
   }
-  .markdown blockquote p::before {
+  /* Convention: the first paragraph in a quote block is the quotation and gets
+     the quote marks; a second paragraph is an attribution line and does not.
+     The CMS hints tell editors the same thing. */
+  .markdown blockquote p:first-child::before {
     content: open-quote;
   }
-  .markdown blockquote p::after {
+  .markdown blockquote p:first-child::after {
     content: close-quote;
+  }
+  .markdown blockquote p:not(:first-child) {
+    font-family: var(--font-sans);
+    font-size: 0.875rem;
+    font-weight: 500;
+    line-height: 1.5;
+    letter-spacing: 0;
+    color: var(--color-ink-faint);
+    margin-top: 0.85rem;
   }
   .markdown blockquote {
     quotes: '\201C' '\201D';

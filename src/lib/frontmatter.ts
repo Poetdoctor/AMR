@@ -1,10 +1,14 @@
 /**
  * Minimal YAML front-matter reader for the site's markdown collections.
  *
- * Deliberately not a general YAML parser: it supports exactly the shapes Decap
- * CMS writes for the field types we use — plain scalars, quoted scalars, block
- * scalars (`|`, `|-`, `>`, `>-`) and simple `- item` lists. Anything richer
- * than that should be a reason to reach for a real parser, not to extend this.
+ * Deliberately not a general YAML parser. Its job is to survive whatever
+ * Decap CMS writes when someone saves a form: plain scalars, quoted scalars
+ * (including ones a serialiser wrapped across lines), block scalars
+ * (`|`, `>`, `|-`, `>-`), escape sequences, and simple `- item` lists.
+ * scripts/test-content.mjs round-trips awkward values through js-yaml — the
+ * library Decap serialises with — and back through this parser. Extend that
+ * test before extending this file; anything richer than the shapes it covers is
+ * a reason to reach for a real YAML library, not to grow this one.
  *
  * Runs in the browser at module-eval time (see content.ts), so it stays
  * dependency-free — gray-matter and friends expect Node's Buffer.
@@ -19,22 +23,95 @@ export interface ParsedDocument {
 
 const DELIMITER = /^---\s*$/
 
+/** YAML's double-quoted escape table. */
+const ESCAPES: Record<string, string> = {
+  '0': '\0',
+  a: '\x07',
+  b: '\b',
+  t: '\t',
+  '\t': '\t',
+  n: '\n',
+  v: '\v',
+  f: '\f',
+  r: '\r',
+  e: '\x1b',
+  ' ': ' ',
+  '"': '"',
+  '/': '/',
+  '\\': '\\',
+  N: '\x85',
+  _: '\xa0',
+  L: ' ',
+  P: ' ',
+}
+
+function unescapeDoubleQuoted(input: string): string {
+  let out = ''
+  for (let i = 0; i < input.length; i++) {
+    if (input[i] !== '\\') {
+      out += input[i]
+      continue
+    }
+    const next = input[++i]
+    if (next === undefined) break
+    if (next === 'x' || next === 'u' || next === 'U') {
+      const width = next === 'x' ? 2 : next === 'u' ? 4 : 8
+      const hex = input.slice(i + 1, i + 1 + width)
+      if (new RegExp(`^[0-9a-fA-F]{${width}}$`).test(hex)) {
+        out += String.fromCodePoint(parseInt(hex, 16))
+        i += width
+        continue
+      }
+    }
+    out += ESCAPES[next] ?? next
+  }
+  return out
+}
+
 function coerce(raw: string): FrontmatterValue {
   const value = raw.trim()
   if (value === '' || value === '~' || value === 'null') return null
   if (value === 'true') return true
   if (value === 'false') return false
   if (/^-?\d+(\.\d+)?$/.test(value)) return Number(value)
-  if (
-    (value.startsWith('"') && value.endsWith('"') && value.length > 1) ||
-    (value.startsWith("'") && value.endsWith("'") && value.length > 1)
-  ) {
-    const inner = value.slice(1, -1)
-    return value[0] === '"'
-      ? inner.replace(/\\"/g, '"').replace(/\\n/g, '\n')
-      : inner.replace(/''/g, "'")
+  if (value.length > 1) {
+    if (value.startsWith('"') && value.endsWith('"'))
+      return unescapeDoubleQuoted(value.slice(1, -1))
+    if (value.startsWith("'") && value.endsWith("'")) return value.slice(1, -1).replace(/''/g, "'")
   }
   return value
+}
+
+/** True when a quoted scalar starting with `quote` is closed within `text`. */
+function isClosedQuote(text: string, quote: string): boolean {
+  if (text.length < 2) return false
+  for (let i = 1; i < text.length; i++) {
+    if (quote === '"' && text[i] === '\\') {
+      i++
+      continue
+    }
+    if (text[i] !== quote) continue
+    if (quote === "'" && text[i + 1] === "'") {
+      i++
+      continue
+    }
+    return true
+  }
+  return false
+}
+
+/**
+ * Join the continuation lines of a quoted scalar that a serialiser wrapped:
+ * a line break folds to a space, and a trailing backslash in a double-quoted
+ * scalar joins with no space at all.
+ */
+function foldQuoted(lines: string[]): string {
+  return lines.reduce((acc, line) => {
+    const trimmed = line.trim()
+    if (acc === '') return trimmed
+    if (acc.endsWith('\\')) return `${acc.slice(0, -1)}${trimmed}`
+    return `${acc} ${trimmed}`
+  }, '')
 }
 
 function dedent(lines: string[]): string[] {
@@ -86,9 +163,12 @@ export function parseFrontmatter(source: string): ParsedDocument {
     const line = head[i]
     if (line.trim() === '' || line.trimStart().startsWith('#')) continue
 
-    const match = /^([A-Za-z0-9_-]+)\s*:\s?(.*)$/.exec(line)
+    // Keys may be quoted — js-yaml quotes any that would otherwise read as a
+    // boolean, a number, or a reserved word.
+    const match = /^\s*(?:'([^']+)'|"([^"]+)"|([A-Za-z0-9_-]+))\s*:\s?(.*)$/.exec(line)
     if (!match) continue
-    const [, key, rest] = match
+    const key = match[1] ?? match[2] ?? match[3]
+    const rest = match[4]
 
     const block = /^([|>])([+-]?)\s*$/.exec(rest.trim())
     if (block) {
@@ -103,6 +183,19 @@ export function parseFrontmatter(source: string): ParsedDocument {
         i++
       }
       data[key] = foldBlock(collected, style as '|' | '>', chomp as '' | '-' | '+')
+      continue
+    }
+
+    // A quoted scalar that doesn't close on its own line continues onto the next.
+    const quote = rest.trim()[0]
+    if ((quote === '"' || quote === "'") && !isClosedQuote(rest.trim(), quote)) {
+      const collected = [rest.trim()]
+      while (i + 1 < head.length) {
+        collected.push(head[i + 1])
+        i++
+        if (isClosedQuote(foldQuoted(collected), quote)) break
+      }
+      data[key] = coerce(foldQuoted(collected))
       continue
     }
 

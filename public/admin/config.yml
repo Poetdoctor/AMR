@@ -1,0 +1,144 @@
+# Decap CMS configuration.
+#
+# Fetched at runtime by /admin, so changing the content model here does not
+# require a rebuild. Every collection below writes markdown into src/content/,
+# which the site reads through src/lib/content.ts.
+#
+# Access control is repo access: anyone who is a collaborator on the GitHub repo
+# can sign in and edit. There is no separate user list to maintain.
+
+backend:
+  name: github
+  repo: Poetdoctor/AMR
+  branch: main
+  commit_messages:
+    create: 'Content: create {{collection}} “{{slug}}”'
+    update: 'Content: update {{collection}} “{{slug}}”'
+    delete: 'Content: delete {{collection}} “{{slug}}”'
+    uploadMedia: 'Content: upload {{path}}'
+    deleteMedia: 'Content: delete {{path}}'
+
+# Lets the CMS run against local files during development:
+#   npx decap-server        (in one terminal)
+#   npm run dev             (in another), then open /admin
+local_backend: true
+
+media_folder: public/uploads
+public_folder: /uploads
+
+collections:
+  - name: learn
+    label: Learn articles
+    label_singular: article
+    folder: src/content/learn
+    create: true
+    slug: '{{slug}}'
+    identifier_field: title
+    summary: '{{order}} — {{title}}'
+    sortable_fields: [order, title]
+    preview_path: 'learn/{{slug}}'
+    fields:
+      - { name: title, label: Title, widget: string }
+      - name: summary
+        label: Summary
+        widget: text
+        hint: One or two sentences. Shown on the Learn index and under the article title.
+      - name: order
+        label: Order
+        widget: number
+        value_type: int
+        min: 1
+        hint: Position in the list. Lower numbers come first.
+      - name: body
+        label: Article
+        widget: markdown
+        hint: >-
+          Use "##" headings to break it up. A quote block renders as a large pull
+          quote; if you add a second paragraph inside the same quote block it is
+          treated as the attribution line.
+
+  - name: stories
+    label: Stories
+    label_singular: story
+    folder: src/content/stories
+    create: true
+    slug: '{{slug}}'
+    identifier_field: name
+    summary: '{{name}} — {{attribution}}'
+    sortable_fields: [order, name]
+    preview_path: 'stories/{{slug}}'
+    fields:
+      - { name: name, label: Name, widget: string }
+      - name: attribution
+        label: How to attribute this
+        widget: select
+        default: anonymous
+        options:
+          - { label: 'Publish under their name (consent confirmed)', value: name }
+          - { label: 'Publish anonymously', value: anonymous }
+          - { label: 'Do not publish', value: withheld }
+        hint: >-
+          Only choose “under their name” once the person has confirmed they are happy
+          to be named publicly on a website — being interviewed is not the same
+          consent. “Do not publish” removes the story from the site entirely.
+      - name: anonymousAs
+        label: Anonymous label
+        widget: string
+        required: false
+        default: A patient living with a resistant infection
+        hint: >-
+          Used instead of the name when publishing anonymously. Keep it general —
+          a rare diagnosis plus a specific role can identify someone on its own.
+      - name: context
+        label: Context line
+        widget: string
+        hint: Shown under the name. Hidden automatically when publishing anonymously.
+      - name: signatureQuote
+        label: Signature quote
+        widget: text
+        hint: The one quote that leads the card on the Stories index. No quote marks needed.
+      - name: summary
+        label: Summary
+        widget: text
+        hint: One or two sentences describing the account.
+      - { name: order, label: Order, widget: number, value_type: int, min: 1 }
+      - { name: photo, label: Photo, widget: image, required: false }
+      - name: body
+        label: The account
+        widget: markdown
+        hint: >-
+          Quote blocks render as large pull quotes. Anything not inside a quote
+          block reads as the site's voice, not theirs.
+
+  - name: team
+    label: Team
+    label_singular: team member
+    folder: src/content/team
+    create: true
+    slug: '{{slug}}'
+    identifier_field: name
+    summary: '{{order}} — {{name}}'
+    sortable_fields: [order, name]
+    preview_path: team
+    fields:
+      - { name: name, label: Name, widget: string }
+      - name: role
+        label: Year and programme
+        widget: string
+        required: false
+        hint: e.g. “Third-year neuroscience”. The card stays hidden until this is filled in.
+      - name: quote
+        label: Quote
+        widget: text
+        required: false
+        hint: >-
+          One honest line about why this project matters to you. The card stays
+          hidden until this is filled in, so nothing half-finished appears publicly.
+      - name: photo
+        label: Photo
+        widget: image
+        required: false
+        hint: >-
+          Landscape, ideally 3:2 (the existing set is 420×280). Optional — without
+          one the card shows initials instead.
+      - { name: order, label: Order, widget: number, value_type: int, min: 1 }

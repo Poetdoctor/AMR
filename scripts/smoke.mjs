@@ -23,6 +23,10 @@ const ROUTES = [
   '/team',
   '/mission',
   '/learn',
+  '/learn/what-amr-actually-means',
+  '/learn/why-isolation-precautions-feel-personal',
+  '/learn/psychosocial-side-of-amr',
+  '/learn/who-faces-greater-risk',
   '/stories',
   '/stories/norma-washburn',
   '/stories/sunny-loo',
@@ -127,6 +131,19 @@ try {
       fail(`reduced-motion ${route}: main content did not render (${textLength} chars)`)
   }
   await reduced.close()
+
+  // The Decap CMS admin is not one of the site's own pages, so the assertions
+  // above don't apply to it — but it does have to boot and find its config.
+  const admin = await browser.newPage()
+  await admin.setViewport(VIEWPORTS[1])
+  const configStatus = await fetch(`${BASE}/admin/config.yml`).then((r) => r.status)
+  if (configStatus !== 200) fail(`/admin/config.yml returned ${configStatus}`)
+  await admin.goto(`${BASE}/admin/`, { waitUntil: 'networkidle2' })
+  await new Promise((r) => setTimeout(r, 2500))
+  const adminText = await admin.evaluate(() => document.body.innerText)
+  if (!/login/i.test(adminText))
+    fail(`/admin did not render a login screen (got: ${adminText.slice(0, 120)})`)
+  await admin.close()
 
   await browser.close()
 } finally {

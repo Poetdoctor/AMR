@@ -2,6 +2,7 @@ import { BrowserRouter, Route, Routes } from 'react-router-dom'
 import { Layout } from '@/components/Layout'
 import Home from '@/pages/Home'
 import Learn from '@/pages/Learn'
+import Article from '@/pages/Article'
 import Stories from '@/pages/Stories'
 import Story from '@/pages/Story'
 import Tool from '@/pages/Tool'
@@ -25,6 +26,7 @@ export default function App() {
         <Route element={<Layout />}>
           <Route index element={<Home />} />
           <Route path="/learn" element={<Learn />} />
+          <Route path="/learn/:slug" element={<Article />} />
           <Route path="/stories" element={<Stories />} />
           <Route path="/stories/:slug" element={<Story />} />
           <Route path="/tool" element={<Tool />} />

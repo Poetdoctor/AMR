@@ -9,8 +9,15 @@ export default defineConfig({
     alias: { '@': path.resolve(import.meta.dirname, 'src') },
   },
   build: {
-    // Decap CMS lives at /admin as a static asset, not part of the SPA bundle.
     outDir: 'dist',
     sourcemap: false,
+    rollupOptions: {
+      // Two entries: the site, and the Decap CMS admin at /admin. The admin is
+      // its own page, not a route in the SPA — see src/App.tsx.
+      input: {
+        main: path.resolve(import.meta.dirname, 'index.html'),
+        admin: path.resolve(import.meta.dirname, 'admin/index.html'),
+      },
+    },
   },
 })

@@ -3,3 +3,7 @@ node_modules
 package-lock.json
 public/admin
 docs
+
+# Content collections are written by Decap CMS in its own style. Formatting them
+# here would make every CMS edit fail the CI format check and block the deploy.
+src/content
