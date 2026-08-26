@@ -248,6 +248,22 @@ it. `CLAUDE.md` lists the ones that are load-bearing — the short version is:
 Setup, moderation and the kill switch are documented in
 [`supabase/README.md`](supabase/README.md).
 
+### The one-character mistake
+
+Vite inlines every `VITE_`-prefixed variable into the shipped JavaScript. That is
+correct for the Supabase **publishable** key and catastrophic for the **secret**
+one, which bypasses row-level security — a `VITE_` prefix on it would hand
+read-write access to every comment, removed ones included, to anyone who opens
+developer tools. The mistake is one word wide and completely silent.
+
+So it is checked mechanically rather than remembered: `npm run check:bundle`
+runs as part of every build and fails if a Supabase secret key, a service_role
+JWT, an Anthropic key, a Discord webhook or a Postgres connection string reaches
+`dist/`. It matches credential _values_, not bare prefixes — `supabase-js`
+contains the literal string `sb_secret_` in its own key-type check, and a guard
+that cries wolf on every build is a guard nobody believes. Negative-tested by
+planting a real secret key in a `VITE_` variable and confirming the build fails.
+
 ### Why the database is the safeguard
 
 The anon key is public — it sits in the shipped bundle, by design, because

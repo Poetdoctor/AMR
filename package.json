@@ -6,7 +6,7 @@
   "description": "iGEM UBC Human Practices — psychosocial impact of antimicrobial resistance",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "build": "tsc -b && vite build && node scripts/check-bundle.mjs",
     "preview": "vite preview",
     "typecheck": "tsc -b --noEmit",
     "format": "prettier --write .",
@@ -14,7 +14,8 @@
     "smoke": "node scripts/smoke.mjs",
     "test:content": "node scripts/test-content.mjs",
     "test:db": "node scripts/test-db.mjs",
-    "verify:live": "node scripts/verify-live.mjs"
+    "verify:live": "node scripts/verify-live.mjs",
+    "check:bundle": "node scripts/check-bundle.mjs"
   },
   "dependencies": {
     "@fontsource-variable/fraunces": "^5.3.0",
