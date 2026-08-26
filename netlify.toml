@@ -27,6 +27,21 @@
     Referrer-Policy = "strict-origin-when-cross-origin"
     Permissions-Policy = "geolocation=(), microphone=(), camera=(), interest-cohort=()"
 
+# Community carries other people's health testimony posted without a human
+# reading it first. Keeping it out of search indexes means an accidental
+# self-identification is visible for the hours it is up, not cached for months.
+# This is a header rather than a robots.txt Disallow on purpose: disallowing
+# stops crawlers reaching the page at all, so they never see the noindex.
+[[headers]]
+  for = "/community"
+  [headers.values]
+    X-Robots-Tag = "noindex, nofollow"
+
+[[headers]]
+  for = "/community/*"
+  [headers.values]
+    X-Robots-Tag = "noindex, nofollow"
+
 [[headers]]
   for = "/assets/*"
   [headers.values]

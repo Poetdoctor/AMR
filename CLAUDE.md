@@ -14,11 +14,24 @@ Mission — it's already written; pull from that file.
 - **Tool section (visit-prep form) stays 100% client-side, no
   exceptions.** Nothing typed into it is ever sent to a server or
   logged anywhere.
-- **Comments are never auto-published.** Every submission enters a
-  moderation queue (`status: pending`) and is invisible to other
-  visitors until a moderator sets `status: approved`. This is the
-  primary safety mechanism for Community — not the AI redaction pass,
-  which is an assist, not a substitute for human review.
+- **Community is post-moderated, and the safeguards that makes
+  necessary are not optional.** Comments publish on submit; a human
+  sweeps daily. This was a deliberate team decision (2026-08-26) that
+  replaced the original pre-moderation rule, and it moves every
+  safeguard from before publication to after it. Whichever of these is
+  removed is the one that will matter:
+  - Community routes are `noindex`, so an accidental self-identification
+    is visible for hours rather than cached by search engines for months.
+  - Authors can delete their own comment instantly from their browser,
+    with no moderator involved. This is the fastest safeguard in the
+    design — regret arrives about ninety seconds after posting.
+  - A report hides a comment immediately if the screening pass also
+    flagged it, or on two independent reports otherwise.
+  - `community_settings.auto_publish` is a kill switch: flip it and new
+    comments are held for approval instead, with no deploy. A database
+    trigger — not application code — decides the status on insert.
+  - The daily sweep is tracked in `swept_at` / `swept_by`, so "did anyone
+    actually look?" is answerable rather than assumed.
 - **No account required to browse.** A lightweight display name is
   enough to comment — pseudonyms encouraged, no real-name requirement.
 - **No analytics or embeds that do session replay or field-level
@@ -94,4 +107,6 @@ are worth reviewing before building on top of.
   general narrative + UTI as one illustrated case.
 - Modeled/realistic 3D assets — abstract/procedural scenes only (see
   Tech stack). No 3D artist on the team.
-- Auto-publishing comments without moderation, under any configuration.
+- A custom moderation panel. Supabase Studio first; build one only if the
+  daily sweep proves painful in practice.
+- Accounts, logins, email, or notifications for commenters.

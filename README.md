@@ -222,6 +222,43 @@ If you add a question to the worksheet, add it to `QUESTION_GROUPS` in
 [`src/lib/visitPrep.ts`](src/lib/visitPrep.ts). Every question there traces back
 to something a patient or clinician actually said in the interviews.
 
+## Community
+
+Comments publish the moment they are written; a human sweeps daily. That was a
+deliberate team decision on 2026-08-26 and it replaced the original
+pre-moderation rule, so every safeguard moved from before publication to after
+it. `CLAUDE.md` lists the ones that are load-bearing — the short version is:
+
+- **The section is `noindex`**, via an `X-Robots-Tag` header rather than a
+  `robots.txt` Disallow. Disallowing would stop crawlers reaching the page at
+  all, so they would never see the noindex and the URL could still surface. The
+  point is that an accidental self-identification is visible for hours, not
+  cached for months.
+- **Authors delete their own comments instantly**, proved by a random token in
+  their browser. No account. This is the fastest safeguard in the design, since
+  the regret arrives about ninety seconds after posting — so Delete really
+  deletes rather than hiding.
+- **A report can hide a comment without waiting for a moderator**: immediately
+  if the screening pass had already flagged it, otherwise on two independent
+  reports. That resists one person erasing testimony they dislike while still
+  acting fast on genuine harm. The database trigger decides this, not the UI.
+- **`community_settings.auto_publish` is a kill switch.** Flip it and new
+  comments are held for approval instead, with no deploy.
+
+Setup, moderation and the kill switch are documented in
+[`supabase/README.md`](supabase/README.md).
+
+### Why the database is the safeguard
+
+The anon key is public — it sits in the shipped bundle, by design, because
+row-level security is what protects the data. With no human reading a comment
+before the public does, those rules are not a backstop, they are the whole
+mechanism. `npm run test:db` asserts that a holder of that key cannot read a
+removed comment, read the moderator's columns, insert, edit, delete, republish,
+report directly, reach the private schema, or flip the kill switch. Those
+assertions were negative-tested by deliberately widening the policy, and they run
+in CI on every push.
+
 ## Deploying
 
 Configured for **either** host — pick one, delete the other config if you like.

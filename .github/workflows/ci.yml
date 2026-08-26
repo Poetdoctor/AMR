@@ -28,3 +28,31 @@ jobs:
           name: dist
           path: dist
           retention-days: 7
+
+  database:
+    name: Community access control
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_PASSWORD: test
+          POSTGRES_DB: amr
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      # Community publishes comments without a human reading them first, so the
+      # database rules are the safeguard rather than a backstop. They are tested
+      # on every push instead of trusted.
+      - name: Row-level security and moderation policy
+        run: npm run test:db
+        env:
+          DATABASE_URL: postgresql://postgres:test@localhost:5432/amr
