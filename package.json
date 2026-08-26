@@ -13,7 +13,8 @@
     "format:check": "prettier --check .",
     "smoke": "node scripts/smoke.mjs",
     "test:content": "node scripts/test-content.mjs",
-    "test:db": "node scripts/test-db.mjs"
+    "test:db": "node scripts/test-db.mjs",
+    "verify:live": "node scripts/verify-live.mjs"
   },
   "dependencies": {
     "@fontsource-variable/fraunces": "^5.3.0",

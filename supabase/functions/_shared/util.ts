@@ -30,7 +30,10 @@ export function preflight(req: Request): Response | null {
 
 /** Service-role client. Bypasses RLS — never expose this key to a browser. */
 export function admin() {
-  return createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!, {
+  // Supabase renamed service_role to the "secret" key. Deployed functions get it
+  // injected automatically under one name or the other; it is never pasted in.
+  const secret = (Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? Deno.env.get('SUPABASE_SECRET_KEY'))!
+  return createClient(Deno.env.get('SUPABASE_URL')!, secret, {
     auth: { persistSession: false },
   })
 }

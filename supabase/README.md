@@ -18,8 +18,15 @@ functions/sweep-nudge           Daily Discord nudge when comments go unread
 
 ## Setting it up
 
-**1. Create the project** at supabase.com. Note the project URL and the two keys
-under Project Settings → API.
+**1. Create the project** at supabase.com.
+
+The team's project is `ztqmnunmsrctmrvsiitb` —
+`https://ztqmnunmsrctmrvsiitb.supabase.co`. Supabase now calls the two keys
+**publishable** (`sb_publishable_…`, public by design, ships in the browser
+bundle) and **secret** (`sb_secret_…`, bypasses row-level security). You never
+need to copy the secret key anywhere: Supabase injects it into deployed Edge
+Functions automatically. If it has ever been pasted into a chat, an email or a
+document, rotate it.
 
 **2. Run the migration.** Supabase Studio → SQL Editor → paste
 `migrations/0001_community.sql` → Run.
@@ -38,12 +45,12 @@ under Project Settings → API.
 **4. Deploy the functions:**
 
 ```bash
-npx supabase link --project-ref <your-ref>
+npx supabase link --project-ref ztqmnunmsrctmrvsiitb
 npx supabase functions deploy submit-comment delete-comment report-comment sweep-nudge
 ```
 
 **5. Set the site's environment variables** in Netlify (Site configuration →
-Environment variables) — `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY`. Both
+Environment variables) — `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY`. Both
 are public and belong in the bundle. See `.env.example` for what must never go
 there.
 
@@ -55,7 +62,7 @@ create extension if not exists pg_net;
 
 select cron.schedule('community-sweep-nudge', '0 17 * * *', $$
   select net.http_post(
-    url     := 'https://<your-ref>.supabase.co/functions/v1/sweep-nudge',
+    url     := 'https://ztqmnunmsrctmrvsiitb.supabase.co/functions/v1/sweep-nudge',
     headers := '{"Authorization": "Bearer <your-anon-key>"}'::jsonb
   );
 $$);
@@ -94,8 +101,16 @@ it. Flip it back to `true` when the incident is over.
 ## Testing
 
 ```bash
-npm run test:db     # needs Docker running, or set DATABASE_URL
+npm run test:db       # the migration is correct   (needs Docker, or DATABASE_URL)
+npm run verify:live   # the live project enforces it (needs .env.local)
 ```
+
+`test:db` proves the migration is right. `verify:live` proves it was actually
+applied to the real project — it hits the deployed REST API using only the
+publishable key, which is exactly what an attacker has, and asserts that it
+cannot read a removed comment, read the moderator's columns, insert, edit,
+delete, report directly, reach the private schema, or flip the kill switch. Run
+it after applying the migration and after any schema change.
 
 Applies the migration to a throwaway Postgres and asserts that a holder of the
 anon key cannot read a removed comment, read the moderator's columns, insert,
