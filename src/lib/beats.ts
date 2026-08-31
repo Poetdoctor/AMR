@@ -29,6 +29,7 @@ export type SceneId =
   | 'monster' // the word made bigger than the organism
   | 'world' // a life, with appointments pinned all through it
   | 'whole' // everything turns, and faces the person
+  | 'breath' // the last thing: one light, one sentence, and then everyone else
 
 export interface Quote {
   text: string
@@ -242,6 +243,23 @@ export const BEATS: Beat[] = [
     body: [
       'Everything in this story — the ward, the family, the organism, the courses of treatment, the walls, the distant lights — has been circling one person the whole time.',
       'AMR is not only about whether a drug can kill a bacterium. It is a whole person’s journey through something that puts their social, psychological and spiritual health on a tangent. Better diagnostics and better antibiotics matter. So does somebody stopping long enough to ask.',
+    ],
+  },
+  {
+    id: 'breath',
+    act: 4,
+    actLabel: ACTS[4],
+    title: 'And it was never one person',
+    words: [],
+    scene: 'breath',
+    quotes: [
+      {
+        text: 'When we talk about our experience, we are just asking to be understood, to be supported.',
+        attribution: 'Sunny Loo',
+      },
+    ],
+    body: [
+      'Every light out there was somebody. Another room, another night, another person told the same thing and left to carry it on their own.',
     ],
   },
 ]

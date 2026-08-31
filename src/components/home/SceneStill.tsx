@@ -492,6 +492,46 @@ function Whole() {
   )
 }
 
+/** Beat 11 — one light, and then everyone else who was also alone. */
+function Breath() {
+  const many = useMemo(() => {
+    const random = seeded(211)
+    return Array.from({ length: 130 }, () => {
+      const angle = random() * Math.PI * 2
+      const distance = 60 + random() * 150
+      return {
+        x: CENTRE + Math.cos(angle) * distance,
+        y: CENTRE + Math.sin(angle) * distance * 0.8,
+        r: 1.4 + random() * 2.4,
+        o: 0.2 + random() * 0.5,
+      }
+    })
+  }, [])
+  return (
+    <>
+      {many.map((l, i) => (
+        <circle
+          key={i}
+          cx={l.x}
+          cy={l.y}
+          r={l.r}
+          className="fill-current text-rust"
+          opacity={l.o}
+        />
+      ))}
+      <circle
+        cx={CENTRE}
+        cy={CENTRE - 6}
+        r={54}
+        className="fill-current text-rust"
+        opacity={0.07}
+      />
+      <circle cx={CENTRE} cy={CENTRE - 6} r={30} className="fill-current text-rust" opacity={0.1} />
+      <Figure x={CENTRE} y={CENTRE + 26} scale={1.2} />
+    </>
+  )
+}
+
 const SCENES: Record<SceneId, () => ReactElement> = {
   fall: Fall,
   rollercoaster: Rollercoaster,
@@ -503,6 +543,7 @@ const SCENES: Record<SceneId, () => ReactElement> = {
   monster: Monster,
   world: World,
   whole: Whole,
+  breath: Breath,
 }
 
 export function SceneStill({ scene, active }: { scene: SceneId; active: boolean }) {
