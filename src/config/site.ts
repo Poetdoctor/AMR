@@ -20,10 +20,21 @@ export const site = {
    */
   shareExperienceUrl: '',
 
-  /** Permanent crisis line for the Community section footer (phase 6). */
+  /**
+   * Permanent crisis line for the Community section.
+   *
+   * Verified 2026-08-31: talksuicide.ca now 301-redirects to 988.ca, and the
+   * service operates as 9-8-8: Suicide Crisis Helpline — call or text, 24/7/365
+   * across Canada. Text matters as much as the number here: someone in an
+   * isolation room, or who cannot face speaking, may only be able to text.
+   *
+   * Re-check this every year. It is the one detail on the site that must not be
+   * stale, and it is the kind that goes stale quietly.
+   */
   crisisResource: {
-    name: 'Talk Suicide Canada',
+    name: '9-8-8: Suicide Crisis Helpline',
     tel: '988',
-    url: 'https://talksuicide.ca',
+    url: 'https://988.ca',
+    verified: '2026-08-31',
   },
 } as const
