@@ -293,7 +293,12 @@ export async function fetchPosts(communityId: string, viewerId?: string | null):
   }))
 }
 
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
 export async function fetchPost(id: string, viewerId?: string | null): Promise<Post | null> {
+  // A hand-edited or stale URL is a 404, not a database error. Postgres rejects
+  // a malformed uuid with a 400 that would otherwise surface as a broken page.
+  if (!UUID.test(id)) return null
   const { data } = await db().from('posts').select(POST_COLUMNS).eq('id', id).maybeSingle()
   if (!data) return null
   const all = await fetchPosts(data.community_id as string, viewerId)

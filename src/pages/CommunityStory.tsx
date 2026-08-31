@@ -86,11 +86,30 @@ export default function CommunityStory() {
     [profile],
   )
 
+  if (!isConfigured) {
+    return (
+      <Container width="wide" className="py-16 md:py-20">
+        <h1 className="display-lg text-ink">Community is not open yet</h1>
+        <p className="lede mt-4 max-w-2xl">
+          Stories people have written will appear here once the team has finished setting this
+          section up. Nothing is missing and nothing has been removed — it simply has not opened.
+        </p>
+        <Link to="/community" className="btn btn-ghost mt-8">
+          Back to Community
+        </Link>
+        <div className="mt-10 max-w-2xl">
+          <CrisisLine />
+        </div>
+      </Container>
+    )
+  }
+
   if (missing) return <NotFound />
   if (loading) {
     return (
       <Container width="wide" className="py-20">
-        <p className="text-sm text-ink-faint">Loading…</p>
+        <h1 className="display-md text-ink">A story from the community</h1>
+        <p className="mt-4 text-sm text-ink-faint">Loading…</p>
       </Container>
     )
   }

@@ -6,6 +6,7 @@ import { CrisisLine } from '@/components/community/CrisisLine'
 import {
   CONTENT_WARNINGS,
   createPost,
+  currentProfile,
   ensureProfile,
   fetchCommunity,
   fetchTags,
@@ -54,9 +55,12 @@ export default function ShareExperience() {
         const record = await fetchCommunity()
         setCommunity(record)
         setTagOptions(await fetchTags(record.id))
-        // The pseudonym is shown before anything is written, so nobody
-        // discovers what name their story carries after posting it.
-        setProfile(await ensureProfile())
+        // Deliberately not creating an identity here. Opening the composer to
+        // see what it asks for should not sign anyone into anything — the
+        // session is minted on the first keystroke instead, which is the point
+        // at which somebody has actually decided to write. If one already
+        // exists from a previous visit, the name is shown straight away.
+        setProfile(await currentProfile())
       } catch (caught) {
         setError(caught instanceof Error ? caught.message : 'Could not open the composer.')
       }
@@ -107,9 +111,25 @@ export default function ShareExperience() {
 
   if (!isConfigured) {
     return (
-      <Container width="wide" className="py-20">
-        <div className="callout p-7">
-          <p className="prose-amr">This section is not connected yet.</p>
+      <Container width="wide" className="py-16 md:py-20">
+        <h1 className="display-lg text-ink">Share an experience</h1>
+        <p className="lede mt-4 max-w-2xl">
+          This is where you will be able to write about what happened to you, under a name made up
+          for you rather than your own.
+        </p>
+        <div className="callout mt-8 max-w-2xl p-7">
+          <p className="eyebrow mb-3">Not open yet</p>
+          <p className="prose-amr">
+            The team is still setting this section up, so nothing can be posted for the moment.
+            Everything else on the site is working — the articles, the accounts people have already
+            shared, and the worksheet for your next appointment.
+          </p>
+        </div>
+        <Link to="/community" className="btn btn-ghost mt-8">
+          Back to Community
+        </Link>
+        <div className="mt-10 max-w-2xl">
+          <CrisisLine />
         </div>
       </Container>
     )
@@ -181,7 +201,15 @@ export default function ShareExperience() {
             value={body}
             autoComplete="off"
             placeholder="What happened, and what you'd want someone in your situation to know…"
-            onChange={(event) => setBody(event.target.value)}
+            onChange={(event) => {
+              setBody(event.target.value)
+              // First keystroke: mint the pseudonym so the privacy preview can
+              // show the real name well before anything is published.
+              if (!profile)
+                void ensureProfile()
+                  .then(setProfile)
+                  .catch(() => {})
+            }}
             className={`${field} mt-2 resize-y leading-relaxed`}
           />
           <p className="mt-2 text-sm text-ink-faint">
@@ -274,7 +302,10 @@ export default function ShareExperience() {
           <Avatar name={profile?.display_name ?? 'AA'} size="sm" />
           <div>
             <p className="text-sm text-ink">
-              Posting as <strong className="font-semibold">{profile?.display_name ?? '…'}</strong>
+              Posting as{' '}
+              <strong className="font-semibold">
+                {profile?.display_name ?? 'a name made up for you'}
+              </strong>
             </p>
             <p className="text-sm text-ink-soft">
               <span aria-hidden="true">🛡 </span>

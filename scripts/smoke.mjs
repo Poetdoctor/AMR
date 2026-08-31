@@ -32,6 +32,8 @@ const ROUTES = [
   '/stories/sunny-loo',
   '/tool',
   '/community',
+  '/community/share',
+  '/community/story/does-not-exist',
   '/no-such-page',
 ]
 
@@ -171,6 +173,13 @@ try {
         }
       })(),
       onSheet: (document.querySelector('.prep-sheet')?.innerText ?? '').includes(secret),
+      storageLeak: (() => {
+        try {
+          return Object.values(localStorage).some((value) => String(value).includes(secret))
+        } catch {
+          return false
+        }
+      })(),
     }),
     SECRET,
   )
@@ -181,8 +190,13 @@ try {
       `/tool has ${toolState.forms} <form> element(s) — a stray submit could put answers in a URL`,
     )
   if (toolState.url.includes(SECRET)) fail('/tool leaked a field value into the URL')
-  if (toolState.storage.length)
-    fail(`/tool wrote to storage without opt-in: ${toolState.storage.join(', ')}`)
+  // The property that matters is that the worksheet stores nothing of its own
+  // and leaks nothing typed into it. Asserting "storage is completely empty"
+  // was a proxy for that, and it broke as soon as another page legitimately
+  // kept a session — a check that fails for the wrong reason gets muted.
+  const toolKeys = toolState.storage.filter((key) => key.startsWith('amr.visit-prep'))
+  if (toolKeys.length) fail(`/tool wrote to storage without opt-in: ${toolKeys.join(', ')}`)
+  if (toolState.storageLeak) fail('/tool leaked typed text into browser storage')
   if (!toolState.onSheet) fail('/tool did not carry typed text through to the printable sheet')
   await tool.close()
 

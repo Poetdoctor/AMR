@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Container } from '@/components/Container'
+import { PageHeader } from '@/components/PageHeader'
 import { PostCard } from '@/components/community/PostCard'
 import { CrisisLine } from '@/components/community/CrisisLine'
 import { Disclaimer } from '@/components/Disclaimer'
@@ -116,17 +117,27 @@ export default function Community() {
       await load()
     })
 
+  // Reachable whenever the Supabase environment is missing — a fresh checkout,
+  // a preview build, a misconfigured deploy. It is a page someone can land on,
+  // so it gets a heading like any other.
   if (!isConfigured) {
     return (
-      <Container width="wide" className="py-20">
-        <div className="callout p-7">
-          <p className="eyebrow mb-4">Opening shortly</p>
-          <p className="prose-amr">
-            This section is built but not yet connected. It will open once the team has finished
-            setting it up.
-          </p>
-        </div>
-      </Container>
+      <>
+        <PageHeader
+          eyebrow="Community"
+          title="Somewhere to say it out loud"
+          subhead="Both of the patients we interviewed told us the same thing, separately: a community for this does not exist. This is our attempt at one."
+        />
+        <Container width="wide" className="py-16">
+          <div className="callout max-w-2xl p-7">
+            <p className="eyebrow mb-4">Opening shortly</p>
+            <p className="prose-amr">
+              This section is built but not yet connected. It will open once the team has finished
+              setting it up.
+            </p>
+          </div>
+        </Container>
+      </>
     )
   }
 
