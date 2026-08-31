@@ -65,7 +65,7 @@ export function FlatNarrative({ animate }: { animate: boolean }) {
         >
           <Container width="wide">
             <div className="grid items-center gap-10 lg:grid-cols-[1.15fr_1fr] lg:gap-16">
-              <BeatPanel beat={beat} dimmed={animate && !visible.has(beat.id)} />
+              <BeatPanel beat={beat} />
               <SceneStill scene={beat.scene} active={!animate || visible.has(beat.id)} />
             </div>
           </Container>

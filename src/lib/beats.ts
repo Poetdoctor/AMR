@@ -1,39 +1,34 @@
 /**
- * The six narrative beats for Home.
+ * Home: ten beats, four acts.
  *
- * One source of truth for both paths. The 3D scroll sequence and the flat
- * fallback render the same beats in the same order with the same words — the
- * only difference is whether a camera moves through space or the panels
- * cross-fade. Anything written here appears in both, so the reduced-motion
- * version can never quietly lose content.
+ * The direction here is the team's, and it corrects an earlier mistake worth
+ * recording. The first attempt illustrated the subject — colonies, plates,
+ * zones of inhibition. Accurate, and wrong: it is the thing almost every AMR
+ * page does, and it makes the story about an organism.
  *
+ * It isn't. What the interviews actually contain is fear, uncertainty,
+ * isolation, misunderstanding, exhaustion, and wanting to be seen. So the
+ * weighting is roughly 70% human experience, 20% the system around it, 10% the
+ * biology — and the reader should FEEL what AMR is like before being told what
+ * it is. The bacterium does not appear until beat eight, and when it does it is
+ * smaller than the words people wrap around it.
+ *
+ * `words` are the floating fragments the scene shows. `body` carries the same
+ * substance in prose so nothing is only available to whoever can run WebGL.
  * Every quote is verbatim from docs/doc-a-amr-beyond-the-diagnosis.pdf.
- * `scene` names the abstract shape the 3D path draws at that stop — deliberately
- * geometry, not illustration: nobody on the team is a 3D artist, and the beat
- * about isolation does not need to look like a hospital room to land.
  */
 
-/**
- * The visual language is drawn from AMR's own world rather than generic
- * geometry. Three families run through it:
- *
- *   the plate   — how resistance is grown, seen and measured
- *   the record  — what medicine writes down, and what it leaves out
- *   the room    — the person the record is about
- *
- * Still abstract and still procedural, as CLAUDE.md requires. A zone of
- * inhibition is only a circle; it is just a circle that means one particular
- * thing, and someone who has had a resistant infection explained to them will
- * recognise it.
- */
 export type SceneId =
-  | 'recurrence' // a plate cleared, and growth crossing back over the line
-  | 'inhibition' // disk diffusion: the zone, and the one colony surviving inside it
-  | 'record' // the susceptibility report, and the column nobody fills in
-  | 'room' // isolation, and the distance it makes
-  | 'schedule' // repeat appointments, stacking up
-  | 'person' // everything measured, drawn against everything that is not
-  | 'across' // the same pattern on other plates
+  | 'fall' // a path, and the floor tilting under it
+  | 'rollercoaster' // the terrain moving while the person stands still
+  | 'weight' // treatment accumulating until it bends someone
+  | 'corridor' // being moved past rather than met
+  | 'machine' // procedures arriving unexplained
+  | 'glass' // walls forming between a person and everyone else
+  | 'ocean' // alone, and then the lights of everyone else alone
+  | 'monster' // the word made bigger than the organism
+  | 'world' // a life, with appointments pinned all through it
+  | 'whole' // everything turns, and faces the person
 
 export interface Quote {
   text: string
@@ -42,100 +37,211 @@ export interface Quote {
 
 export interface Beat {
   id: string
-  eyebrow: string
-  heading: string
+  act: 1 | 2 | 3 | 4
+  actLabel: string
+  title: string
+  /** Fragments the scene surfaces. Large, few, and felt rather than read. */
+  words: string[]
+  /** Verbatim, always. The connective prose is ours; these are theirs. */
+  quotes: Quote[]
   body: string[]
-  quote?: Quote
   scene: SceneId
+}
+
+export const ACTS: Record<number, string> = {
+  1: 'Something is wrong',
+  2: "Nobody understands what I'm carrying",
+  3: 'The infection is not the whole story',
+  4: 'Healing begins when someone sees the whole person',
 }
 
 export const BEATS: Beat[] = [
   {
-    id: 'hook',
-    eyebrow: 'One',
-    heading: "It isn't one bad day",
-    scene: 'recurrence',
-    quote: {
-      text: "A sinking feeling is what you feel first: I've had this before and oh no, it's happening again.",
-      attribution: 'Norma Washburn, AMR patient',
-    },
+    id: 'fall',
+    act: 1,
+    actLabel: ACTS[1],
+    title: 'The fall',
+    words: ['Hope', 'Again?', 'Fear'],
+    scene: 'fall',
+    quotes: [
+      {
+        text: "A sinking feeling is what you feel first: I've had this before and oh no, it's happening again.",
+        attribution: 'Norma Washburn, AMR patient',
+      },
+      {
+        text: 'My dressing lasted for months, but I was scared it would happen again.',
+        attribution: 'Norma Washburn',
+      },
+    ],
     body: [
-      'An antibiotic clears the infection. Weeks later the same organism is back, and the drug that worked last time does not. Initial hope, then despair, then encouragement, and ultimately back down in the dumps — that is the rollercoaster patients described to us. Not a single bad day. A cycle.',
-      'It shows up in the body as well as the mind. Norma Washburn described collapsing to the ground with exhaustion after repeated courses of antibiotics — the treatment itself becoming part of what there is to survive.',
+      'Nothing dramatic happens. There is no moment anybody would put in a chart. There is a result, or a phrase, or a look — and the ground is not quite where it was a second ago.',
     ],
   },
   {
-    id: 'mechanism',
-    eyebrow: 'Two',
-    heading: 'You did not become resistant. The bacteria did.',
-    scene: 'inhibition',
-    quote: {
-      text: 'Reinforce that bacteria are resistant — not the patient.',
-      attribution: 'Dr. Edith Blondel-Hill, infectious disease physician',
-    },
+    id: 'rollercoaster',
+    act: 1,
+    actLabel: ACTS[1],
+    title: 'The rollercoaster',
+    words: ['Happiness', 'Despair', 'Encouraged', 'Back in the dumps'],
+    scene: 'rollercoaster',
+    quotes: [
+      {
+        text: 'But it’s a relief to have people who are specialists to do these dressings for you.',
+        attribution: 'Norma Washburn',
+      },
+    ],
     body: [
-      'This is the most common misunderstanding, and the most damaging. Antibiotics kill the bacteria they can reach; every so often one survives, and its descendants inherit whatever let it survive. Resistance is a property of a bacterial population, not of a person’s body.',
-      'The word people meet instead is “superbug”, and it usually arrives from outside the clinic. Norma heard it from her own daughter: “Mom, this is what you got — a superbug!” People hear it and assume nothing will work. Usually something still does; resistance makes the list shorter and the treatment harder.',
+      'Initial hope and happiness, then despair, then encouraged, and ultimately back down in the dumps. Patients described the same shape to us again and again. It is not a description of an illness — it is what living with one that keeps returning does to a person.',
+      'The person is not moving. The ground is.',
     ],
   },
   {
-    id: 'gap',
-    eyebrow: 'Three',
-    heading: 'Treated quickly, heard slowly',
-    scene: 'record',
-    quote: {
-      text: 'I want others to understand how I feel and stop long enough to allow me to share how I feel instead of going straight into…the treatment',
-      attribution: 'Sunny Loo, vasculitis patient',
-    },
+    id: 'weight',
+    act: 1,
+    actLabel: ACTS[1],
+    title: 'The invisible weight',
+    words: ['Another course', 'And another', 'Enough'],
+    scene: 'weight',
+    quotes: [],
     body: [
-      'Not a request for different medicine. A request for the moment before it. Norma put the same thing from the other side: “It seems they have just decided that their priority is getting through patients after patients, but it leaves the patient feeling less than prepared to face what they need.”',
-      'Clinicians described the same gap. Dr. Anthony Liu told us that as physicians specialise, they lose the basics of a condition and debrief patients on them less. Nobody decides to stop explaining. It stops being anybody’s job.',
+      'Every course of antibiotics is one more thing to get through. They accumulate. Nobody counts them, because each one on its own is reasonable.',
+      'This subconscious despair can manifest itself physically. Norma collapsed to the ground with exhaustion after repeated treatment with antibiotics. Not from the infection. From the treating.',
     ],
   },
   {
-    id: 'isolation',
-    eyebrow: 'Four',
-    heading: 'Physical distance becomes social distance',
-    scene: 'room',
+    id: 'corridor',
+    act: 2,
+    actLabel: ACTS[2],
+    title: 'The hospital that doesn’t see you',
+    words: ['Diagnosis', 'Prescription', 'Test', 'Procedure'],
+    scene: 'corridor',
+    quotes: [
+      {
+        text: 'I want others to understand how I feel and stop long enough to allow me to share how I feel instead of going straight into…the treatment',
+        attribution: 'Sunny Loo, vasculitis patient',
+      },
+      {
+        text: 'I would appreciate my physician asking about how I feel… but they would send me straight to counseling if I did ask.',
+        attribution: 'Sunny Loo — and the counselling would be out of pocket',
+      },
+      {
+        text: 'It seems they have just decided that their priority is getting through patients after patients, but it leaves the patient feeling less than prepared to face what they need.',
+        attribution: 'Norma Washburn',
+      },
+    ],
     body: [
-      'For many people the first visible change is not a conversation. It is that staff, then family, then friends start putting on gowns and gloves before coming into the room.',
-      'The precautions are necessary. What follows them often is not. A patient begins wondering whether they are dangerous to the people around them. Some pull away from partners, from family, from a new baby. Others begin to describe themselves as dirty, or contagious — words about character, applied to a culture result.',
-      'Both patients we spoke to had found their own way through: for Norma, the church and a friend who believes in the power of prayer; for Sunny, online games with friends. Neither had been offered anything. Both raised the same absence — there is no community of AMR patients to connect with, and both said they would value one.',
+      'Everyone here is competent, and everyone here is busy. Canada has a physician shortage, British Columbia included, and finding time to connect personally is genuinely hard.',
+      'The words still arrive on time. The person carrying them does not get asked anything.',
     ],
   },
   {
-    id: 'life',
-    eyebrow: 'Five',
-    heading: 'Treatment has to fit a life',
-    scene: 'schedule',
+    id: 'machine',
+    act: 2,
+    actLabel: ACTS[2],
+    title: 'The missing explanation',
+    words: ['Why this?', 'Why now?', 'Nobody said'],
+    scene: 'machine',
+    quotes: [
+      {
+        text: 'They are busy putting in a PICC telling me that I need it, but only because I have some nursing experience I understood it… I would be really really scared otherwise… people have no time to explain to patients.',
+        attribution: 'A patient, in the team’s interviews',
+      },
+      {
+        text: 'Make it a priority to, if the doctor has concerns about a medication and is hovering between several options, tell the patient that there are those concerns… he should let the patient in on it so that they know what will be possible outcomes.',
+        attribution: 'Norma Washburn',
+      },
+    ],
     body: [
-      'Eventually the patient leaves the hospital room and the infection goes with them — but so does everything else in their life: work, school, dependents, relationships, money.',
-      'A resistant infection can mean repeat appointments, more testing, specialist visits, longer courses. Someone near a major hospital manages. Someone in a smaller community may not have the same access, and every appointment carries another cost. Norma once collapsed from going to the hospital so much.',
-      'Even the form matters. Some intravenous treatments need refrigeration that is not practical for every household. The best treatment on paper is not always the best fit for somebody’s life.',
+      'Swabs, lines, scans, results. Each has a reason, and the reason stays inside the machine.',
+      'Dr. Edith Blondel-Hill told us some AMR screening is invasive to a patient’s privacy and modesty — repeated swabs, including anal swabs. Without a proper debrief beforehand, people can come out of it feeling violated rather than investigated.',
+      'Norma’s physician never had time to explain what AMR was, or what side effects to expect. The comorbidities that followed arrived as a surprise that a conversation could have prevented.',
+    ],
+  },
+  {
+    id: 'glass',
+    act: 2,
+    actLabel: ACTS[2],
+    title: 'Isolation',
+    words: ['Am I dangerous?', 'Am I contagious?', 'Am I dirty?'],
+    scene: 'glass',
+    quotes: [],
+    body: [
+      'The room does not change. Staff, then family, then friends start putting on gowns and gloves before coming in, and then it is a different room.',
+      'The precautions matter — they stop resistant bacteria spreading. What follows them often is not intended by anyone. Physical isolation becomes social isolation. People begin distancing themselves from partners and family for fear of passing it on, and some come to see themselves as dirty, or contagious.',
+      'Dr. Blondel-Hill and Dr. Anthony Liu both raised what patients cannot see from inside the room: isolated patients tend to receive fewer and shorter interactions with their care team, and the evidence links that to anxiety, depression and stigmatisation.',
+    ],
+  },
+  {
+    id: 'ocean',
+    act: 3,
+    actLabel: ACTS[3],
+    title: 'The loneliness',
+    words: ['Nobody else', 'Anywhere', 'Surely somebody'],
+    scene: 'ocean',
+    quotes: [],
+    body: [
+      'Both patients found something for themselves. Norma has the church, and a friend who believes in the power of prayer, which helped her greatly through the isolated stretches. Sunny plays online games with friends, and stays connected that way.',
+      'Neither was offered anything. Both raised the same absence, unprompted: there is no community of AMR patients to connect with, and both said they would value one.',
+      'They are not rare. They are unconnected. Every light out there is another person who was told the same thing, in another room, on another night.',
+    ],
+  },
+  {
+    id: 'monster',
+    act: 3,
+    actLabel: ACTS[3],
+    title: 'The monster is a word',
+    words: ['SUPERBUG', 'UNTREATABLE', 'DOOMED', 'INFECTIOUS'],
+    scene: 'monster',
+    quotes: [
+      {
+        text: 'Mom, remember when we were kids and you were reading us all about the fact of overuse of antibiotics and that we’re gonna create a superbug? Mom, this is what you got — a superbug!',
+        attribution: 'Norma’s daughter',
+      },
+    ],
+    body: [
+      'People hear “superbug” and assume no antibiotic will work at all. Usually something still does; resistance makes the list shorter and the treatment more complicated.',
+      'And underneath the word is the misconception that matters most: that the person has become resistant to antibiotics. They haven’t. The bacteria have.',
+    ],
+  },
+  {
+    id: 'world',
+    act: 3,
+    actLabel: ACTS[3],
+    title: 'The world beyond the hospital',
+    words: ['Work', 'School', 'Money', 'Getting there'],
+    scene: 'world',
+    quotes: [
+      {
+        text: 'Doctors get straight to what illness, what procedure… but often this is a small part of a patient’s day to day concern… most patients require a psychological aspect: how do I go through the rest of the day with what I have, how do I get through tomorrow with what I have?',
+        attribution: 'Sunny Loo',
+      },
+    ],
+    body: [
+      'Eventually the patient leaves the room and the infection goes with them — but so does work, school, dependents, relationships and money. Appointments get pinned all through it.',
+      'Somebody near a major hospital manages. Somebody in a smaller community may not have the same access, and every journey carries another cost. Norma once collapsed from going to the hospital so much.',
+      'Even the form matters: some intravenous treatments need refrigeration that is not practical for every household. The best treatment on paper is not always the best fit for somebody’s life.',
     ],
   },
   {
     id: 'whole',
-    eyebrow: 'Six',
-    heading: 'We fail to address the whole person',
-    scene: 'person',
-    quote: {
-      text: 'When we talk about our experience, we are just asking to be understood, to be supported.',
-      attribution: 'Sunny Loo',
-    },
-    body: [
-      'Preventing and treating resistant infections needs better diagnostics, effective antibiotics and responsible prescribing. Our conversations suggest it also needs communication, education and empathy.',
-      '“We fail to address the whole person,” Norma told us. AMR is not only a question of whether a drug can kill a bacterium. It is a person’s social, psychological and spiritual health, running alongside the infection the whole way.',
+    act: 4,
+    actLabel: ACTS[4],
+    title: 'The whole person',
+    words: ['Understanding', 'Support', 'Communication', 'Education', 'Connection', 'Care'],
+    scene: 'whole',
+    quotes: [
+      {
+        text: 'We fail to address the whole person.',
+        attribution: 'Norma Washburn',
+      },
+      {
+        text: 'When we talk about our experience, we are just asking to be understood, to be supported.',
+        attribution: 'Sunny Loo',
+      },
     ],
-  },
-  {
-    id: 'wider',
-    eyebrow: 'And beyond this',
-    heading: 'The same shape, across different infections',
-    scene: 'across',
     body: [
-      'Mechanism misunderstood, distress dismissed, isolation, then the sheer weight of the treatment. That pattern turned up in every conversation, across different conditions — it is not specific to any one organism.',
-      'Our team’s diagnostic work is one concrete example inside that picture, not the frame around it.',
+      'Everything in this story — the ward, the family, the organism, the courses of treatment, the walls, the distant lights — has been circling one person the whole time.',
+      'AMR is not only about whether a drug can kill a bacterium. It is a whole person’s journey through something that puts their social, psychological and spiritual health on a tangent. Better diagnostics and better antibiotics matter. So does somebody stopping long enough to ask.',
     ],
   },
 ]
