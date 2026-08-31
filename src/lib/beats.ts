@@ -13,8 +13,27 @@
  * about isolation does not need to look like a hospital room to land.
  */
 
+/**
+ * The visual language is drawn from AMR's own world rather than generic
+ * geometry. Three families run through it:
+ *
+ *   the plate   — how resistance is grown, seen and measured
+ *   the record  — what medicine writes down, and what it leaves out
+ *   the room    — the person the record is about
+ *
+ * Still abstract and still procedural, as CLAUDE.md requires. A zone of
+ * inhibition is only a circle; it is just a circle that means one particular
+ * thing, and someone who has had a resistant infection explained to them will
+ * recognise it.
+ */
 export type SceneId =
-  'descent' | 'selection' | 'gap' | 'enclosure' | 'corridor' | 'convergence' | 'wider'
+  | 'recurrence' // a plate cleared, and growth crossing back over the line
+  | 'inhibition' // disk diffusion: the zone, and the one colony surviving inside it
+  | 'record' // the susceptibility report, and the column nobody fills in
+  | 'room' // isolation, and the distance it makes
+  | 'schedule' // repeat appointments, stacking up
+  | 'person' // everything measured, drawn against everything that is not
+  | 'across' // the same pattern on other plates
 
 export interface Quote {
   text: string
@@ -35,21 +54,21 @@ export const BEATS: Beat[] = [
     id: 'hook',
     eyebrow: 'One',
     heading: "It isn't one bad day",
-    scene: 'descent',
+    scene: 'recurrence',
     quote: {
       text: "A sinking feeling is what you feel first: I've had this before and oh no, it's happening again.",
       attribution: 'Norma Washburn, AMR patient',
     },
     body: [
-      'Initial hope, then despair, then encouragement, and ultimately back down in the dumps. That is the rollercoaster patients living with antimicrobial resistance describe — not a single bad day, a cycle that keeps returning.',
-      'It can show up in the body as well as the mind. One patient described collapsing to the ground with exhaustion after repeated courses of antibiotics.',
+      'An antibiotic clears the infection. Weeks later the same organism is back, and the drug that worked last time does not. Initial hope, then despair, then encouragement, and ultimately back down in the dumps — that is the rollercoaster patients described to us. Not a single bad day. A cycle.',
+      'It shows up in the body as well as the mind. Norma Washburn described collapsing to the ground with exhaustion after repeated courses of antibiotics — the treatment itself becoming part of what there is to survive.',
     ],
   },
   {
     id: 'mechanism',
     eyebrow: 'Two',
     heading: 'You did not become resistant. The bacteria did.',
-    scene: 'selection',
+    scene: 'inhibition',
     quote: {
       text: 'Reinforce that bacteria are resistant — not the patient.',
       attribution: 'Dr. Edith Blondel-Hill, infectious disease physician',
@@ -63,7 +82,7 @@ export const BEATS: Beat[] = [
     id: 'gap',
     eyebrow: 'Three',
     heading: 'Treated quickly, heard slowly',
-    scene: 'gap',
+    scene: 'record',
     quote: {
       text: 'I want others to understand how I feel and stop long enough to allow me to share how I feel instead of going straight into…the treatment',
       attribution: 'Sunny Loo, vasculitis patient',
@@ -77,7 +96,7 @@ export const BEATS: Beat[] = [
     id: 'isolation',
     eyebrow: 'Four',
     heading: 'Physical distance becomes social distance',
-    scene: 'enclosure',
+    scene: 'room',
     body: [
       'For many people the first visible change is not a conversation. It is that staff, then family, then friends start putting on gowns and gloves before coming into the room.',
       'The precautions are necessary. What follows them often is not. A patient begins wondering whether they are dangerous to the people around them. Some pull away from partners, from family, from a new baby. Others begin to describe themselves as dirty, or contagious — words about character, applied to a culture result.',
@@ -88,7 +107,7 @@ export const BEATS: Beat[] = [
     id: 'life',
     eyebrow: 'Five',
     heading: 'Treatment has to fit a life',
-    scene: 'corridor',
+    scene: 'schedule',
     body: [
       'Eventually the patient leaves the hospital room and the infection goes with them — but so does everything else in their life: work, school, dependents, relationships, money.',
       'A resistant infection can mean repeat appointments, more testing, specialist visits, longer courses. Someone near a major hospital manages. Someone in a smaller community may not have the same access, and every appointment carries another cost. Norma once collapsed from going to the hospital so much.',
@@ -99,7 +118,7 @@ export const BEATS: Beat[] = [
     id: 'whole',
     eyebrow: 'Six',
     heading: 'We fail to address the whole person',
-    scene: 'convergence',
+    scene: 'person',
     quote: {
       text: 'When we talk about our experience, we are just asking to be understood, to be supported.',
       attribution: 'Sunny Loo',
@@ -113,7 +132,7 @@ export const BEATS: Beat[] = [
     id: 'wider',
     eyebrow: 'And beyond this',
     heading: 'The same shape, across different infections',
-    scene: 'wider',
+    scene: 'across',
     body: [
       'Mechanism misunderstood, distress dismissed, isolation, then the sheer weight of the treatment. That pattern turned up in every conversation, across different conditions — it is not specific to any one organism.',
       'Our team’s diagnostic work is one concrete example inside that picture, not the frame around it.',

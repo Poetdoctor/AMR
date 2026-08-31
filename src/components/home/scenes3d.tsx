@@ -1,4 +1,5 @@
 import { useMemo, useRef } from 'react'
+import type { ReactElement } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import type { SceneId } from '@/lib/beats'
@@ -6,28 +7,28 @@ import type { SceneId } from '@/lib/beats'
 /**
  * The seven stations the camera travels through.
  *
- * Abstract and procedural, per CLAUDE.md: primitives, particle fields and
- * simple geometry, generated in code. Nobody on the team is a 3D artist, and
- * six unique modelled environments is not buildable in a season — nor is it
- * needed. Camera travel through space is what carries the narrative; the
- * isolation beat does not have to look like a hospital room to land.
+ * Same visual language as the flat path — the plate, the record, the room —
+ * built from primitives and instanced points rather than modelled assets, as
+ * CLAUDE.md requires. Nobody on the team is a 3D artist, and none of this
+ * needs modelling: a zone of inhibition is a disc, an isolation room is a
+ * bounded volume, a susceptibility report is a lattice with a gap in it.
  *
- * Each station matches the SVG still on the flat path, so switching between
- * the two feels like the same story rather than two different sites.
+ * What the third dimension adds is that the camera flies *through* them. You
+ * pass across the surface of a plate and see the one colony that survived; you
+ * cross the threshold into the room and the visitors are left outside it.
  */
 
 export const STATION_GAP = 34
 export const SCENE_ORDER: SceneId[] = [
-  'descent',
-  'selection',
-  'gap',
-  'enclosure',
-  'corridor',
-  'convergence',
-  'wider',
+  'recurrence',
+  'inhibition',
+  'record',
+  'room',
+  'schedule',
+  'person',
+  'across',
 ]
 
-/** Station i sits at this depth. The camera walks from the first to the last. */
 export function stationZ(index: number): number {
   return -index * STATION_GAP
 }
@@ -35,7 +36,6 @@ export function stationZ(index: number): number {
 const INK = new THREE.Color('#8a7965')
 const RUST = new THREE.Color('#b04a22')
 
-/** Deterministic, so the geometry is identical on every load and every device. */
 function seeded(seed: number): () => number {
   let state = seed
   return () => {
@@ -44,239 +44,403 @@ function seeded(seed: number): () => number {
   }
 }
 
-function Descent() {
-  const group = useRef<THREE.Group>(null)
-  useFrame((_, delta) => {
-    if (group.current) group.current.rotation.y += delta * 0.06
-  })
+/** The plate itself: a thin disc the camera passes across. */
+function PlateDisc({ radius = 11 }: { radius?: number }) {
   return (
-    <group ref={group}>
-      {Array.from({ length: 7 }, (_, i) => (
-        <mesh key={i} position={[0, 6 - i * 2.1, 0]} rotation={[Math.PI / 2, 0, 0]}>
-          <torusGeometry args={[5.2 - i * 0.35, 0.035, 8, 96]} />
-          <meshBasicMaterial color={INK} transparent opacity={0.5 - i * 0.05} />
+    <group rotation={[-Math.PI / 2.7, 0, 0]}>
+      <mesh>
+        <circleGeometry args={[radius, 72]} />
+        <meshBasicMaterial color={INK} transparent opacity={0.05} side={THREE.DoubleSide} />
+      </mesh>
+      <mesh rotation={[Math.PI / 2, 0, 0]} position={[0, 0, 0]}>
+        <torusGeometry args={[radius, 0.05, 8, 96]} />
+        <meshBasicMaterial color={INK} transparent opacity={0.45} />
+      </mesh>
+    </group>
+  )
+}
+
+/** Colonies scattered on the plate's plane, avoiding a cleared radius. */
+function Colonies({
+  seed,
+  count,
+  radius,
+  clearRadius,
+  colour,
+  opacity,
+  size,
+}: {
+  seed: number
+  count: number
+  radius: number
+  clearRadius: number
+  colour: THREE.Color
+  opacity: number
+  size: number
+}) {
+  const mesh = useRef<THREE.InstancedMesh>(null)
+  const points = useMemo(() => {
+    const random = seeded(seed)
+    const out: [number, number, number][] = []
+    let guard = 0
+    while (out.length < count && guard++ < count * 40) {
+      const angle = random() * Math.PI * 2
+      const distance = Math.sqrt(random()) * radius
+      if (distance < clearRadius) continue
+      out.push([Math.cos(angle) * distance, 0, Math.sin(angle) * distance])
+    }
+    return out
+  }, [seed, count, radius, clearRadius])
+
+  useFrame(() => {
+    if (!mesh.current) return
+    const matrix = new THREE.Matrix4()
+    points.forEach((p, i) => {
+      matrix.makeScale(size, size, size)
+      matrix.setPosition(p[0], p[1], p[2])
+      mesh.current!.setMatrixAt(i, matrix)
+    })
+    mesh.current.instanceMatrix.needsUpdate = true
+  })
+
+  return (
+    <group rotation={[-Math.PI / 2.7, 0, 0]}>
+      <instancedMesh ref={mesh} args={[undefined, undefined, Math.max(1, points.length)]}>
+        <sphereGeometry args={[1, 8, 8]} />
+        <meshBasicMaterial color={colour} transparent opacity={opacity} />
+      </instancedMesh>
+    </group>
+  )
+}
+
+/** Beat one: the plate was cleared to the dashed line, and growth crossed back. */
+function Recurrence() {
+  return (
+    <group>
+      <PlateDisc />
+      <group rotation={[-Math.PI / 2.7, 0, 0]}>
+        <mesh rotation={[Math.PI / 2, 0, 0]}>
+          <torusGeometry args={[6.4, 0.03, 6, 96]} />
+          <meshBasicMaterial color={INK} transparent opacity={0.32} />
+        </mesh>
+      </group>
+      <Colonies
+        seed={3}
+        count={150}
+        radius={10.6}
+        clearRadius={6.4}
+        colour={INK}
+        opacity={0.3}
+        size={0.16}
+      />
+      <Colonies
+        seed={19}
+        count={14}
+        radius={5.6}
+        clearRadius={1.2}
+        colour={RUST}
+        opacity={1}
+        size={0.2}
+      />
+    </group>
+  )
+}
+
+/**
+ * Beat two: disk diffusion. The disc at the centre is the antibiotic; the empty
+ * ring around it is everything the drug killed. One colony survived inside that
+ * ring and is dividing. The patient is not in this picture — which is the beat.
+ */
+function Inhibition() {
+  const survivors = useMemo(() => {
+    const random = seeded(23)
+    const seedPoint: [number, number, number] = [3.1, 0, -2.2]
+    return [
+      seedPoint,
+      ...Array.from({ length: 6 }, () => {
+        const angle = random() * Math.PI * 2
+        const distance = 0.5 + random() * 1.1
+        return [
+          seedPoint[0] + Math.cos(angle) * distance,
+          0,
+          seedPoint[2] + Math.sin(angle) * distance,
+        ] as [number, number, number]
+      }),
+    ]
+  }, [])
+
+  return (
+    <group>
+      <PlateDisc />
+      <Colonies
+        seed={7}
+        count={190}
+        radius={10.6}
+        clearRadius={7}
+        colour={INK}
+        opacity={0.32}
+        size={0.16}
+      />
+      <group rotation={[-Math.PI / 2.7, 0, 0]}>
+        {/* the edge of the zone of inhibition */}
+        <mesh rotation={[Math.PI / 2, 0, 0]}>
+          <torusGeometry args={[7, 0.03, 6, 96]} />
+          <meshBasicMaterial color={INK} transparent opacity={0.4} />
+        </mesh>
+        {/* the antibiotic disk */}
+        <mesh rotation={[Math.PI / 2, 0, 0]}>
+          <cylinderGeometry args={[1.7, 1.7, 0.12, 40]} />
+          <meshBasicMaterial color={INK} transparent opacity={0.35} />
+        </mesh>
+        {survivors.map((p, i) => (
+          <mesh key={i} position={p}>
+            <sphereGeometry args={[i === 0 ? 0.3 : 0.19, 12, 12]} />
+            <meshBasicMaterial color={RUST} />
+          </mesh>
+        ))}
+      </group>
+    </group>
+  )
+}
+
+/**
+ * Beat three: the susceptibility report as a lattice the camera passes along.
+ * Every drug tested and recorded — and one column, outlined and empty, where
+ * nothing asks how the person is.
+ */
+function Record() {
+  const cells = useMemo(() => {
+    const random = seeded(31)
+    const out: { p: [number, number, number]; resistant: boolean; faint: boolean }[] = []
+    for (let r = 0; r < 7; r++) {
+      for (let c = 0; c < 5; c++) {
+        const roll = random()
+        out.push({
+          p: [(c - 2.6) * 2.1, (3 - r) * 1.5, 0],
+          resistant: roll < 0.34,
+          faint: roll >= 0.34 && roll < 0.62,
+        })
+      }
+    }
+    return out
+  }, [])
+
+  return (
+    <group>
+      {cells.map((cell, i) => (
+        <mesh key={i} position={cell.p}>
+          <boxGeometry args={[1.1, 1.1, 0.08]} />
+          <meshBasicMaterial
+            color={cell.resistant ? RUST : INK}
+            transparent
+            opacity={cell.resistant ? 0.9 : cell.faint ? 0.35 : 0.14}
+          />
         </mesh>
       ))}
-      <mesh position={[0, -9, 0]}>
-        <sphereGeometry args={[0.35, 16, 16]} />
-        <meshBasicMaterial color={RUST} />
+      {/* the column nobody fills in */}
+      <mesh position={[(5 - 2.6) * 2.1, 0, 0]}>
+        <boxGeometry args={[1.5, 11, 0.02]} />
+        <meshBasicMaterial color={RUST} wireframe transparent opacity={0.7} />
       </mesh>
     </group>
   )
 }
 
 /**
- * The mechanism, shown rather than described: a dense field where almost every
- * point is dim, and a handful are not. Those are the ones that survived.
+ * Beat four: the room. The camera crosses the threshold and the visitors stay
+ * on the other side of it, further away with each tier.
  */
-function Selection() {
-  const dim = useRef<THREE.InstancedMesh>(null)
-  const survivors = useRef<THREE.InstancedMesh>(null)
-  const DIM = 420
-  const ALIVE = 14
-
-  const layout = useMemo(() => {
-    const random = seeded(11)
-    const place = (count: number, spread: number) =>
-      Array.from({ length: count }, () => [
-        (random() - 0.5) * spread,
-        (random() - 0.5) * spread * 0.7,
-        (random() - 0.5) * spread * 0.5,
-      ])
-    return { dim: place(DIM, 22), alive: place(ALIVE, 16) }
+function Room() {
+  const visitors = useMemo(() => {
+    const random = seeded(53)
+    return Array.from({ length: 12 }, (_, i) => {
+      const tier = Math.floor(i / 4)
+      return [
+        7.5 + tier * 3.4 + random() * 1.6,
+        (i % 4) * 2.6 - 3.9 + random(),
+        -2 + random() * 4,
+      ] as [number, number, number]
+    })
   }, [])
 
-  useFrame(() => {
-    const matrix = new THREE.Matrix4()
-    for (const [mesh, points, scale] of [
-      [dim, layout.dim, 0.06],
-      [survivors, layout.alive, 0.22],
-    ] as const) {
-      if (!mesh.current) continue
-      points.forEach((p, i) => {
-        matrix.makeScale(scale, scale, scale)
-        matrix.setPosition(p[0], p[1], p[2])
-        mesh.current!.setMatrixAt(i, matrix)
-      })
-      mesh.current.instanceMatrix.needsUpdate = true
-    }
-  })
-
   return (
     <group>
-      <instancedMesh ref={dim} args={[undefined, undefined, DIM]}>
-        <sphereGeometry args={[1, 6, 6]} />
-        <meshBasicMaterial color={INK} transparent opacity={0.18} />
-      </instancedMesh>
-      <instancedMesh ref={survivors} args={[undefined, undefined, ALIVE]}>
-        <sphereGeometry args={[1, 12, 12]} />
+      <mesh position={[-2.5, 0, 0]}>
+        <boxGeometry args={[11, 9, 11]} />
+        <meshBasicMaterial color={INK} wireframe transparent opacity={0.28} />
+      </mesh>
+      <mesh position={[-2.5, 0, 0]}>
+        <sphereGeometry args={[0.42, 16, 16]} />
         <meshBasicMaterial color={RUST} />
-      </instancedMesh>
+      </mesh>
+      {/* the threshold: where the gowns and gloves go on */}
+      <mesh position={[3.2, 0, 0]} rotation={[0, Math.PI / 2, 0]}>
+        <planeGeometry args={[11, 9]} />
+        <meshBasicMaterial color={RUST} transparent opacity={0.08} side={THREE.DoubleSide} />
+      </mesh>
+      {visitors.map((p, i) => (
+        <mesh key={i} position={p}>
+          <sphereGeometry args={[0.26, 10, 10]} />
+          <meshBasicMaterial color={INK} transparent opacity={0.42 - Math.floor(i / 4) * 0.11} />
+        </mesh>
+      ))}
     </group>
   )
 }
 
-function Gap() {
+/** Beat five: every appointment a mark, the journey to it the arc above. */
+function Schedule() {
+  const visits = useMemo(() => {
+    const random = seeded(67)
+    return Array.from({ length: 26 }, (_, i) => ({
+      x: (i - 12.5) * 1.15,
+      height: 0.7 + random() * 3.4,
+    }))
+  }, [])
   return (
     <group>
-      <mesh position={[-3.2, 0, 0]} rotation={[0, 0, Math.PI / 2]}>
-        <torusGeometry args={[5, 0.04, 8, 96, Math.PI]} />
-        <meshBasicMaterial color={INK} transparent opacity={0.45} />
+      <mesh rotation={[0, 0, Math.PI / 2]}>
+        <cylinderGeometry args={[0.025, 0.025, 30, 6]} />
+        <meshBasicMaterial color={INK} transparent opacity={0.4} />
       </mesh>
-      <mesh position={[3.2, 0, 0]} rotation={[0, 0, -Math.PI / 2]}>
-        <torusGeometry args={[5, 0.04, 8, 96, Math.PI]} />
-        <meshBasicMaterial color={INK} transparent opacity={0.45} />
-      </mesh>
-      <mesh position={[-1.1, 0, 0]}>
-        <sphereGeometry args={[0.26, 16, 16]} />
-        <meshBasicMaterial color={INK} transparent opacity={0.6} />
-      </mesh>
-      <mesh position={[1.1, 0, 0]}>
-        <sphereGeometry args={[0.3, 16, 16]} />
+      {visits.map((v, i) => (
+        <group key={i} position={[v.x, 0, 0]}>
+          <mesh position={[0, v.height / 2, 0]}>
+            <cylinderGeometry args={[0.02, 0.02, v.height, 6]} />
+            <meshBasicMaterial color={INK} transparent opacity={0.34} />
+          </mesh>
+          <mesh position={[0, v.height, 0]}>
+            <sphereGeometry args={[0.09, 8, 8]} />
+            <meshBasicMaterial color={INK} transparent opacity={0.45} />
+          </mesh>
+        </group>
+      ))}
+      <mesh position={[visits[0].x, 0, 0]}>
+        <sphereGeometry args={[0.25, 12, 12]} />
         <meshBasicMaterial color={RUST} />
+      </mesh>
+      <mesh position={[visits[visits.length - 1].x, 0, 0]}>
+        <sphereGeometry args={[0.25, 12, 12]} />
+        <meshBasicMaterial color={RUST} transparent opacity={0.5} />
       </mesh>
     </group>
   )
 }
 
-function Enclosure() {
-  const shell = useRef<THREE.Mesh>(null)
-  useFrame((_, delta) => {
-    if (shell.current) shell.current.rotation.y += delta * 0.08
-  })
-  const outside = useMemo(() => {
-    const random = seeded(29)
-    return Array.from({ length: 18 }, () => {
+/**
+ * Beat six: what medicine measures, drawn to scale against what it does not.
+ * The lattice and the plate are small and precise at the centre; the person
+ * extends a long way past the edge of both.
+ */
+function Person() {
+  const field = useRef<THREE.InstancedMesh>(null)
+  const COUNT = 260
+  const points = useMemo(() => {
+    const random = seeded(83)
+    return Array.from({ length: COUNT }, () => {
       const theta = random() * Math.PI * 2
       const phi = Math.acos(2 * random() - 1)
-      const r = 9 + random() * 3
+      const r = 8 + random() * 9
       return [
         r * Math.sin(phi) * Math.cos(theta),
         r * Math.sin(phi) * Math.sin(theta),
         r * Math.cos(phi),
-      ]
+      ] as [number, number, number]
     })
   }, [])
-  return (
-    <group>
-      <mesh ref={shell}>
-        <sphereGeometry args={[6.2, 16, 10]} />
-        <meshBasicMaterial color={INK} wireframe transparent opacity={0.3} />
-      </mesh>
-      <mesh>
-        <sphereGeometry args={[0.4, 16, 16]} />
-        <meshBasicMaterial color={RUST} />
-      </mesh>
-      {outside.map((p, i) => (
-        <mesh key={i} position={p as [number, number, number]}>
-          <sphereGeometry args={[0.16, 8, 8]} />
-          <meshBasicMaterial color={INK} transparent opacity={0.35} />
-        </mesh>
-      ))}
-    </group>
-  )
-}
 
-/** The appointments: the same frame again, and again, receding. */
-function Corridor() {
-  return (
-    <group>
-      {Array.from({ length: 10 }, (_, i) => (
-        <mesh key={i} position={[0, 0, -i * 2.4]}>
-          <torusGeometry args={[4.6 - i * 0.16, 0.03, 6, 4, Math.PI * 2]} />
-          <meshBasicMaterial color={INK} transparent opacity={0.4 - i * 0.03} />
-        </mesh>
-      ))}
-      <mesh>
-        <sphereGeometry args={[0.28, 16, 16]} />
-        <meshBasicMaterial color={RUST} />
-      </mesh>
-    </group>
-  )
-}
-
-function Convergence() {
-  const group = useRef<THREE.Group>(null)
-  useFrame((_, delta) => {
-    if (group.current) group.current.rotation.z += delta * 0.04
+  useFrame(() => {
+    if (!field.current) return
+    const matrix = new THREE.Matrix4()
+    points.forEach((p, i) => {
+      matrix.makeScale(0.07, 0.07, 0.07)
+      matrix.setPosition(p[0], p[1], p[2])
+      field.current!.setMatrixAt(i, matrix)
+    })
+    field.current.instanceMatrix.needsUpdate = true
   })
-  const spokes = useMemo(() => {
-    const random = seeded(47)
-    return Array.from({ length: 54 }, (_, i) => {
-      const angle = (i / 54) * Math.PI * 2
-      const outer = 5.5 + random() * 3.5
-      return { angle, outer }
-    })
-  }, [])
+
   return (
-    <group ref={group}>
-      {spokes.map((s, i) => {
-        const inner = 2.4
-        const length = s.outer - inner
-        const mid = inner + length / 2
-        return (
-          <mesh
-            key={i}
-            position={[Math.cos(s.angle) * mid, Math.sin(s.angle) * mid, 0]}
-            rotation={[0, 0, s.angle + Math.PI / 2]}
-          >
-            <boxGeometry args={[0.025, length, 0.025]} />
-            <meshBasicMaterial color={INK} transparent opacity={0.3} />
-          </mesh>
-        )
-      })}
+    <group>
+      <instancedMesh ref={field} args={[undefined, undefined, COUNT]}>
+        <sphereGeometry args={[1, 6, 6]} />
+        <meshBasicMaterial color={INK} transparent opacity={0.24} />
+      </instancedMesh>
       <mesh rotation={[Math.PI / 2, 0, 0]}>
-        <torusGeometry args={[2.2, 0.04, 8, 64]} />
+        <torusGeometry args={[3.4, 0.05, 8, 72]} />
         <meshBasicMaterial color={RUST} />
       </mesh>
-      <mesh>
-        <sphereGeometry args={[0.45, 16, 16]} />
-        <meshBasicMaterial color={RUST} />
-      </mesh>
+      {[-1, 0, 1].map((r) =>
+        [-1, 0, 1].map((c) => (
+          <mesh key={`${r}${c}`} position={[c * 1.2, r * 1.2, 0]}>
+            <boxGeometry args={[0.7, 0.7, 0.06]} />
+            <meshBasicMaterial color={INK} transparent opacity={0.32} />
+          </mesh>
+        )),
+      )}
     </group>
   )
 }
 
-function Wider() {
-  const clusters = useMemo(
+/** Beat seven: other organisms, other plates, the same pattern on each. */
+function Across() {
+  const plates = useMemo(
     () => [
-      { p: [-5.5, 2.4, -2], r: 2.6 },
-      { p: [4.6, 3.2, -4], r: 1.9 },
-      { p: [0, -3.2, 0], r: 3.4 },
-      { p: [6.2, -2.6, -3], r: 1.5 },
+      { p: [-7.5, 3, -3] as [number, number, number], r: 4.2, seed: 5 },
+      { p: [7, 4, -6] as [number, number, number], r: 3.1, seed: 9 },
+      { p: [0, -4.5, 0] as [number, number, number], r: 5.2, seed: 13 },
     ],
     [],
   )
   return (
     <group>
-      {clusters.map((c, i) => (
-        <group key={i} position={c.p as [number, number, number]}>
-          <mesh rotation={[Math.PI / 2.6, 0, 0]}>
-            <torusGeometry args={[c.r, 0.03, 8, 64]} />
-            <meshBasicMaterial color={INK} transparent opacity={0.34} />
-          </mesh>
-          <mesh>
-            <sphereGeometry args={[0.2, 12, 12]} />
-            <meshBasicMaterial
-              color={i === 2 ? RUST : INK}
-              transparent
-              opacity={i === 2 ? 1 : 0.55}
-            />
-          </mesh>
-        </group>
-      ))}
+      {plates.map((plate, i) => {
+        const random = seeded(plate.seed)
+        const zone = plate.r * 0.6
+        const dots = Array.from({ length: 30 }, () => {
+          const angle = random() * Math.PI * 2
+          const distance = zone + random() * (plate.r - zone - 0.2)
+          return [Math.cos(angle) * distance, 0, Math.sin(angle) * distance] as [
+            number,
+            number,
+            number,
+          ]
+        })
+        return (
+          <group key={i} position={plate.p} rotation={[-Math.PI / 2.7, 0, i * 0.4]}>
+            <mesh rotation={[Math.PI / 2, 0, 0]}>
+              <torusGeometry args={[plate.r, 0.03, 6, 72]} />
+              <meshBasicMaterial color={INK} transparent opacity={0.4} />
+            </mesh>
+            <mesh rotation={[Math.PI / 2, 0, 0]}>
+              <torusGeometry args={[zone, 0.02, 6, 64]} />
+              <meshBasicMaterial color={INK} transparent opacity={0.28} />
+            </mesh>
+            {dots.map((d, j) => (
+              <mesh key={j} position={d}>
+                <sphereGeometry args={[0.11, 6, 6]} />
+                <meshBasicMaterial color={INK} transparent opacity={0.3} />
+              </mesh>
+            ))}
+            <mesh position={[zone * 0.45, 0, -zone * 0.35]}>
+              <sphereGeometry args={[0.2, 10, 10]} />
+              <meshBasicMaterial color={RUST} />
+            </mesh>
+          </group>
+        )
+      })}
     </group>
   )
 }
 
-const SCENES: Record<SceneId, () => React.ReactElement> = {
-  descent: Descent,
-  selection: Selection,
-  gap: Gap,
-  enclosure: Enclosure,
-  corridor: Corridor,
-  convergence: Convergence,
-  wider: Wider,
+const SCENES: Record<SceneId, () => ReactElement> = {
+  recurrence: Recurrence,
+  inhibition: Inhibition,
+  record: Record,
+  room: Room,
+  schedule: Schedule,
+  person: Person,
+  across: Across,
 }
 
 export function Station({ scene, index }: { scene: SceneId; index: number }) {
