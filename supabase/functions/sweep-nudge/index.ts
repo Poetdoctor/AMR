@@ -8,9 +8,10 @@
  *
  * Schedule it with pg_cron — see supabase/README.md.
  */
-import { admin, json } from '../_shared/util.ts'
+import { admin, replyFor } from '../_shared/util.ts'
 
-Deno.serve(async (_req) => {
+Deno.serve(async (req) => {
+  const reply = replyFor(req)
   const db = admin()
 
   const { count: unswept } = await db
@@ -32,14 +33,14 @@ Deno.serve(async (_req) => {
     .limit(1)
     .maybeSingle()
 
-  if (!unswept) return json({ posted: false, reason: 'queue empty' })
+  if (!unswept) return reply({ posted: false, reason: 'queue empty' })
 
   const hoursWaiting = oldest
     ? Math.floor((Date.now() - new Date(oldest.created_at).getTime()) / 3_600_000)
     : 0
 
   const webhook = Deno.env.get('DISCORD_WEBHOOK_URL')
-  if (!webhook) return json({ posted: false, reason: 'no webhook configured', unswept })
+  if (!webhook) return reply({ posted: false, reason: 'no webhook configured', unswept })
 
   const lines = [
     `**${unswept} comment${unswept === 1 ? '' : 's'} waiting to be read.**`,
@@ -56,5 +57,5 @@ Deno.serve(async (_req) => {
     body: JSON.stringify({ content: lines.join('\n') }),
   })
 
-  return json({ posted: true, unswept, reported, hoursWaiting })
+  return reply({ posted: true, unswept, reported, hoursWaiting })
 })

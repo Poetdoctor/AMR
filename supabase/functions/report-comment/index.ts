@@ -11,27 +11,28 @@
  * needs some key, so a daily-rotating hash goes in the private schema — which
  * PostgREST does not expose — and is purged after a week.
  */
-import { admin, json, preflight, sourceHash } from '../_shared/util.ts'
+import { admin, preflight, replyFor, sourceHash } from '../_shared/util.ts'
 
 const REASONS = ['identifying', 'abusive', 'distressing', 'spam', 'other']
 
 Deno.serve(async (req) => {
   const pre = preflight(req)
   if (pre) return pre
-  if (req.method !== 'POST') return json({ error: 'Method not allowed' }, 405)
+  const reply = replyFor(req)
+  if (req.method !== 'POST') return reply({ error: 'Method not allowed' }, 405)
 
   let payload: { id?: string; reason?: string; detail?: string }
   try {
     payload = await req.json()
   } catch {
-    return json({ error: 'Could not read that report.' }, 400)
+    return reply({ error: 'Could not read that report.' }, 400)
   }
 
   const { id, reason } = payload
   const detail = (payload.detail ?? '').trim().slice(0, 500) || null
 
-  if (!id) return json({ error: 'Missing comment id.' }, 400)
-  if (!reason || !REASONS.includes(reason)) return json({ error: 'Unknown reason.' }, 400)
+  if (!id) return reply({ error: 'Missing comment id.' }, 400)
+  if (!reason || !REASONS.includes(reason)) return reply({ error: 'Unknown reason.' }, 400)
 
   const db = admin()
   const hash = await sourceHash(req)
@@ -45,13 +46,13 @@ Deno.serve(async (req) => {
     .insert({ comment_id: id, ip_hash: hash })
 
   if (fingerprintError && fingerprintError.code === '23505')
-    return json({ reported: true, note: 'already reported' })
+    return reply({ reported: true, note: 'already reported' })
 
   const { error } = await db.from('reports').insert({ comment_id: id, reason, detail })
   if (error) {
     console.error('report failed', error)
-    return json({ error: 'Something went wrong sending that. Please try again.' }, 500)
+    return reply({ error: 'Something went wrong sending that. Please try again.' }, 500)
   }
 
-  return json({ reported: true })
+  return reply({ reported: true })
 })

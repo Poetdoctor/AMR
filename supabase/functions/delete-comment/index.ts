@@ -9,22 +9,23 @@
  *
  * Proof of authorship is the token in their browser. No account, no email.
  */
-import { admin, json, preflight, tokenHash } from '../_shared/util.ts'
+import { admin, preflight, replyFor, tokenHash } from '../_shared/util.ts'
 
 Deno.serve(async (req) => {
   const pre = preflight(req)
   if (pre) return pre
-  if (req.method !== 'POST') return json({ error: 'Method not allowed' }, 405)
+  const reply = replyFor(req)
+  if (req.method !== 'POST') return reply({ error: 'Method not allowed' }, 405)
 
   let payload: { id?: string; deleteToken?: string }
   try {
     payload = await req.json()
   } catch {
-    return json({ error: 'Could not read that request.' }, 400)
+    return reply({ error: 'Could not read that request.' }, 400)
   }
 
   const { id, deleteToken } = payload
-  if (!id || !deleteToken) return json({ error: 'Missing id or token.' }, 400)
+  if (!id || !deleteToken) return reply({ error: 'Missing id or token.' }, 400)
 
   const db = admin()
   const { data, error } = await db
@@ -33,18 +34,18 @@ Deno.serve(async (req) => {
     .eq('id', id)
     .maybeSingle()
 
-  if (error || !data) return json({ error: 'That comment no longer exists.' }, 404)
+  if (error || !data) return reply({ error: 'That comment no longer exists.' }, 404)
 
   if (data.delete_token_hash !== (await tokenHash(deleteToken)))
     // Deliberately the same message as a missing row: a wrong token must not
     // reveal that the comment exists.
-    return json({ error: 'That comment no longer exists.' }, 404)
+    return reply({ error: 'That comment no longer exists.' }, 404)
 
   const { error: deleteError } = await db.from('comments').delete().eq('id', id)
   if (deleteError) {
     console.error('delete failed', deleteError)
-    return json({ error: 'Something went wrong removing that. Please try again.' }, 500)
+    return reply({ error: 'Something went wrong removing that. Please try again.' }, 500)
   }
 
-  return json({ deleted: true })
+  return reply({ deleted: true })
 })

@@ -8,24 +8,67 @@
  */
 import { createClient } from 'npm:@supabase/supabase-js@2'
 
-export const ALLOWED_ORIGIN = Deno.env.get('SITE_ORIGIN') ?? '*'
-
-export const CORS = {
-  'Access-Control-Allow-Origin': ALLOWED_ORIGIN,
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
-  Vary: 'Origin',
+/**
+ * Allowed browser origins.
+ *
+ * SITE_ORIGIN is a comma-separated list. Values are normalised before use,
+ * because a browser's Origin header is a bare scheme://host[:port] — never with
+ * a trailing slash and never with a path. Pasting the site URL straight from
+ * the address bar gives you "https://example.app/", which does not match, and
+ * the only symptom is an unexplained "NetworkError" in the visitor's console.
+ * A config value that breaks everything if you add one character is a bad
+ * config value, so the code takes the character off rather than asking people
+ * to remember.
+ */
+function normaliseOrigin(value: string): string {
+  const trimmed = value.trim()
+  if (!trimmed || trimmed === '*') return trimmed
+  try {
+    return new URL(trimmed).origin
+  } catch {
+    return trimmed.replace(/\/+$/, '')
+  }
 }
 
-export function json(body: unknown, status = 200): Response {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { ...CORS, 'Content-Type': 'application/json' },
-  })
+const ALLOWED_ORIGINS = (Deno.env.get('SITE_ORIGIN') ?? '')
+  .split(',')
+  .map(normaliseOrigin)
+  .filter(Boolean)
+
+/** Echo back the caller's origin when it is allowed; fall back sensibly. */
+export function corsFor(req: Request): Record<string, string> {
+  const origin = req.headers.get('origin')
+  const allow =
+    ALLOWED_ORIGINS.length === 0 || ALLOWED_ORIGINS.includes('*')
+      ? '*'
+      : origin && ALLOWED_ORIGINS.includes(normaliseOrigin(origin))
+        ? origin
+        : ALLOWED_ORIGINS[0]
+
+  return {
+    'Access-Control-Allow-Origin': allow,
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    Vary: 'Origin',
+  }
+}
+
+/**
+ * Builds a JSON responder bound to one request.
+ *
+ * Every response needs the CORS headers, errors included — a 400 or a 429
+ * without them reaches the browser as an unexplained "NetworkError" instead of
+ * the message it carries, which is precisely the failure this whole file exists
+ * to prevent. Binding once per request removes the chance of forgetting.
+ */
+export function replyFor(req: Request) {
+  const headers = { ...corsFor(req), 'Content-Type': 'application/json' }
+  return (body: unknown, status = 200): Response =>
+    new Response(JSON.stringify(body), { status, headers })
 }
 
 export function preflight(req: Request): Response | null {
-  return req.method === 'OPTIONS' ? new Response('ok', { headers: CORS }) : null
+  return req.method === 'OPTIONS' ? new Response('ok', { headers: corsFor(req) }) : null
 }
 
 /** Service-role client. Bypasses RLS — never expose this key to a browser. */

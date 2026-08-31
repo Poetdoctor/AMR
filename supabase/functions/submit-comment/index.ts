@@ -9,9 +9,9 @@
 import {
   admin,
   isThrottled,
-  json,
   LIMITS,
   preflight,
+  replyFor,
   sourceHash,
   tokenHash,
 } from '../_shared/util.ts'
@@ -20,28 +20,29 @@ import { screenComment } from '../_shared/screen.ts'
 Deno.serve(async (req) => {
   const pre = preflight(req)
   if (pre) return pre
-  if (req.method !== 'POST') return json({ error: 'Method not allowed' }, 405)
+  const reply = replyFor(req)
+  if (req.method !== 'POST') return reply({ error: 'Method not allowed' }, 405)
 
   let payload: { body?: string; displayName?: string }
   try {
     payload = await req.json()
   } catch {
-    return json({ error: 'Could not read that submission.' }, 400)
+    return reply({ error: 'Could not read that submission.' }, 400)
   }
 
   const body = (payload.body ?? '').trim()
   const displayName = (payload.displayName ?? '').trim().slice(0, LIMITS.nameMax) || null
 
   if (body.length < LIMITS.bodyMin)
-    return json({ error: `Please write at least ${LIMITS.bodyMin} characters.` }, 400)
+    return reply({ error: `Please write at least ${LIMITS.bodyMin} characters.` }, 400)
   if (body.length > LIMITS.bodyMax)
-    return json({ error: `Please keep it under ${LIMITS.bodyMax} characters.` }, 400)
+    return reply({ error: `Please keep it under ${LIMITS.bodyMax} characters.` }, 400)
 
   const db = admin()
   const hash = await sourceHash(req)
 
   if (await isThrottled(db, hash))
-    return json({ error: "You've posted a few times just now. Please try again in an hour." }, 429)
+    return reply({ error: "You've posted a few times just now. Please try again in an hour." }, 429)
 
   // The author keeps this; we keep only its hash. It is what lets someone
   // delete their own comment with no account.
@@ -55,7 +56,7 @@ Deno.serve(async (req) => {
 
   if (error) {
     console.error('insert failed', error)
-    return json({ error: 'Something went wrong saving that. Please try again.' }, 500)
+    return reply({ error: 'Something went wrong saving that. Please try again.' }, 500)
   }
 
   // Fire-and-forget: the response goes out now, screening lands seconds later.
@@ -64,7 +65,7 @@ Deno.serve(async (req) => {
   const runtime = (globalThis as any).EdgeRuntime
   if (runtime?.waitUntil) runtime.waitUntil(background)
 
-  return json({
+  return reply({
     comment: {
       id: data.id,
       created_at: data.created_at,
