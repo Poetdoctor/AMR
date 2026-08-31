@@ -68,6 +68,7 @@ select pg_temp.must_fail('select moderator_note from public.comments',    'canno
 select pg_temp.must_fail('select delete_token_hash from public.comments', 'cannot read delete_token_hash');
 select pg_temp.must_fail('select report_count from public.comments',      'cannot read report_count');
 select pg_temp.must_fail('select swept_at, swept_by from public.comments','cannot read sweep record');
+select pg_temp.must_fail('select screen_error from public.comments',      'cannot read screen_error');
 
 select pg_temp.must_fail(
   $$insert into public.comments (body) values ('trying to post directly, bypassing the edge function')$$,
@@ -98,15 +99,16 @@ select pg_temp.must_fail('select * from private.sweep_queue',           'cannot 
 \echo 'insert trigger'
 reset role;
 
-insert into public.comments (id, body, status, ai_flags, swept_at, swept_by, report_count)
+insert into public.comments (id, body, status, ai_flags, swept_at, swept_by, report_count, screen_error)
 values ('33333333-3333-3333-3333-333333333333',
         'A caller trying to insert a row that claims to be already screened and swept.',
-        'published', '{"overall":{"reidentification_risk":"low"}}'::jsonb, now(), 'nobody', 99);
+        'published', '{"overall":{"reidentification_risk":"low"}}'::jsonb, now(), 'nobody', 99, 'faked');
 
 select pg_temp.must_equal((select ai_flags    from public.comments where id='33333333-3333-3333-3333-333333333333'), null::jsonb, 'insert cannot pre-set ai_flags');
 select pg_temp.must_equal((select swept_at    from public.comments where id='33333333-3333-3333-3333-333333333333'), null::timestamptz, 'insert cannot pre-set swept_at');
 select pg_temp.must_equal((select swept_by    from public.comments where id='33333333-3333-3333-3333-333333333333'), null::text, 'insert cannot pre-set swept_by');
 select pg_temp.must_equal((select report_count from public.comments where id='33333333-3333-3333-3333-333333333333'), 0, 'insert cannot pre-set report_count');
+select pg_temp.must_equal((select screen_error from public.comments where id='33333333-3333-3333-3333-333333333333'), null::text, 'insert cannot pre-set screen_error');
 
 \echo 'kill switch'
 update public.community_settings set auto_publish = false;

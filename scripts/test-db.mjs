@@ -21,6 +21,7 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const FILES = [
   'supabase/tests/00_roles.sql',
   'supabase/migrations/0001_community.sql',
+  'supabase/migrations/0002_screen_error.sql',
   'supabase/tests/01_access.sql',
 ]
 

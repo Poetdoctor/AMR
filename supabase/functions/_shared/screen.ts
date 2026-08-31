@@ -17,7 +17,9 @@
  * as NOT SCREENED rather than as clean.
  */
 import Anthropic from 'npm:@anthropic-ai/sdk@0'
-import { z } from 'npm:zod@3'
+// Must be Zod 4: the SDK's zodOutputFormat reads the v4 schema internals, and a
+// v3 schema fails with "Cannot read properties of undefined (reading 'def')".
+import { z } from 'npm:zod@^4'
 import { zodOutputFormat } from 'npm:@anthropic-ai/sdk@0/helpers/zod'
 import type { admin } from './util.ts'
 
@@ -110,10 +112,22 @@ export async function screenComment(
         ai_flags: flags,
         theme: flags.theme,
         screened_at: new Date().toISOString(),
+        screen_error: null,
       })
       .eq('id', id)
   } catch (error) {
-    // Never surfaces to the visitor and never blocks anything.
-    console.error('screening failed', id, error)
+    /*
+     * Never surfaces to the visitor and never blocks anything — but it must not
+     * vanish either. A silently failing screen looks identical to a clean one
+     * from the moderator's side, and this failed in production for a fortnight-
+     * shaped reason (an unpaid API balance) that nothing on the site could show.
+     * Recording it means the sweep queue says WHY a comment was not screened.
+     */
+    const message = error instanceof Error ? error.message : String(error)
+    console.error('screening failed', id, message)
+    await db
+      .from('comments')
+      .update({ screen_error: message.slice(0, 300) })
+      .eq('id', id)
   }
 }
