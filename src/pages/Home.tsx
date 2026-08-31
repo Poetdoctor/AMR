@@ -1,106 +1,126 @@
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Container } from '@/components/Container'
+import { FlatNarrative } from '@/components/home/FlatNarrative'
+import { useCapability, readFlatPreference, writeFlatPreference } from '@/lib/capability'
 import { usePageTitle } from '@/lib/usePageTitle'
 
 /**
- * Phase 1 landing.
+ * Home: the narrative.
  *
- * The full six-beat narrative — camera-travel scrollytelling with a mandatory
- * flat 2D fallback — is the last thing in the build order (CLAUDE.md, phase 7).
- * What's here is the static shell it grows out of: beat 1's hook, and the routes
- * out to the rest of the site. Kept deliberately small so phase 7 replaces it
- * rather than fighting it.
+ * Two paths through the same seven beats. The flat one is the default and
+ * always works; the 3D scroll sequence is layered on only for visitors whose
+ * device and preferences can carry it (see lib/capability.ts). Both render the
+ * same words from lib/beats.ts, so the quieter version can never lose content.
+ *
+ * The switch is also offered on the page, because detection gets it wrong — a
+ * capable phone that is hot and throttling, or someone who simply finds the
+ * movement unpleasant without having set a system preference.
  */
-
-const ENTRANCES = [
-  {
-    to: '/learn',
-    label: 'Learn',
-    blurb:
-      'What resistance actually is, what the precautions are for, and why nobody explained it.',
-  },
-  {
-    to: '/stories',
-    label: 'Stories',
-    blurb: 'Testimony from people who have lived with a resistant infection, in their own words.',
-  },
-  {
-    to: '/tool',
-    label: 'Visit prep',
-    blurb: 'A private worksheet for your next appointment. Nothing you type leaves your browser.',
-  },
-  {
-    to: '/community',
-    label: 'Community',
-    blurb:
-      'Somewhere to say it out loud, under any name you like. Read by a person before it posts.',
-  },
-]
-
 export default function Home() {
   usePageTitle()
+  const capability = useCapability()
+  const [preferFlat, setPreferFlat] = useState(true)
+
+  useEffect(() => setPreferFlat(readFlatPreference()), [])
+
+  const rich = capability.rich && !preferFlat
+  const canChoose = capability.reason === 'ok' || preferFlat
 
   return (
     <>
-      <section className="border-b border-sand-line bg-cream-deep py-20 md:py-32">
+      <section className="border-b border-sand-line bg-cream-deep py-20 md:py-28">
         <Container width="wide">
           <p className="eyebrow mb-6">iGEM UBC · Human Practices</p>
           <h1 className="display-xl max-w-4xl text-ink">
             Antimicrobial resistance is counted carefully. The people are not.
           </h1>
-
-          <figure className="mt-12 max-w-2xl border-l-2 border-rust pl-6 md:pl-8">
-            <blockquote>
-              <p className="font-display text-2xl leading-snug font-semibold text-ink md:text-[1.75rem]">
-                “A sinking feeling is what you feel first: I've had this before and oh no, it's
-                happening again.”
-              </p>
-            </blockquote>
-            <figcaption className="mt-4 text-sm text-ink-faint">
-              Norma Washburn, who lives with a resistant infection
-            </figcaption>
-          </figure>
-
-          <p className="lede mt-12 max-w-2xl">
-            A resistant infection is not one bad day. It is a cycle — hope, then despair,
-            encouragement, and back down again — and most of it happens where no one is counting.
-            We're a student team asking the people it happened to what it was actually like.
+          <p className="lede mt-8 max-w-2xl">
+            Seven things patients and clinicians told us, in the order they tend to happen. It takes
+            about five minutes to read.
           </p>
 
-          <div className="mt-10 flex flex-wrap gap-3">
-            <Link className="btn btn-primary" to="/mission">
-              What we're doing, and why
-            </Link>
-            <Link className="btn btn-ghost" to="/team">
-              Meet the team
-            </Link>
+          <div className="mt-10 flex flex-wrap items-center gap-4">
+            <a className="btn btn-primary" href="#beat-hook">
+              Start reading
+            </a>
+            {canChoose ? (
+              <button
+                type="button"
+                onClick={() => {
+                  const next = !preferFlat
+                  setPreferFlat(next)
+                  writeFlatPreference(next)
+                }}
+                className="text-sm font-semibold text-rust-deep underline-offset-4 hover:underline"
+              >
+                {preferFlat ? 'Try the moving version' : 'Switch to the still version'}
+              </button>
+            ) : null}
           </div>
+
+          {capability.reason === 'reduced-motion' ? (
+            <p className="mt-6 max-w-xl text-sm text-ink-faint">
+              Your device asks for reduced motion, so this is the still version. Nothing is missing
+              from it.
+            </p>
+          ) : null}
         </Container>
       </section>
 
-      <Container width="wide" className="py-16 md:py-24">
-        <h2 className="display-md text-ink">Where to go from here</h2>
-        <ul className="mt-8 grid list-none gap-5 sm:grid-cols-2">
-          {ENTRANCES.map((item) => (
-            <li key={item.to}>
-              <Link
-                to={item.to}
-                className="card flex h-full flex-col p-7 transition-shadow hover:shadow-[var(--shadow-card-lift)]"
-              >
-                <span className="font-display text-xl font-bold tracking-tight text-ink">
-                  {item.label}
-                </span>
-                <span className="mt-2.5 text-[0.9375rem] leading-relaxed text-ink-soft">
-                  {item.blurb}
-                </span>
-                <span aria-hidden="true" className="mt-5 text-sm font-semibold text-rust-deep">
-                  Open →
-                </span>
-              </Link>
-            </li>
-          ))}
-        </ul>
-      </Container>
+      <div id="beat-hook">
+        {/* The 3D path lands here in the next commit; until then both routes
+            render the flat narrative, which is the one that must always work. */}
+        <FlatNarrative animate={!rich && capability.reason !== 'reduced-motion'} />
+      </div>
+
+      <section className="border-t border-sand-line py-16 md:py-24">
+        <Container width="wide">
+          <h2 className="display-md text-ink">Where to go from here</h2>
+          <ul className="mt-8 grid list-none gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            {[
+              {
+                to: '/learn',
+                label: 'Learn',
+                blurb: 'What resistance actually is, and why nobody explained it.',
+              },
+              {
+                to: '/stories',
+                label: 'Stories',
+                blurb: 'The full accounts these seven beats are drawn from.',
+              },
+              {
+                to: '/community',
+                label: 'Community',
+                blurb: 'Both patients told us no community exists. This is our attempt at one.',
+              },
+              {
+                to: '/tool',
+                label: 'Visit prep',
+                blurb: 'Write your questions before the appointment. Nothing leaves your browser.',
+              },
+              {
+                to: '/mission',
+                label: 'Mission',
+                blurb: 'What we are doing about it, and what we hope changes.',
+              },
+              { to: '/team', label: 'Team', blurb: 'The six people reading your story.' },
+            ].map((item) => (
+              <li key={item.to}>
+                <Link
+                  to={item.to}
+                  className="card flex h-full flex-col p-6 transition-shadow hover:shadow-[var(--shadow-card-lift)]"
+                >
+                  <span className="font-display text-lg font-bold text-ink">{item.label}</span>
+                  <span className="mt-2 text-[0.9375rem] leading-relaxed text-ink-soft">
+                    {item.blurb}
+                  </span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </Container>
+      </section>
     </>
   )
 }
