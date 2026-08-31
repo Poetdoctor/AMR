@@ -22,7 +22,8 @@ const FILES = [
   'supabase/tests/00_roles.sql',
   'supabase/migrations/0001_community.sql',
   'supabase/migrations/0002_screen_error.sql',
-  'supabase/tests/01_access.sql',
+  'supabase/migrations/0003_communities.sql',
+  'supabase/tests/02_communities.sql',
 ]
 
 const CONTAINER = 'amr-pg-test'
@@ -110,7 +111,7 @@ let failed = false
 try {
   for (const file of FILES) {
     const out = apply(file)
-    if (file.includes('tests/01')) {
+    if (file.includes('tests/0')) {
       for (const line of out.split('\n')) {
         const t = line.trim()
         if (t && !/^\(|^-+$|^$/.test(t)) console.log(t.startsWith('ok') ? `  ${t}` : t)
