@@ -102,6 +102,23 @@ select pg_temp.must_fail('select * from public.bookmarks',            'cannot re
 select pg_temp.must_fail('select * from public.reports',              'cannot read who reported what');
 select pg_temp.must_fail('select * from private.sweep_queue',         'cannot read the moderation queue');
 
+\echo 'comment threads'
+-- The trigger takes author_id from the session, so a comment must be written
+-- while one exists.
+set role authenticated;
+set request.jwt.claim.sub = 'bbbbbbbb-0000-0000-0000-000000000002';
+insert into public.post_comments (post_id, author_id, body)
+values ('11111111-1111-1111-1111-111111111111','bbbbbbbb-0000-0000-0000-000000000002','Wishing you strength.');
+reset role; reset request.jwt.claim.sub;
+
+set role anon;
+-- Regression: this policy checks the parent story's status, which anon is not
+-- granted. Reading it as the caller made every thread fail with 401.
+select pg_temp.must_equal((select count(*)::int from public.post_comments), 1,
+  'a logged-out reader can read a comment thread');
+select pg_temp.must_fail('select status from public.post_comments', 'cannot read comment status');
+reset role;
+
 \echo 'members-only visibility'
 set role authenticated;
 set request.jwt.claim.sub = 'bbbbbbbb-0000-0000-0000-000000000002';

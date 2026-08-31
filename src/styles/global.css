@@ -34,6 +34,17 @@
   --color-rust-light: #e58a55;
   --color-rust-wash: #f6e5d8;
 
+  /* Community.
+     The team's design for this section introduces a deep green ground that the
+     rest of the site does not use. Kept as its own token set rather than bent
+     into the rust palette, because Community is a different kind of place —
+     somewhere people write rather than read — and it is allowed to feel like
+     one. The type scale stays the site's, so it still reads as the same site. */
+  --color-forest: #4a5749;
+  --color-forest-deep: #3a4539;
+  --color-forest-soft: #e6eae4;
+  --color-forest-line: #cdd6ca;
+
   --font-display: 'Fraunces Variable', 'Iowan Old Style', Georgia, 'Times New Roman', serif;
   --font-sans:
     'Inter Variable', -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;

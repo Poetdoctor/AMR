@@ -1,46 +1,52 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { Container } from '@/components/Container'
-import { PageHeader } from '@/components/PageHeader'
-import { CommentForm } from '@/components/community/CommentForm'
-import { CommentCard } from '@/components/community/CommentCard'
+import { PostCard } from '@/components/community/PostCard'
 import { CrisisLine } from '@/components/community/CrisisLine'
+import { Disclaimer } from '@/components/Disclaimer'
 import {
-  deleteComment,
-  fetchComments,
-  forgetToken,
+  ensureProfile,
+  currentProfile,
+  fetchCommunity,
+  fetchMemberCount,
+  fetchPosts,
   isConfigured,
-  rememberToken,
-  reportComment,
-  submitComment,
-  themeLabel,
-  THEMES,
-  tokenFor,
-  type Comment,
-  type ReportReason,
+  isMember,
+  joinCommunity,
+  leaveCommunity,
+  report,
+  toggleBookmark,
+  toggleReaction,
+  deletePost,
+  type Community as CommunityRecord,
+  type Post,
+  type Profile,
 } from '@/lib/community'
 import { usePageTitle } from '@/lib/usePageTitle'
 
 /**
- * Community.
+ * Community index.
  *
- * Comments publish on submit and a human sweeps daily. The safeguards that
- * arrangement requires are: this page is noindex (see netlify.toml — an
- * accidental self-identification should be visible for hours, not cached by
- * search engines for months), authors can delete their own comment instantly,
- * and every comment carries a Report action that hides it fast when the
- * screening pass had already flagged it.
+ * Reading needs no session at all — nobody is signed into anything merely for
+ * visiting. An identity appears the first time someone joins, reacts or writes.
+ *
+ * The section is noindex (see netlify.toml): stories are published without a
+ * human reading them first, so an accidental self-identification should be
+ * visible for the hours it is up rather than cached by search engines for
+ * months.
  */
 export default function Community() {
   usePageTitle('Community')
 
-  const [comments, setComments] = useState<Comment[]>([])
+  const [community, setCommunity] = useState<CommunityRecord | null>(null)
+  const [posts, setPosts] = useState<Post[]>([])
+  const [profile, setProfile] = useState<Profile | null>(null)
+  const [members, setMembers] = useState(0)
+  const [joined, setJoined] = useState(false)
   const [loading, setLoading] = useState(isConfigured)
-  const [loadError, setLoadError] = useState('')
-  const [theme, setTheme] = useState<string>('all')
-  const [justPosted, setJustPosted] = useState<string | null>(null)
+  const [error, setError] = useState('')
+  const [busy, setBusy] = useState(false)
 
-  // Belt and braces with the X-Robots-Tag header: crawlers that run JavaScript
-  // see this too, and it survives a change of host.
   useEffect(() => {
     const tag = document.createElement('meta')
     tag.name = 'robots'
@@ -52,10 +58,21 @@ export default function Community() {
   const load = useCallback(async () => {
     if (!isConfigured) return
     try {
-      setComments(await fetchComments())
-      setLoadError('')
-    } catch {
-      setLoadError('We could not load the comments just now. Please try again shortly.')
+      const record = await fetchCommunity()
+      const me = await currentProfile()
+      const [feed, count, member] = await Promise.all([
+        fetchPosts(record.id, me?.id),
+        fetchMemberCount(record.id),
+        me ? isMember(record.id, me.id) : Promise.resolve(false),
+      ])
+      setCommunity(record)
+      setProfile(me)
+      setPosts(feed)
+      setMembers(count)
+      setJoined(member)
+      setError('')
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : 'We could not load this just now.')
     } finally {
       setLoading(false)
     }
@@ -65,174 +82,208 @@ export default function Community() {
     void load()
   }, [load])
 
-  const handleSubmit = useCallback(async (body: string, displayName: string) => {
-    const result = await submitComment(body, displayName)
-    rememberToken(result.comment.id, result.deleteToken)
-    setJustPosted(result.held ? 'held' : 'live')
-    if (!result.held) setComments((current) => [result.comment, ...current])
-  }, [])
-
-  const handleDelete = useCallback(async (id: string) => {
-    const token = tokenFor(id)
-    if (!token) throw new Error('This browser cannot prove that comment is yours.')
-    await deleteComment(id, token)
-    forgetToken(id)
-    setComments((current) => current.filter((comment) => comment.id !== id))
-  }, [])
-
-  const handleReport = useCallback(
-    async (id: string, reason: ReportReason) => {
-      await reportComment(id, reason)
-      // A report may have hidden it. Reload so the list reflects reality rather
-      // than optimism.
-      void load()
+  /** Any action that must be attributable creates the identity on demand. */
+  const withProfile = useCallback(
+    async (action: (me: Profile) => Promise<void>) => {
+      setBusy(true)
+      setError('')
+      try {
+        const me = profile ?? (await ensureProfile())
+        if (!me) throw new Error('Could not start a session.')
+        if (!profile) setProfile(me)
+        await action(me)
+      } catch (caught) {
+        setError(caught instanceof Error ? caught.message : 'That did not work. Please try again.')
+      } finally {
+        setBusy(false)
+      }
     },
-    [load],
+    [profile],
   )
 
-  const counts = useMemo(() => {
-    const map = new Map<string, number>()
-    for (const comment of comments) map.set(comment.theme, (map.get(comment.theme) ?? 0) + 1)
-    return map
-  }, [comments])
+  const handleJoin = () =>
+    withProfile(async (me) => {
+      if (!community) return
+      if (joined) {
+        await leaveCommunity(community.id, me.id)
+        setJoined(false)
+        setMembers((n) => Math.max(0, n - 1))
+      } else {
+        await joinCommunity(community.id, me.id)
+        setJoined(true)
+        setMembers((n) => n + 1)
+      }
+      await load()
+    })
 
-  const visible = theme === 'all' ? comments : comments.filter((c) => c.theme === theme)
+  if (!isConfigured) {
+    return (
+      <Container width="wide" className="py-20">
+        <div className="callout p-7">
+          <p className="eyebrow mb-4">Opening shortly</p>
+          <p className="prose-amr">
+            This section is built but not yet connected. It will open once the team has finished
+            setting it up.
+          </p>
+        </div>
+      </Container>
+    )
+  }
 
   return (
     <>
-      <PageHeader
-        eyebrow="Community"
-        title="Somewhere to say it out loud"
-        subhead="Both of the patients we interviewed told us the same thing, separately: a community for this does not exist. This is our attempt at one."
-      />
+      <header className="bg-forest py-14 text-cream md:py-16">
+        <Container width="wide">
+          <p className="text-xs font-semibold tracking-[0.16em] text-cream/70 uppercase">
+            Flagship community
+          </p>
+          <h1 className="display-lg mt-3 max-w-3xl text-cream">
+            {community?.name ?? 'Living With Antimicrobial Resistance'}
+          </h1>
+          {community?.tagline ? (
+            <p className="mt-3 max-w-2xl text-cream/80">{community.tagline}</p>
+          ) : null}
+
+          <div className="mt-7 flex flex-wrap items-center gap-4">
+            <span className="text-sm text-cream/80">
+              <span aria-hidden="true">👥</span> <span className="tabular-nums">{members}</span>{' '}
+              {members === 1 ? 'member' : 'members'}
+            </span>
+            <button
+              type="button"
+              onClick={handleJoin}
+              disabled={busy}
+              className="rounded-full bg-cream px-5 py-2 text-sm font-semibold text-forest-deep transition-colors hover:bg-cream-deep disabled:opacity-60"
+            >
+              {joined ? 'Leave community' : 'Join community'}
+            </button>
+            <Link
+              to="/community/share"
+              className="rounded-full border border-cream/40 px-5 py-2 text-sm font-semibold text-cream transition-colors hover:bg-cream/10"
+            >
+              Share an experience
+            </Link>
+          </div>
+        </Container>
+      </header>
 
       <Container width="wide" className="py-12 md:py-16">
-        <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,22rem)] lg:gap-14">
-          <div className="space-y-10">
-            {isConfigured ? (
-              <CommentForm onSubmit={handleSubmit} />
-            ) : (
-              <div className="callout p-7 md:p-9">
-                <p className="eyebrow mb-4">Opening shortly</p>
-                <p className="prose-amr">
-                  This section is built but not yet connected. It will open once the team has
-                  finished setting it up.
-                </p>
-              </div>
-            )}
-
-            {justPosted ? (
-              <p
-                role="status"
-                className="rounded-xl border border-rust bg-rust-wash px-4 py-3 text-sm leading-relaxed text-ink"
-              >
-                {justPosted === 'live'
-                  ? "Posted — it's on the page now. If you want it gone, use Delete on your comment. That works from this browser, no account needed."
-                  : 'Thank you. Comments are being checked by a person before they appear at the moment, so this will show up shortly.'}
-              </p>
-            ) : null}
-
-            {isConfigured ? (
-              <section>
-                <div className="flex flex-wrap items-baseline justify-between gap-3">
-                  <h2 className="display-md text-ink">What people have said</h2>
-                  <span className="text-sm text-ink-faint">
-                    {comments.length} {comments.length === 1 ? 'comment' : 'comments'}
-                  </span>
-                </div>
-
-                {comments.length > 0 ? (
-                  <nav aria-label="Filter by theme" className="mt-5">
-                    <ul className="flex list-none flex-wrap gap-2">
-                      {[{ id: 'all', label: 'All' }, ...THEMES].map((option) => {
-                        const count =
-                          option.id === 'all' ? comments.length : (counts.get(option.id) ?? 0)
-                        if (option.id !== 'all' && count === 0) return null
-                        const active = theme === option.id
-                        return (
-                          <li key={option.id}>
-                            <button
-                              type="button"
-                              aria-pressed={active}
-                              onClick={() => setTheme(option.id)}
-                              className={`rounded-full px-3.5 py-1.5 text-sm font-medium transition-colors ${
-                                active
-                                  ? 'bg-rust text-cream'
-                                  : 'border border-sand-line bg-paper text-ink-soft hover:border-ink-faint hover:text-ink'
-                              }`}
-                            >
-                              {option.label}{' '}
-                              <span className={active ? 'text-cream/75' : 'text-ink-faint'}>
-                                {count}
-                              </span>
-                            </button>
-                          </li>
-                        )
-                      })}
-                    </ul>
-                  </nav>
+        <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,20rem)] lg:gap-12">
+          <div className="space-y-8">
+            {community?.intro_body ? (
+              <section className="card p-6 md:p-7">
+                <h2 className="display-md text-ink">{community.intro_title}</h2>
+                <p className="prose-amr mt-3">{community.intro_body}</p>
+                {community.topics.length > 0 ? (
+                  <ul className="mt-5 flex list-none flex-wrap gap-2">
+                    {community.topics.map((topic) => (
+                      <li
+                        key={topic}
+                        className="rounded-full bg-sand px-3 py-1.5 text-sm text-ink-soft"
+                      >
+                        {topic}
+                      </li>
+                    ))}
+                  </ul>
                 ) : null}
-
-                <div className="mt-6 space-y-5">
-                  {loading ? <p className="text-sm text-ink-faint">Loading…</p> : null}
-
-                  {loadError ? (
-                    <p
-                      role="alert"
-                      className="rounded-xl border border-rust bg-rust-wash px-4 py-3 text-sm text-ink"
-                    >
-                      {loadError}
-                    </p>
-                  ) : null}
-
-                  {!loading && !loadError && comments.length === 0 ? (
-                    <p className="prose-amr">
-                      Nobody has written anything yet. If you have lived through any of this, you
-                      would be the first — and the reason someone else finds this page not empty.
-                    </p>
-                  ) : null}
-
-                  {visible.map((comment) => (
-                    <CommentCard
-                      key={comment.id}
-                      comment={comment}
-                      isMine={Boolean(tokenFor(comment.id))}
-                      onDelete={handleDelete}
-                      onReport={handleReport}
-                    />
-                  ))}
-
-                  {!loading && comments.length > 0 && visible.length === 0 ? (
-                    <p className="text-sm text-ink-faint">Nothing under {themeLabel(theme)} yet.</p>
-                  ) : null}
-                </div>
               </section>
             ) : null}
+
+            <section>
+              <h2 className="display-md text-ink">Latest lived experiences</h2>
+
+              {error ? (
+                <p
+                  role="alert"
+                  className="mt-4 rounded-xl border border-rust bg-rust-wash px-4 py-3 text-sm text-ink"
+                >
+                  {error}
+                </p>
+              ) : null}
+
+              <div className="mt-5 space-y-5">
+                {loading ? <p className="text-sm text-ink-faint">Loading…</p> : null}
+
+                {!loading && posts.length === 0 ? (
+                  <div className="card p-7">
+                    <p className="prose-amr">
+                      Nobody has written anything yet. If you have lived through any of this, you
+                      would be the first — and the reason the next person finds this page not empty.
+                    </p>
+                    <Link to="/community/share" className="btn btn-primary mt-5">
+                      Share an experience
+                    </Link>
+                  </div>
+                ) : null}
+
+                {posts.map((post) => (
+                  <PostCard
+                    key={post.id}
+                    post={post}
+                    communityLabel={community?.card_label ?? ''}
+                    onReact={(kind, on) =>
+                      withProfile(async (me) => {
+                        await toggleReaction(post.id, me.id, kind, on)
+                        await load()
+                      })
+                    }
+                    onBookmark={(on) =>
+                      withProfile(async (me) => {
+                        await toggleBookmark(post.id, me.id, on)
+                        await load()
+                      })
+                    }
+                    onReport={async (reason) => {
+                      await report({ postId: post.id }, reason, profile?.id ?? null)
+                      await load()
+                    }}
+                    onDelete={
+                      post.isMine
+                        ? async () => {
+                            await deletePost(post.id)
+                            await load()
+                          }
+                        : undefined
+                    }
+                  />
+                ))}
+              </div>
+            </section>
           </div>
 
           <aside className="space-y-5 lg:sticky lg:top-24 lg:self-start">
+            {community?.guidelines ? (
+              <section className="card p-5">
+                <h2 className="font-display text-base font-bold text-ink">
+                  <span aria-hidden="true" className="mr-1.5">
+                    🛡
+                  </span>
+                  Community guidelines
+                </h2>
+                <p className="mt-2.5 text-sm leading-relaxed text-ink-soft">
+                  {community.guidelines}
+                </p>
+              </section>
+            ) : null}
+
+            {community && community.glossary.length > 0 ? (
+              <section className="card p-5">
+                <h2 className="font-display text-base font-bold text-ink">AMR glossary</h2>
+                <dl className="mt-3 space-y-3.5">
+                  {community.glossary.map((entry) => (
+                    <div key={entry.term}>
+                      <dt className="text-sm font-semibold text-ink">{entry.term}</dt>
+                      <dd className="mt-0.5 text-sm leading-relaxed text-ink-soft">
+                        {entry.definition}
+                      </dd>
+                    </div>
+                  ))}
+                </dl>
+              </section>
+            ) : null}
+
             <CrisisLine />
-            <div className="rounded-2xl border border-sand-line bg-cream-deep p-5 text-sm leading-relaxed text-ink-soft">
-              <h2 className="font-display text-base font-bold text-ink">
-                How this is looked after
-              </h2>
-              <ul className="mt-3 list-none space-y-2.5">
-                {[
-                  'Comments appear as soon as they are written. One of us reads through everything each day.',
-                  'You can delete your own comment at any time, from the browser you wrote it on.',
-                  'Every comment has a Report action, and reporting can take one down straight away.',
-                  'This page is not indexed by search engines.',
-                ].map((line) => (
-                  <li key={line} className="flex gap-2.5">
-                    <span
-                      aria-hidden="true"
-                      className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-rust"
-                    />
-                    <span>{line}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
+            <Disclaimer />
           </aside>
         </div>
       </Container>

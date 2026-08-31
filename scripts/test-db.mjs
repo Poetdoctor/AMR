@@ -23,6 +23,7 @@ const FILES = [
   'supabase/migrations/0001_community.sql',
   'supabase/migrations/0002_screen_error.sql',
   'supabase/migrations/0003_communities.sql',
+  'supabase/migrations/0004_comment_visibility.sql',
   'supabase/tests/02_communities.sql',
 ]
 

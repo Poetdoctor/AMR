@@ -7,6 +7,8 @@ import Stories from '@/pages/Stories'
 import Story from '@/pages/Story'
 import Tool from '@/pages/Tool'
 import Community from '@/pages/Community'
+import CommunityStory from '@/pages/CommunityStory'
+import ShareExperience from '@/pages/ShareExperience'
 import Team from '@/pages/Team'
 import Mission from '@/pages/Mission'
 import NotFound from '@/pages/NotFound'
@@ -31,6 +33,8 @@ export default function App() {
           <Route path="/stories/:slug" element={<Story />} />
           <Route path="/tool" element={<Tool />} />
           <Route path="/community" element={<Community />} />
+          <Route path="/community/share" element={<ShareExperience />} />
+          <Route path="/community/story/:id" element={<CommunityStory />} />
           <Route path="/team" element={<Team />} />
           <Route path="/mission" element={<Mission />} />
           <Route path="*" element={<NotFound />} />
