@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react'
+import { lazy, Suspense, useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Container } from '@/components/Container'
 import { FlatNarrative } from '@/components/home/FlatNarrative'
+import { NarrativeBoundary } from '@/components/home/NarrativeBoundary'
 import { useCapability, readFlatPreference, writeFlatPreference } from '@/lib/capability'
 import { usePageTitle } from '@/lib/usePageTitle'
 
@@ -17,6 +18,15 @@ import { usePageTitle } from '@/lib/usePageTitle'
  * capable phone that is hot and throttling, or someone who simply finds the
  * movement unpleasant without having set a system preference.
  */
+/*
+ * Loaded only when the 3D path is actually going to run. three.js and its
+ * friends are a large download, and the people on the still path are by
+ * definition the ones least able to afford it — so they never fetch it.
+ */
+const RichNarrative = lazy(() =>
+  import('@/components/home/RichNarrative').then((m) => ({ default: m.RichNarrative })),
+)
+
 export default function Home() {
   usePageTitle()
   const capability = useCapability()
@@ -24,8 +34,13 @@ export default function Home() {
 
   useEffect(() => setPreferFlat(readFlatPreference()), [])
 
-  const rich = capability.rich && !preferFlat
+  const [crashed, setCrashed] = useState(false)
+  const rich = capability.rich && !preferFlat && !crashed
   const canChoose = capability.reason === 'ok' || preferFlat
+
+  // A lost WebGL context or a render error drops to the still version for the
+  // rest of the visit rather than flickering between the two.
+  const dropToFlat = useCallback(() => setCrashed(true), [])
 
   return (
     <>
@@ -69,9 +84,15 @@ export default function Home() {
       </section>
 
       <div id="beat-hook">
-        {/* The 3D path lands here in the next commit; until then both routes
-            render the flat narrative, which is the one that must always work. */}
-        <FlatNarrative animate={!rich && capability.reason !== 'reduced-motion'} />
+        {rich ? (
+          <NarrativeBoundary onError={dropToFlat} fallback={<FlatNarrative animate={false} />}>
+            <Suspense fallback={<FlatNarrative animate={false} />}>
+              <RichNarrative onFallback={dropToFlat} />
+            </Suspense>
+          </NarrativeBoundary>
+        ) : (
+          <FlatNarrative animate={capability.reason !== 'reduced-motion'} />
+        )}
       </div>
 
       <section className="border-t border-sand-line py-16 md:py-24">
