@@ -4,7 +4,8 @@ import { useFrame } from '@react-three/fiber'
 import { MeshTransmissionMaterial, Text } from '@react-three/drei'
 import * as THREE from 'three'
 import type { SceneId } from '@/lib/beats'
-import { Figure, OtherFigure, PALETTE, SceneLight, WorldWord } from './atmosphere'
+import { Figure, Ground, OtherFigure, PALETTE, SceneLight, WorldWord } from './atmosphere'
+import { easeOut, stage, StationPhase, useScenePhase } from './phase'
 
 /**
  * Eleven scenes. One person.
@@ -120,6 +121,7 @@ function Fall() {
       <SceneLight intensity={0.85} />
       <Motes count={700} spread={30} />
       <group ref={world}>
+        <Ground y={-1.62} size={64} opacity={0.55} />
         {/* the path, glowing faintly from within */}
         <mesh position={[0, -1.6, -14]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
           <planeGeometry args={[3.4, 62]} />
@@ -145,13 +147,13 @@ function Fall() {
         </group>
       </group>
 
-      <WorldWord position={[-4.6, 2.6, 3]} size={1.05} drift={1} colour={PALETTE.ember}>
+      <WorldWord position={[0.2, 3, 4]} size={1} drift={1} colour={PALETTE.ember}>
         Hope
       </WorldWord>
-      <WorldWord position={[3.9, 1.5, 1]} size={0.95} drift={0.8}>
+      <WorldWord position={[4.6, 1.7, 2]} size={0.9} drift={0.8}>
         Again?
       </WorldWord>
-      <WorldWord position={[-2.4, 0.2, -2]} size={1.15} drift={0.6} colour={PALETTE.rust}>
+      <WorldWord position={[2.2, -0.2, 0]} size={1.1} drift={0.6} colour={PALETTE.rust}>
         Fear
       </WorldWord>
     </group>
@@ -202,16 +204,16 @@ function Rollercoaster() {
         />
       </mesh>
       <Figure position={[0, -1.9, 5]} pose="standing" />
-      <WorldWord position={[-6.5, 3.3, -2]} size={0.8} flicker={0.8} colour={PALETTE.ember}>
+      <WorldWord position={[0.4, 3.4, 0]} size={0.8} flicker={0.8} colour={PALETTE.ember}>
         Happiness
       </WorldWord>
-      <WorldWord position={[5.4, 1.1, -5]} size={0.8} flicker={0.6} colour={PALETTE.rust}>
+      <WorldWord position={[5.6, 1.4, -3]} size={0.8} flicker={0.6} colour={PALETTE.rust}>
         Despair
       </WorldWord>
-      <WorldWord position={[-4.2, -0.4, -8]} size={0.75} flicker={0.7}>
+      <WorldWord position={[1.2, -0.8, -6]} size={0.78} flicker={0.7}>
         Encouraged
       </WorldWord>
-      <WorldWord position={[4.1, -2.2, -11]} size={0.75} flicker={0.5} colour={PALETTE.rust}>
+      <WorldWord position={[4.8, -2.6, -9]} size={0.78} flicker={0.5} colour={PALETTE.rust}>
         Back in the dumps
       </WorldWord>
     </group>
@@ -225,7 +227,12 @@ function Rollercoaster() {
 function Weight() {
   const cloud = useRef<THREE.InstancedMesh>(null)
   const figure = useRef<THREE.Group>(null)
-  // It does not happen all at once, and it does not happen quickly.
+  const phase = useScenePhase()
+  /*
+   * Driven by scroll, not a timer. Somebody reading slowly used to arrive
+   * after the collapse had already happened, which is the one thing this beat
+   * exists to show them.
+   */
   const [collapsed, setCollapsed] = useState(false)
   const COUNT = 2600
 
@@ -243,10 +250,11 @@ function Weight() {
 
   useFrame((state, delta) => {
     const t = state.clock.elapsedTime
+    const p = phase.current
     if (cloud.current) {
       const matrix = new THREE.Matrix4()
-      // The cloud descends over the beat: it does not hang, it settles.
-      const settle = Math.min(1, t / 14)
+      // The cloud gathers and settles as the reader comes down the corridor.
+      const settle = easeOut(stage(p, 0.05, 0.72))
       particles.forEach((p, i) => {
         const angle = p.angle + t * p.speed * 0.16
         const radius = p.radius * (1 - settle * 0.28)
@@ -260,11 +268,12 @@ function Weight() {
       })
       cloud.current.instanceMatrix.needsUpdate = true
     }
-    if (!collapsed && t > 9) setCollapsed(true)
+    const giving = p > 0.62
+    if (giving !== collapsed) setCollapsed(giving)
     if (figure.current) {
       figure.current.position.y = THREE.MathUtils.damp(
         figure.current.position.y,
-        collapsed ? -2.05 : -1.7,
+        giving ? -2.05 : -1.7,
         0.6,
         delta,
       )
@@ -274,6 +283,7 @@ function Weight() {
   return (
     <group>
       <SceneLight intensity={0.65} colour={PALETTE.rust} />
+      <Ground y={-2.1} size={54} />
       <instancedMesh ref={cloud} args={[undefined, undefined, COUNT]}>
         <sphereGeometry args={[1, 5, 5]} />
         <meshStandardMaterial
@@ -287,13 +297,13 @@ function Weight() {
       <group ref={figure} position={[0, -1.7, 0]}>
         <Figure pose={collapsed ? 'collapsing' : 'bearing'} />
       </group>
-      <WorldWord position={[-5, 4.6, 2]} size={0.7} flicker={0.4}>
+      <WorldWord position={[0.6, 4.4, 3]} size={0.72} flicker={0.4}>
         Another course
       </WorldWord>
-      <WorldWord position={[4.4, 3.2, 1]} size={0.7} flicker={0.5}>
+      <WorldWord position={[5, 3, 2]} size={0.72} flicker={0.5}>
         And another
       </WorldWord>
-      <WorldWord position={[0, -4.6, 3]} size={1.1} colour={PALETTE.rust}>
+      <WorldWord position={[2.6, -4.2, 4]} size={1.05} colour={PALETTE.rust}>
         Enough
       </WorldWord>
     </group>
@@ -301,91 +311,110 @@ function Weight() {
 }
 
 /* ─── 4 ─────────────────────────────────────────────────────────────────────
- * The hospital that doesn't see you. Everyone competent, everyone busy, and
- * the words arriving on time while the person carrying them is not asked
- * anything. The camera sits at their height.
+ * The hospital that doesn't see you.
+ *
+ * Rebuilt bigger and much closer: the reader is inside the corridor at the
+ * patient's own height, not looking down one from outside. Staff pass near
+ * enough to fill the frame and keep going. The words come at you and go past.
  */
 function Corridor() {
   const staff = useRef<THREE.Group>(null)
   const words = useRef<THREE.Group>(null)
+  const patient = useRef<THREE.Group>(null)
+  const phase = useScenePhase()
 
   const people = useMemo(() => {
     const random = seeded(37)
-    return Array.from({ length: 22 }, () => ({
-      x: (random() - 0.5) * 8.5,
-      z: -random() * 60,
-      speed: 7 + random() * 9,
-      scale: 0.92 + random() * 0.26,
+    return Array.from({ length: 26 }, () => ({
+      x: (random() - 0.5) * 9,
+      z: -random() * 74,
+      speed: 9 + random() * 12,
+      scale: 1 + random() * 0.22,
+      turn: random() > 0.5 ? Math.PI : Math.PI * 0.92,
     }))
   }, [])
 
   useFrame((_, delta) => {
     staff.current?.children.forEach((child, i) => {
       child.position.z += people[i].speed * delta
-      if (child.position.z > 16) child.position.z = -58
+      if (child.position.z > 20) child.position.z = -74
     })
     words.current?.children.forEach((child) => {
-      child.position.z += 9 * delta
-      if (child.position.z > 14) child.position.z = -46
+      child.position.z += 13 * delta
+      if (child.position.z > 18) child.position.z = -58
     })
+    // The reach goes out as the reader arrives, and finds nothing.
+    if (patient.current) {
+      patient.current.rotation.y = 0.16 * Math.sin(phase.current * Math.PI)
+    }
   })
 
   return (
     <group>
-      <SceneLight intensity={0.55} colour={PALETTE.glass} />
-      <Motes count={400} spread={20} />
-      {/* pools of ceiling light, receding */}
-      {Array.from({ length: 16 }, (_, i) => (
-        <pointLight
-          key={i}
-          position={[0, 4.2, 8 - i * 4.4]}
-          intensity={162}
-          color={PALETTE.bone}
-          distance={33}
-          decay={2}
-        />
-      ))}
-      <mesh position={[0, -1.9, -26]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
-        <planeGeometry args={[13, 78]} />
-        <meshStandardMaterial color={PALETTE.deep} roughness={0.7} metalness={0.1} />
-      </mesh>
-      {[-6.5, 6.5].map((x) => (
+      <SceneLight intensity={0.4} colour={PALETTE.glass} />
+      <Motes count={500} spread={22} />
+
+      {/* the corridor: tall, tight, and long enough to have no end */}
+      <Ground y={-2.2} size={120} />
+      {[-7.5, 7.5].map((x) => (
         <mesh
           key={x}
-          position={[x, 1.4, -26]}
+          position={[x, 2.6, -32]}
           rotation={[0, x > 0 ? -Math.PI / 2 : Math.PI / 2, 0]}
+          receiveShadow
         >
-          <planeGeometry args={[78, 7]} />
+          <planeGeometry args={[96, 9.6]} />
           <meshStandardMaterial color={PALETTE.deep} roughness={0.95} />
         </mesh>
+      ))}
+      <mesh position={[0, 7.4, -32]} rotation={[Math.PI / 2, 0, 0]}>
+        <planeGeometry args={[15, 96]} />
+        <meshStandardMaterial color={PALETTE.void} roughness={1} />
+      </mesh>
+
+      {/* strip lights overhead, receding to a point */}
+      {Array.from({ length: 20 }, (_, i) => (
+        <group key={i} position={[0, 7.1, 12 - i * 4.6]}>
+          <mesh>
+            <boxGeometry args={[3.4, 0.1, 0.5]} />
+            <meshStandardMaterial
+              color={PALETTE.bone}
+              emissive={PALETTE.bone}
+              emissiveIntensity={2.4}
+            />
+          </mesh>
+          {i % 2 === 0 ? (
+            <pointLight intensity={140} color={PALETTE.bone} distance={26} decay={2} />
+          ) : null}
+        </group>
       ))}
 
       <group ref={staff}>
         {people.map((p, i) => (
-          <group key={i} position={[p.x, -1.9, p.z]}>
+          <group key={i} position={[p.x, -2.2, p.z]}>
             <OtherFigure
               position={[0, 0, 0]}
               scale={p.scale}
-              opacity={0.6}
+              opacity={0.72}
               pose="walking"
-              turn={Math.PI}
+              turn={p.turn}
             />
           </group>
         ))}
       </group>
 
       <group ref={words}>
-        {['Diagnosis', 'Prescription', 'Test', 'Procedure'].map((word, i) => (
-          <group key={word} position={[i % 2 === 0 ? -3.4 : 3.4, 0.6 + (i % 3) * 1.1, -12 * i - 4]}>
+        {['Diagnosis', 'Prescription', 'Test', 'Procedure', 'Results'].map((word, i) => (
+          <group key={word} position={[i % 2 === 0 ? -4.2 : 4.2, 1.4 + (i % 3) * 1.4, -14 * i - 6]}>
             <Text
-              fontSize={0.62}
+              fontSize={1.1}
               color={PALETTE.bone}
               anchorX="center"
               anchorY="middle"
-              outlineWidth={0.028}
+              outlineWidth={0.05}
               outlineColor="#0d0b09"
               material-transparent
-              material-opacity={0.78}
+              material-opacity={0.72}
               material-depthWrite={false}
             >
               {word}
@@ -394,109 +423,145 @@ function Corridor() {
         ))}
       </group>
 
-      <Figure position={[0, -1.9, 3]} pose="reaching" />
+      <group ref={patient}>
+        <Figure position={[0, -2.2, 6]} scale={1.1} pose="reaching" />
+      </group>
     </group>
   )
 }
 
 /* ─── 5 ─────────────────────────────────────────────────────────────────────
- * The missing explanation. A machine overhead too large to see the whole of,
- * throwing procedures down at somebody who was never told why.
+ * The missing explanation.
+ *
+ * The machine is now genuinely overhead and genuinely large — it fills the top
+ * of the frame, it moves, and it comes down as the reader arrives. Procedures
+ * descend out of it on their own schedule. The person underneath is small and
+ * was never told why any of it is happening.
  */
 function Machine() {
-  const ring = useRef<THREE.Group>(null)
-  const inner = useRef<THREE.Group>(null)
+  const rig = useRef<THREE.Group>(null)
+  const arms = useRef<THREE.Group>(null)
+  const descending = useRef<THREE.Group>(null)
+  const phase = useScenePhase()
 
-  const objects = useMemo(() => {
+  const pistons = useMemo(() => {
     const random = seeded(59)
-    return Array.from({ length: 46 }, (_, i) => ({
-      angle: (i / 46) * Math.PI * 2,
-      radius: 3 + random() * 4.6,
-      height: -1.4 + random() * 6.5,
-      size: 0.14 + random() * 0.34,
-      long: random() > 0.55,
-      spin: (random() - 0.5) * 2,
+    return Array.from({ length: 34 }, () => ({
+      x: (random() - 0.5) * 26,
+      z: (random() - 0.5) * 26,
+      length: 1.6 + random() * 4.4,
+      speed: 0.4 + random() * 1.1,
+      phase: random() * Math.PI * 2,
     }))
   }, [])
 
-  useFrame((_, delta) => {
-    if (ring.current) ring.current.rotation.y += delta * 0.26
-    if (inner.current) inner.current.rotation.y -= delta * 0.42
+  const objects = useMemo(() => {
+    const random = seeded(61)
+    return Array.from({ length: 30 }, (_, i) => ({
+      angle: (i / 30) * Math.PI * 2,
+      radius: 3.4 + random() * 5,
+      height: random() * 7,
+      size: 0.18 + random() * 0.4,
+      long: random() > 0.5,
+      spin: (random() - 0.5) * 2.4,
+    }))
+  }, [])
+
+  useFrame((state, delta) => {
+    const t = state.clock.elapsedTime
+    if (arms.current) arms.current.rotation.y += delta * 0.16
+    if (descending.current) descending.current.rotation.y -= delta * 0.34
+    // It comes down. Slowly, and without saying anything.
+    if (rig.current) {
+      rig.current.position.y = 13.5 - easeOut(stage(phase.current, 0.1, 0.85)) * 3.6
+      rig.current.children.forEach((child, i) => {
+        const piston = pistons[i]
+        if (!piston) return
+        child.position.y =
+          -piston.length / 2 - Math.abs(Math.sin(t * piston.speed + piston.phase)) * 1.6
+      })
+    }
   })
 
   return (
     <group>
-      <SceneLight intensity={0.5} colour={PALETTE.glass} />
-      <Motes count={600} spread={22} />
-      {/* the machine, cut off by the top of the frame on purpose */}
-      <group position={[0, 9.5, 0]}>
-        <mesh>
-          <boxGeometry args={[22, 6, 22]} />
-          <meshStandardMaterial color={PALETTE.deep} roughness={0.6} metalness={0.35} />
-        </mesh>
-        {Array.from({ length: 26 }, (_, i) => {
-          const random = seeded(i + 3)
-          return (
-            <mesh key={i} position={[(random() - 0.5) * 18, -3.1, (random() - 0.5) * 18]}>
-              <cylinderGeometry args={[0.06, 0.06, 1.4 + random() * 2.4, 6]} />
+      <SceneLight intensity={0.32} colour={PALETTE.glass} />
+      <Motes count={700} spread={26} />
+      <Ground y={-3.2} size={80} />
+
+      {/* the underside of something far too big to see the whole of */}
+      <group ref={rig} position={[0, 13.5, 0]}>
+        {pistons.map((piston, i) => (
+          <group key={i} position={[piston.x, -piston.length / 2, piston.z]}>
+            <mesh castShadow>
+              <cylinderGeometry args={[0.09, 0.09, piston.length, 7]} />
+              <meshStandardMaterial color={PALETTE.ink} roughness={0.45} metalness={0.6} />
+            </mesh>
+            <mesh position={[0, -piston.length / 2, 0]}>
+              <sphereGeometry args={[0.15, 8, 8]} />
               <meshStandardMaterial
-                color={PALETTE.ink}
+                color={PALETTE.glass}
                 emissive={PALETTE.glass}
-                emissiveIntensity={0.4}
+                emissiveIntensity={1.2}
               />
             </mesh>
-          )
-        })}
+          </group>
+        ))}
       </group>
+      <mesh position={[0, 15.5, 0]}>
+        <boxGeometry args={[44, 5, 44]} />
+        <meshStandardMaterial color={PALETTE.void} roughness={0.8} metalness={0.4} />
+      </mesh>
       <pointLight
-        position={[0, 5, 0]}
-        intensity={396}
+        position={[0, 6.5, 2]}
+        intensity={280}
         color={PALETTE.glass}
-        distance={48}
+        distance={40}
         decay={2}
       />
 
-      <group ref={ring}>
-        {objects.slice(0, 26).map((o, i) => (
+      <group ref={arms}>
+        {objects.slice(0, 16).map((o, i) => (
           <mesh
             key={i}
-            position={[Math.cos(o.angle) * o.radius, o.height, Math.sin(o.angle) * o.radius]}
+            position={[Math.cos(o.angle) * o.radius, o.height - 1, Math.sin(o.angle) * o.radius]}
             rotation={[o.angle * o.spin, o.angle, o.spin]}
+            castShadow
           >
             {o.long ? (
-              <cylinderGeometry args={[0.03, 0.03, o.size * 7, 6]} />
+              <cylinderGeometry args={[0.05, 0.05, o.size * 9, 7]} />
             ) : (
               <boxGeometry args={[o.size, o.size, o.size]} />
             )}
-            <meshStandardMaterial color={PALETTE.bone} roughness={0.4} metalness={0.5} />
+            <meshStandardMaterial color={PALETTE.bone} roughness={0.35} metalness={0.6} />
           </mesh>
         ))}
       </group>
-      <group ref={inner}>
-        {objects.slice(26).map((o, i) => (
+      <group ref={descending}>
+        {objects.slice(16).map((o, i) => (
           <mesh
             key={i}
             position={[
-              Math.cos(o.angle) * o.radius * 0.55,
-              o.height * 0.6,
-              Math.sin(o.angle) * o.radius * 0.55,
+              Math.cos(o.angle) * o.radius * 0.6,
+              o.height * 0.5 - 1.6,
+              Math.sin(o.angle) * o.radius * 0.6,
             ]}
             rotation={[o.angle, 0, o.spin]}
           >
-            <boxGeometry args={[o.size * 0.7, o.size * 0.7, o.size * 0.7]} />
-            <meshStandardMaterial color={PALETTE.ink} roughness={0.5} metalness={0.3} />
+            <boxGeometry args={[o.size * 0.8, o.size * 0.8, o.size * 0.8]} />
+            <meshStandardMaterial color={PALETTE.ink} roughness={0.5} metalness={0.45} />
           </mesh>
         ))}
       </group>
 
-      <Figure position={[0, -2.6, 0]} scale={0.9} pose="unsteady" />
-      <WorldWord position={[-5.2, -0.6, 4]} size={0.62} flicker={0.5}>
+      <Figure position={[0, -3.2, 1.5]} scale={0.95} pose="unsteady" />
+      <WorldWord position={[0.4, 1.4, 6]} size={0.72} flicker={0.5}>
         Why this?
       </WorldWord>
-      <WorldWord position={[5, -1.4, 3]} size={0.62} flicker={0.4}>
+      <WorldWord position={[4.6, -0.2, 5]} size={0.7} flicker={0.4}>
         Why now?
       </WorldWord>
-      <WorldWord position={[0, -4.4, 4]} size={0.8} colour={PALETTE.rust}>
+      <WorldWord position={[2.4, -4.4, 6]} size={0.9} colour={PALETTE.rust}>
         Nobody said
       </WorldWord>
     </group>
@@ -513,14 +578,16 @@ function Machine() {
  */
 function Glass() {
   const panes = useRef<THREE.Group>(null)
+  const phase = useScenePhase()
 
-  useFrame((state) => {
+  useFrame(() => {
     if (!panes.current) return
-    // They arrive one at a time, easing, so no single moment is the moment.
-    const t = state.clock.elapsedTime
+    /*
+     * One pane at a time, staged across the reader's approach. Nobody notices
+     * the moment it happens — which is exactly what the interviews describe.
+     */
     panes.current.children.forEach((child, i) => {
-      const local = Math.max(0, Math.min(1, (t - i * 2.2) / 2.6))
-      const eased = local * local * (3 - 2 * local)
+      const eased = easeOut(stage(phase.current, 0.12 + i * 0.18, 0.48 + i * 0.18))
       child.scale.y = Math.max(0.001, eased)
       child.visible = eased > 0.01
     })
@@ -539,7 +606,8 @@ function Glass() {
       <Motes count={350} spread={16} />
 
       {/* the room: warm, and completely ordinary */}
-      <mesh position={[-2, -2.05, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+      <Ground y={-2.06} size={70} opacity={0.7} />
+      <mesh position={[-2, -2.02, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
         <planeGeometry args={[11, 13]} />
         <meshStandardMaterial color={PALETTE.deep} roughness={0.85} />
       </mesh>
@@ -635,6 +703,7 @@ function Glass() {
  * between them: the community that does not exist yet, but could.
  */
 function Ocean() {
+  const phase = useScenePhase()
   const water = useRef<THREE.Mesh>(null)
   const lights = useRef<THREE.InstancedMesh>(null)
   const links = useRef<THREE.LineSegments>(null)
@@ -673,6 +742,7 @@ function Ocean() {
 
   useFrame((state) => {
     const t = state.clock.elapsedTime
+    const p = phase.current
     if (water.current) {
       const position = geometry.attributes.position
       for (let i = 0; i < position.count; i++) {
@@ -685,8 +755,8 @@ function Ocean() {
     if (lights.current) {
       const matrix = new THREE.Matrix4()
       others.forEach((light, i) => {
-        // Appearing one at a time, each in its own rhythm.
-        const arrive = Math.max(0, Math.min(1, (t - 1 - i * 0.045) / 1.6))
+        // Appearing one at a time as the reader arrives, each in its own rhythm.
+        const arrive = easeOut(stage(p, 0.08 + (i / COUNT) * 0.5, 0.3 + (i / COUNT) * 0.5))
         const pulse = 0.6 + 0.4 * Math.sin(t * light.speed + light.phase)
         const size = 0.16 * pulse * arrive
         matrix.makeScale(size, size, size)
@@ -696,8 +766,9 @@ function Ocean() {
       lights.current.instanceMatrix.needsUpdate = true
     }
     if (links.current) {
+      // The connections form last, and only once the lights are all there.
       const material = links.current.material as THREE.LineBasicMaterial
-      material.opacity = Math.max(0, Math.min(0.16, (t - 12) * 0.02))
+      material.opacity = stage(p, 0.68, 1) * 0.2
     }
   })
 
@@ -728,7 +799,7 @@ function Ocean() {
       </instancedMesh>
 
       <Figure position={[0, -2.3, 0]} pose="standing" />
-      <WorldWord position={[0, 2.6, 4]} size={0.7} opacity={0.85} flicker={0.3}>
+      <WorldWord position={[2.4, 3, 5]} size={0.82} opacity={0.85} flicker={0.3}>
         Nobody else
       </WorldWord>
     </group>
@@ -744,6 +815,7 @@ function Ocean() {
  * exists to show the difference in scale.
  */
 function Monster() {
+  const phase = useScenePhase()
   const shell = useRef<THREE.Group>(null)
   const debris = useRef<THREE.InstancedMesh>(null)
   const organism = useRef<THREE.Mesh>(null)
@@ -797,7 +869,9 @@ function Monster() {
       const matrix = new THREE.Matrix4()
       fragments.forEach((f, i) => {
         // The words peel away and drift outwards, thinning as they go.
-        const shed = Math.max(0, Math.min(1, (t - 6 - f.delay) / 7))
+        const shed = easeOut(
+          stage(phase.current, 0.28 + (f.delay / 6) * 0.3, 0.72 + (f.delay / 6) * 0.28),
+        )
         const radius = f.r * (1 + shed * 3.4)
         const size = f.size * (1 - shed)
         matrix.makeScale(size, size, size)
@@ -808,7 +882,7 @@ function Monster() {
     }
     if (organism.current) {
       // What was underneath all of it, breathing.
-      const reveal = Math.max(0, Math.min(1, (t - 9) / 4))
+      const reveal = stage(phase.current, 0.5, 0.95)
       const material = organism.current.material as THREE.MeshStandardMaterial
       material.emissiveIntensity = 0.4 + reveal * 2.2
       organism.current.scale.setScalar(0.85 + Math.sin(t * 0.8) * 0.05)
@@ -864,95 +938,137 @@ function Monster() {
 }
 
 /* ─── 9 ─────────────────────────────────────────────────────────────────────
- * The world beyond the hospital. Work, school, money, getting there — with
- * appointments pinned all the way through, and the path between them tangling.
+ * The world beyond the hospital.
+ *
+ * Rebuilt as inhabited rooms rather than empty boxes: each one is lit from
+ * inside, because they are a workplace, a classroom, a kitchen table, a bus
+ * stop — the life the infection came home to. The appointments pin themselves
+ * through all of it as the reader arrives, and the route between them tangles.
  */
 function World() {
   const group = useRef<THREE.Group>(null)
+  const route = useRef<THREE.Mesh>(null)
+  const pinGroup = useRef<THREE.InstancedMesh>(null)
+  const phase = useScenePhase()
 
   const places = useMemo(
     () => [
-      { p: [-8, 2.6, -4] as [number, number, number], s: 2.4 },
-      { p: [7, 3.8, -9] as [number, number, number], s: 1.8 },
-      { p: [-6, -3, 4] as [number, number, number], s: 2.1 },
-      { p: [8.4, -2, 3] as [number, number, number], s: 1.6 },
-      { p: [0.5, 5, -2] as [number, number, number], s: 2 },
+      { p: [-9, 2.4, -5] as [number, number, number], s: 3.2, warm: 1 },
+      { p: [8, 4.2, -11] as [number, number, number], s: 2.4, warm: 0.6 },
+      { p: [-7, -3.4, 5] as [number, number, number], s: 2.8, warm: 0.9 },
+      { p: [9.5, -2.4, 2] as [number, number, number], s: 2.1, warm: 0.5 },
+      { p: [0.5, 6, -4] as [number, number, number], s: 2.6, warm: 0.75 },
+      { p: [-2, -6, -8] as [number, number, number], s: 2.2, warm: 0.4 },
     ],
     [],
   )
 
   const pins = useMemo(() => {
     const random = seeded(97)
-    return Array.from({ length: 46 }, () => {
+    return Array.from({ length: 64 }, () => {
       const place = places[Math.floor(random() * places.length)]
-      return [
-        place.p[0] + (random() - 0.5) * place.s * 2.4,
-        place.p[1] + (random() - 0.5) * place.s * 2.4,
-        place.p[2] + (random() - 0.5) * place.s * 2.4,
-      ] as [number, number, number]
+      return new THREE.Vector3(
+        place.p[0] + (random() - 0.5) * place.s * 2.6,
+        place.p[1] + (random() - 0.5) * place.s * 2.6,
+        place.p[2] + (random() - 0.5) * place.s * 2.6,
+      )
     })
   }, [places])
 
-  // The route between them, drawn as one continuous tangle.
   const routeGeometry = useMemo(() => {
     const random = seeded(101)
     const points: THREE.Vector3[] = []
-    for (let i = 0; i < 60; i++) {
+    for (let i = 0; i < 90; i++) {
       const place = places[i % places.length]
       points.push(
         new THREE.Vector3(
-          place.p[0] + (random() - 0.5) * 3,
-          place.p[1] + (random() - 0.5) * 3,
-          place.p[2] + (random() - 0.5) * 3,
+          place.p[0] + (random() - 0.5) * 4,
+          place.p[1] + (random() - 0.5) * 4,
+          place.p[2] + (random() - 0.5) * 4,
         ),
       )
     }
-    const curve = new THREE.CatmullRomCurve3(points, false, 'catmullrom', 0.4)
-    return new THREE.TubeGeometry(curve, 320, 0.035, 6, false)
+    const curve = new THREE.CatmullRomCurve3(points, false, 'catmullrom', 0.35)
+    return new THREE.TubeGeometry(curve, 600, 0.045, 6, false)
   }, [places])
 
   useFrame((_, delta) => {
-    if (group.current) group.current.rotation.y += delta * 0.045
+    if (group.current) group.current.rotation.y += delta * 0.038
+    // The route draws itself as the reader travels it.
+    if (route.current) {
+      const drawn = easeOut(stage(phase.current, 0.1, 0.9))
+      route.current.geometry.setDrawRange(0, Math.floor(routeGeometry.index!.count * drawn))
+    }
+    // Appointments land one after another, and keep landing.
+    if (pinGroup.current) {
+      const matrix = new THREE.Matrix4()
+      pins.forEach((pin, i) => {
+        const arrive = easeOut(
+          stage(phase.current, 0.15 + (i / pins.length) * 0.6, 0.3 + (i / pins.length) * 0.6),
+        )
+        const size = 0.14 * arrive
+        matrix.makeScale(size, size, size)
+        matrix.setPosition(pin.x, pin.y, pin.z)
+        pinGroup.current!.setMatrixAt(i, matrix)
+      })
+      pinGroup.current.instanceMatrix.needsUpdate = true
+    }
   })
 
   return (
     <group>
-      <SceneLight intensity={0.55} />
-      <Motes count={500} spread={26} />
+      <SceneLight intensity={0.4} />
+      <Motes count={700} spread={34} />
       <group ref={group}>
         {places.map((place, i) => (
-          <mesh key={i} position={place.p}>
-            <boxGeometry args={[place.s, place.s, place.s]} />
-            <meshStandardMaterial
-              color={PALETTE.deep}
-              emissive={PALETTE.ink}
-              emissiveIntensity={0.22}
-              roughness={0.75}
-              transparent
-              opacity={0.85}
+          <group key={i} position={place.p}>
+            {/* a room, lit from inside — somebody lives here */}
+            <mesh castShadow receiveShadow>
+              <boxGeometry args={[place.s, place.s, place.s]} />
+              <meshStandardMaterial
+                color={PALETTE.deep}
+                roughness={0.8}
+                metalness={0.1}
+                transparent
+                opacity={0.9}
+              />
+            </mesh>
+            <mesh scale={0.94}>
+              <boxGeometry args={[place.s, place.s, place.s]} />
+              <meshBasicMaterial
+                color={PALETTE.ember}
+                wireframe
+                transparent
+                opacity={0.18 * place.warm}
+              />
+            </mesh>
+            <pointLight
+              intensity={26 * place.warm}
+              color={PALETTE.ember}
+              distance={place.s * 4.5}
+              decay={2}
             />
-          </mesh>
+          </group>
         ))}
-        <mesh geometry={routeGeometry}>
+        <mesh ref={route} geometry={routeGeometry}>
           <meshStandardMaterial
             color={PALETTE.ink}
             emissive={PALETTE.ink}
-            emissiveIntensity={0.3}
-            roughness={0.6}
+            emissiveIntensity={0.45}
+            roughness={0.55}
           />
         </mesh>
-        {pins.map((pin, i) => (
-          <mesh key={i} position={pin}>
-            <sphereGeometry args={[0.11, 10, 10]} />
-            <meshStandardMaterial
-              color={PALETTE.rust}
-              emissive={PALETTE.rust}
-              emissiveIntensity={1.6}
-            />
-          </mesh>
-        ))}
+        <instancedMesh ref={pinGroup} args={[undefined, undefined, pins.length]}>
+          <sphereGeometry args={[1, 10, 10]} />
+          <meshStandardMaterial
+            color={PALETTE.rust}
+            emissive={PALETTE.rust}
+            emissiveIntensity={2.2}
+          />
+        </instancedMesh>
       </group>
-      <Figure position={[0, -2.4, 7]} scale={0.95} pose="walking" />
+      <Figure position={[0, -8.5, 9]} scale={1.1} pose="walking" />
+      <Ground y={-8.5} size={70} opacity={0.8} />
     </group>
   )
 }
@@ -965,6 +1081,7 @@ function World() {
  * orbit. The person is the centre. The infection is not.
  */
 function Whole() {
+  const phase = useScenePhase()
   const orbit = useRef<THREE.Group>(null)
   const swarm = useRef<THREE.InstancedMesh>(null)
   const COUNT = 1400
@@ -1028,8 +1145,7 @@ function Whole() {
     arriving.forEach((w, i) => {
       const node = wordRefs.current[i]
       if (!node) return
-      const progress = Math.max(0, Math.min(1, (t - 1 - w.delay) / 3.4))
-      const eased = 1 - Math.pow(1 - progress, 3)
+      const eased = easeOut(stage(phase.current, 0.12 + w.delay * 0.06, 0.62 + w.delay * 0.06))
       node.position.set(
         w.from[0] + (w.to[0] - w.from[0]) * eased,
         w.from[1] + (w.to[1] - w.from[1]) * eased,
@@ -1044,6 +1160,7 @@ function Whole() {
   return (
     <group>
       <SceneLight intensity={1.15} />
+      <Ground y={-2.15} size={60} opacity={0.65} />
       <group ref={orbit}>
         <instancedMesh ref={swarm} args={[undefined, undefined, COUNT]}>
           <sphereGeometry args={[1, 7, 7]} />
@@ -1090,6 +1207,7 @@ function Whole() {
  * realises they were never looking at one patient.
  */
 function Breath() {
+  const phase = useScenePhase()
   const light = useRef<THREE.PointLight>(null)
   const many = useRef<THREE.InstancedMesh>(null)
   const COUNT = 700
@@ -1121,7 +1239,10 @@ function Breath() {
     if (many.current) {
       const matrix = new THREE.Matrix4()
       lights.forEach((l, i) => {
-        const arrive = Math.max(0, Math.min(1, (t - l.delay) / 3))
+        // Held back until the reader is fully here, then all of them at once.
+        const arrive = easeOut(
+          stage(phase.current, 0.45 + (l.delay / 11) * 0.4, 0.8 + (l.delay / 11) * 0.2),
+        )
         const pulse = 0.55 + 0.45 * Math.sin(t * 0.4 + l.phase)
         const size = 0.13 * arrive * pulse
         matrix.makeScale(size, size, size)
@@ -1187,7 +1308,9 @@ export function Station({
   if (!active) return null
   return (
     <group position={[0, 0, stationZ(index)]}>
-      <Shape />
+      <StationPhase index={index}>
+        <Shape />
+      </StationPhase>
     </group>
   )
 }

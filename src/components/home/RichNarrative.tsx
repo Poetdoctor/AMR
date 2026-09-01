@@ -5,6 +5,7 @@ import * as THREE from 'three'
 import { Container } from '@/components/Container'
 import { BeatPanel } from './BeatPanel'
 import { SCENE_ORDER, Station, stationZ, STATION_GAP } from './scenes3d'
+import { CameraStation } from './phase'
 import { PALETTE } from './atmosphere'
 import { BEATS } from '@/lib/beats'
 
@@ -27,9 +28,11 @@ const NEAR = 1
 
 function CameraRig({
   progressRef,
+  stationRef,
   onStation,
 }: {
   progressRef: React.RefObject<number>
+  stationRef: { current: number }
   onStation: (index: number) => void
 }) {
   const { camera } = useThree()
@@ -48,7 +51,9 @@ function CameraRig({
     camera.position.set(Math.sin(t * 0.14) * 0.45, Math.sin(t * 0.11) * 0.3, current.current + 17)
     camera.lookAt(Math.sin(t * 0.09) * 0.2, 0, current.current - 9)
 
-    const index = Math.round(-current.current / STATION_GAP)
+    // Fractional station position: what every scene animates against.
+    stationRef.current = -current.current / STATION_GAP
+    const index = Math.round(stationRef.current)
     if (index !== reported.current) {
       reported.current = index
       onStation(index)
@@ -81,6 +86,7 @@ export function RichNarrative({ onFallback }: { onFallback: () => void }) {
   const progress = useRef(0)
   const visible = useIsVisible(wrapper)
   const [station, setStation] = useState(0)
+  const cameraStation = useRef(0)
 
   useEffect(() => {
     function onScroll() {
@@ -105,7 +111,7 @@ export function RichNarrative({ onFallback }: { onFallback: () => void }) {
         <Canvas
           frameloop={visible ? 'always' : 'never'}
           dpr={[1, 1.5]}
-          shadows={false}
+          shadows="soft"
           gl={{
             antialias: false, // the composer's own pass handles edges more cheaply
             powerPreference: 'high-performance',
@@ -121,22 +127,24 @@ export function RichNarrative({ onFallback }: { onFallback: () => void }) {
             scene.background = PALETTE.void
             // Dense enough that the next scene down the corridor is genuinely gone,
             // not faintly readable through the dark.
-            scene.fog = new THREE.FogExp2(PALETTE.void.getHex(), 0.02)
+            scene.fog = new THREE.FogExp2(PALETTE.void.getHex(), 0.027)
             gl.domElement.addEventListener('webglcontextlost', (event) => {
               event.preventDefault()
               onFallback()
             })
           }}
         >
-          <CameraRig progressRef={progress} onStation={setStation} />
-          {SCENE_ORDER.map((scene, index) => (
-            <Station
-              key={scene}
-              scene={scene}
-              index={index}
-              active={Math.abs(index - station) <= NEAR}
-            />
-          ))}
+          <CameraRig progressRef={progress} stationRef={cameraStation} onStation={setStation} />
+          <CameraStation.Provider value={cameraStation}>
+            {SCENE_ORDER.map((scene, index) => (
+              <Station
+                key={scene}
+                scene={scene}
+                index={index}
+                active={Math.abs(index - station) <= NEAR}
+              />
+            ))}
+          </CameraStation.Provider>
 
           {/*
             Bloom is what makes a warm point of light read as a light rather

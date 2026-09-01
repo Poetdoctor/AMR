@@ -57,7 +57,7 @@ export function Figure({
 
   return (
     <group position={position} rotation={[0, turn, 0]} scale={scale}>
-      <mesh geometry={geometry}>
+      <mesh geometry={geometry} castShadow>
         <meshStandardMaterial
           color={colour}
           emissive={colour}
@@ -108,6 +108,57 @@ export function OtherFigure({
       opacity={opacity}
       grounded={false}
     />
+  )
+}
+
+/**
+ * The floor.
+ *
+ * A large plane that fades to nothing at its edges rather than ending on a
+ * visible line, so the space reads as continuing past the frame instead of
+ * being a stage set. Receives shadow.
+ */
+export function Ground({
+  y = 0,
+  size = 90,
+  colour = PALETTE.deep,
+  opacity = 1,
+}: {
+  y?: number
+  size?: number
+  colour?: THREE.Color
+  opacity?: number
+}) {
+  // A radial alpha ramp, generated once — cheaper and softer than fogging the
+  // plane's own edges, and it works at any camera height.
+  const texture = useMemo(() => {
+    const canvas = document.createElement('canvas')
+    canvas.width = canvas.height = 256
+    const context = canvas.getContext('2d')
+    if (!context) return null
+    const gradient = context.createRadialGradient(128, 128, 10, 128, 128, 128)
+    gradient.addColorStop(0, 'rgba(255,255,255,1)')
+    gradient.addColorStop(0.55, 'rgba(255,255,255,0.55)')
+    gradient.addColorStop(1, 'rgba(255,255,255,0)')
+    context.fillStyle = gradient
+    context.fillRect(0, 0, 256, 256)
+    const map = new THREE.CanvasTexture(canvas)
+    map.colorSpace = THREE.SRGBColorSpace
+    return map
+  }, [])
+
+  return (
+    <mesh position={[0, y, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+      <planeGeometry args={[size, size]} />
+      <meshStandardMaterial
+        color={colour}
+        roughness={0.92}
+        metalness={0.04}
+        transparent
+        opacity={opacity}
+        alphaMap={texture ?? undefined}
+      />
+    </mesh>
   )
 }
 
