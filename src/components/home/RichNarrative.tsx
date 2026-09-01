@@ -166,7 +166,7 @@ export function RichNarrative({ onFallback }: { onFallback: () => void }) {
         {BEATS.map((beat) => (
           <section key={beat.id} data-beat={beat.id} className="flex min-h-dvh items-center py-24">
             <Container width="wide">
-              <div className="max-w-xl rounded-[var(--radius-card)] border border-white/10 bg-black/55 p-7 text-cream backdrop-blur-md md:p-9">
+              <div className="max-w-xl rounded-[var(--radius-card)] border border-cream/15 bg-[#0d0b09]/88 p-7 text-cream shadow-[0_24px_70px_-30px_rgba(0,0,0,0.9)] backdrop-blur-xl md:p-9">
                 <BeatPanel beat={beat} compact onDark />
               </div>
             </Container>

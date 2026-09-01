@@ -2,6 +2,7 @@ import { useMemo, useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
 import { Text } from '@react-three/drei'
 import * as THREE from 'three'
+import { buildPerson, POSES, type Pose } from './person'
 
 /**
  * Shared craft for the narrative: the palette, the light, the figure, and text
@@ -28,79 +29,84 @@ export const PALETTE = {
 /**
  * The person.
  *
- * A lathe-turned form rather than a capsule, so the silhouette has shoulders
- * and a taper and reads as somebody rather than a pill. Lit and emissive, so it
- * holds its own against the dark without being a flat sticker.
+ * Built and posed in person.ts, merged to a single geometry so a crowd costs
+ * one draw call each. Posture carries the state: `pose` is the whole point of
+ * the component, not a decoration on it.
  */
 export function Figure({
   position = [0, 0, 0],
   scale = 1,
-  lean = 0,
+  pose = 'standing',
+  turn = 0,
   colour = PALETTE.ember,
-  emissive = 1.1,
+  emissive = 0.85,
   opacity = 1,
+  grounded = true,
 }: {
   position?: [number, number, number]
   scale?: number
-  lean?: number
+  pose?: keyof typeof POSES | Pose
+  turn?: number
   colour?: THREE.Color
   emissive?: number
   opacity?: number
+  /** A soft pool of light under the feet, so nobody is floating. */
+  grounded?: boolean
 }) {
-  const body = useMemo(() => {
-    // Half-profile of a standing figure, revolved.
-    const points: THREE.Vector2[] = []
-    const profile: [number, number][] = [
-      [0.0, 0.0],
-      [0.19, 0.03],
-      [0.22, 0.35],
-      [0.26, 0.72],
-      [0.24, 1.02],
-      [0.16, 1.16],
-      [0.1, 1.22],
-      [0.13, 1.3],
-      [0.17, 1.4],
-      [0.15, 1.5],
-      [0.0, 1.55],
-    ]
-    for (const [x, y] of profile) points.push(new THREE.Vector2(x, y))
-    return new THREE.LatheGeometry(points, 28)
-  }, [])
+  const geometry = useMemo(() => buildPerson(typeof pose === 'string' ? POSES[pose] : pose), [pose])
 
   return (
-    <group position={position} rotation={[0, 0, lean]} scale={scale}>
-      <mesh geometry={body} castShadow>
+    <group position={position} rotation={[0, turn, 0]} scale={scale}>
+      <mesh geometry={geometry}>
         <meshStandardMaterial
           color={colour}
           emissive={colour}
           emissiveIntensity={emissive}
-          roughness={0.45}
+          roughness={0.55}
           metalness={0.05}
           transparent={opacity < 1}
           opacity={opacity}
         />
       </mesh>
+      {grounded ? (
+        <mesh position={[0, 0.012, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+          <circleGeometry args={[0.7, 28]} />
+          <meshBasicMaterial
+            color={colour}
+            transparent
+            opacity={0.09 * opacity}
+            depthWrite={false}
+          />
+        </mesh>
+      ) : null}
     </group>
   )
 }
 
-/** Everyone who is not the patient: the same form, unlit and colder. */
+/** Everyone who is not the patient: the same body, colder and unlit. */
 export function OtherFigure({
   position,
   scale = 1,
-  opacity = 0.5,
+  opacity = 0.6,
+  pose = 'standing',
+  turn = 0,
 }: {
   position: [number, number, number]
   scale?: number
   opacity?: number
+  pose?: keyof typeof POSES | Pose
+  turn?: number
 }) {
   return (
     <Figure
       position={position}
       scale={scale}
+      pose={pose}
+      turn={turn}
       colour={PALETTE.ink}
-      emissive={0.12}
+      emissive={0.16}
       opacity={opacity}
+      grounded={false}
     />
   )
 }
@@ -118,7 +124,7 @@ export function WorldWord({
   position,
   size = 0.9,
   colour = PALETTE.bone,
-  opacity = 0.85,
+  opacity = 1,
   drift = 0,
   flicker = 0,
   anchorX = 'center',
@@ -162,8 +168,15 @@ export function WorldWord({
         color={colour}
         anchorX={anchorX}
         anchorY="middle"
-        letterSpacing={-0.02}
-        outlineWidth={0}
+        letterSpacing={-0.015}
+        /*
+         * A dark outline is the difference between a word you can read and a
+         * word you can almost read. These float over lights, glass and empty
+         * dark within the same scene, so they cannot rely on any one ground.
+         */
+        outlineWidth={size * 0.045}
+        outlineColor="#0d0b09"
+        outlineOpacity={0.85}
         material-transparent
         material-opacity={opacity}
         material-depthWrite={false}

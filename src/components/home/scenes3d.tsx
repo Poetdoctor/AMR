@@ -1,4 +1,4 @@
-import { useMemo, useRef } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import type { ReactElement } from 'react'
 import { useFrame } from '@react-three/fiber'
 import { MeshTransmissionMaterial, Text } from '@react-three/drei'
@@ -141,7 +141,7 @@ function Fall() {
           </mesh>
         ))}
         <group ref={figure}>
-          <Figure position={[0, -1.6, 0]} />
+          <Figure position={[0, -1.6, 0]} pose="unsteady" />
         </group>
       </group>
 
@@ -201,7 +201,7 @@ function Rollercoaster() {
           wireframe
         />
       </mesh>
-      <Figure position={[0, -1.9, 5]} />
+      <Figure position={[0, -1.9, 5]} pose="standing" />
       <WorldWord position={[-6.5, 3.3, -2]} size={0.8} flicker={0.8} colour={PALETTE.ember}>
         Happiness
       </WorldWord>
@@ -225,6 +225,8 @@ function Rollercoaster() {
 function Weight() {
   const cloud = useRef<THREE.InstancedMesh>(null)
   const figure = useRef<THREE.Group>(null)
+  // It does not happen all at once, and it does not happen quickly.
+  const [collapsed, setCollapsed] = useState(false)
   const COUNT = 2600
 
   const particles = useMemo(() => {
@@ -258,9 +260,14 @@ function Weight() {
       })
       cloud.current.instanceMatrix.needsUpdate = true
     }
+    if (!collapsed && t > 9) setCollapsed(true)
     if (figure.current) {
-      figure.current.rotation.z = THREE.MathUtils.damp(figure.current.rotation.z, 0.42, 0.18, delta)
-      figure.current.position.y = THREE.MathUtils.damp(figure.current.position.y, -2.4, 0.15, delta)
+      figure.current.position.y = THREE.MathUtils.damp(
+        figure.current.position.y,
+        collapsed ? -2.05 : -1.7,
+        0.6,
+        delta,
+      )
     }
   })
 
@@ -278,7 +285,7 @@ function Weight() {
         />
       </instancedMesh>
       <group ref={figure} position={[0, -1.7, 0]}>
-        <Figure />
+        <Figure pose={collapsed ? 'collapsing' : 'bearing'} />
       </group>
       <WorldWord position={[-5, 4.6, 2]} size={0.7} flicker={0.4}>
         Another course
@@ -356,7 +363,13 @@ function Corridor() {
       <group ref={staff}>
         {people.map((p, i) => (
           <group key={i} position={[p.x, -1.9, p.z]}>
-            <OtherFigure position={[0, 0, 0]} scale={p.scale} opacity={0.55} />
+            <OtherFigure
+              position={[0, 0, 0]}
+              scale={p.scale}
+              opacity={0.6}
+              pose="walking"
+              turn={Math.PI}
+            />
           </group>
         ))}
       </group>
@@ -369,8 +382,10 @@ function Corridor() {
               color={PALETTE.bone}
               anchorX="center"
               anchorY="middle"
+              outlineWidth={0.028}
+              outlineColor="#0d0b09"
               material-transparent
-              material-opacity={0.5}
+              material-opacity={0.78}
               material-depthWrite={false}
             >
               {word}
@@ -379,7 +394,7 @@ function Corridor() {
         ))}
       </group>
 
-      <Figure position={[0, -1.9, 3]} />
+      <Figure position={[0, -1.9, 3]} pose="reaching" />
     </group>
   )
 }
@@ -474,7 +489,7 @@ function Machine() {
         ))}
       </group>
 
-      <Figure position={[0, -2.6, 0]} scale={0.9} />
+      <Figure position={[0, -2.6, 0]} scale={0.9} pose="unsteady" />
       <WorldWord position={[-5.2, -0.6, 4]} size={0.62} flicker={0.5}>
         Why this?
       </WorldWord>
@@ -519,7 +534,7 @@ function Glass() {
   ]
 
   return (
-    <group position={[1.5, 0.4, 0]} scale={0.6}>
+    <group position={[3.6, 0.5, 0]} scale={0.5}>
       <SceneLight intensity={0.55} />
       <Motes count={350} spread={16} />
 
@@ -598,9 +613,9 @@ function Glass() {
         Am I dirty?
       </WorldWord>
 
-      <Figure position={[-2, -2, 0]} />
+      <Figure position={[-2, -2, 0]} pose="retreating" turn={0.5} />
       {visitors.map((p, i) => (
-        <OtherFigure key={i} position={p} scale={0.98} opacity={0.6} />
+        <OtherFigure key={i} position={p} scale={0.98} opacity={0.7} turn={-Math.PI / 2} />
       ))}
       {/* the people outside are lit too. They did not leave. */}
       <pointLight
@@ -712,8 +727,8 @@ function Ocean() {
         <meshBasicMaterial color={PALETTE.ember} />
       </instancedMesh>
 
-      <Figure position={[0, -2.3, 0]} />
-      <WorldWord position={[0, 2.6, 4]} size={0.7} opacity={0.55} flicker={0.3}>
+      <Figure position={[0, -2.3, 0]} pose="standing" />
+      <WorldWord position={[0, 2.6, 4]} size={0.7} opacity={0.85} flicker={0.3}>
         Nobody else
       </WorldWord>
     </group>
@@ -825,7 +840,7 @@ function Monster() {
               anchorY="middle"
               letterSpacing={0.06}
               material-transparent
-              material-opacity={0.45}
+              material-opacity={0.7}
               material-depthWrite={false}
             >
               {w.word}
@@ -937,7 +952,7 @@ function World() {
           </mesh>
         ))}
       </group>
-      <Figure position={[0, -2.4, 7]} scale={0.95} />
+      <Figure position={[0, -2.4, 7]} scale={0.95} pose="walking" />
     </group>
   )
 }
@@ -958,12 +973,12 @@ function Whole() {
     const random = seeded(103)
     return Array.from({ length: COUNT }, (_, i) => {
       const angle = (i / COUNT) * Math.PI * 2 * 5
-      const radius = 3.4 + (i / COUNT) * 7
+      const radius = 6.2 + (i / COUNT) * 7
       return {
         angle,
         radius,
-        y: (random() - 0.5) * 6,
-        size: 0.03 + random() * 0.09,
+        y: (random() - 0.5) * 7,
+        size: 0.03 + random() * 0.08,
         warm: random() > 0.68,
         speed: 0.1 + random() * 0.2,
       }
@@ -1062,7 +1077,7 @@ function Whole() {
         distance={48}
         decay={2}
       />
-      <Figure position={[0, -1.9, 0]} scale={1.45} emissive={1.7} />
+      <Figure position={[0, -2.1, 2.5]} scale={1.75} pose="open" emissive={1.6} />
     </group>
   )
 }
@@ -1132,7 +1147,7 @@ function Breath() {
         <sphereGeometry args={[1, 8, 8]} />
         <meshBasicMaterial color={PALETTE.ember} />
       </instancedMesh>
-      <Figure position={[0, -1.7, 0]} scale={1.15} emissive={1.4} />
+      <Figure position={[0, -1.7, 0]} scale={1.15} pose="open" emissive={1.2} />
     </group>
   )
 }
