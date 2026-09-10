@@ -28,23 +28,27 @@ export function BeatPanel({
       <p className={`eyebrow mb-3 ${onDark ? '!text-[var(--color-rust-light)]' : ''}`}>
         Act {beat.act} · {beat.actLabel}
       </p>
-      <h2 className={`display-lg max-w-2xl ${heading}`}>{beat.title}</h2>
+      <h2 className={`max-w-2xl ${heading} ${compact ? 'display-md' : 'display-lg'}`}>
+        {beat.title}
+      </h2>
 
       {/* The fragments. Large, few, and felt rather than read. */}
-      <ul className="mt-6 flex list-none flex-wrap items-baseline gap-x-5 gap-y-2">
+      <ul
+        className={`flex list-none flex-wrap items-baseline gap-x-4 gap-y-1 ${compact ? 'mt-3' : 'mt-6'}`}
+      >
         {beat.words.map((word, index) => (
           <li
             key={word}
             className={`font-display leading-none font-semibold tracking-tight ${
               index === 0 ? accent : muted
-            } text-[clamp(1.25rem,3.4vw,2.1rem)]`}
+            } ${compact ? 'text-[clamp(1rem,2.2vw,1.4rem)]' : 'text-[clamp(1.25rem,3.4vw,2.1rem)]'}`}
           >
             {word}
           </li>
         ))}
       </ul>
 
-      {beat.quotes.map((quote) => (
+      {(compact ? beat.quotes.slice(0, 1) : beat.quotes).map((quote) => (
         <figure
           key={quote.text.slice(0, 30)}
           className="mt-7 max-w-2xl border-l-2 border-rust pl-6"
@@ -67,13 +71,23 @@ export function BeatPanel({
           ))}
         </div>
       ) : (
-        <details className="mt-6 max-w-2xl">
+        <details className="mt-5 max-w-2xl">
           <summary
             className={`cursor-pointer text-sm font-semibold underline-offset-4 hover:underline ${onDark ? 'text-[var(--color-rust-light)]' : 'text-rust-deep'}`}
           >
             Read more
           </summary>
           <div className={`prose-amr mt-4 ${prose}`}>
+            {beat.quotes.slice(1).map((quote) => (
+              <figure key={quote.text.slice(0, 30)} className="border-l-2 border-rust pl-4">
+                <blockquote>
+                  <p className={`font-display leading-snug font-semibold ${quoteText}`}>
+                    “{quote.text}”
+                  </p>
+                </blockquote>
+                <figcaption className={`mt-2 text-sm ${muted}`}>{quote.attribution}</figcaption>
+              </figure>
+            ))}
             {beat.body.map((paragraph) => (
               <p key={paragraph.slice(0, 40)}>{paragraph}</p>
             ))}

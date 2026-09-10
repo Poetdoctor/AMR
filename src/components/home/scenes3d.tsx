@@ -147,13 +147,13 @@ function Fall() {
         </group>
       </group>
 
-      <WorldWord position={[0.2, 3, 4]} size={1} drift={1} colour={PALETTE.ember}>
+      <WorldWord position={[1.6, 4.3, 5]} size={0.62} drift={1} colour={PALETTE.ember}>
         Hope
       </WorldWord>
-      <WorldWord position={[4.6, 1.7, 2]} size={0.9} drift={0.8}>
+      <WorldWord position={[6.6, 2.6, 1.5]} size={0.6} drift={0.8}>
         Again?
       </WorldWord>
-      <WorldWord position={[2.2, -0.2, 0]} size={1.1} drift={0.6} colour={PALETTE.rust}>
+      <WorldWord position={[2.4, 0.7, 6]} size={0.64} drift={0.6} colour={PALETTE.rust}>
         Fear
       </WorldWord>
     </group>
@@ -204,16 +204,16 @@ function Rollercoaster() {
         />
       </mesh>
       <Figure position={[0, -1.9, 5]} pose="standing" />
-      <WorldWord position={[0.4, 3.4, 0]} size={0.8} flicker={0.8} colour={PALETTE.ember}>
+      <WorldWord position={[1.6, 4.3, 5]} size={0.62} flicker={0.8} colour={PALETTE.ember}>
         Happiness
       </WorldWord>
-      <WorldWord position={[5.6, 1.4, -3]} size={0.8} flicker={0.6} colour={PALETTE.rust}>
+      <WorldWord position={[6.6, 2.6, 1.5]} size={0.6} flicker={0.6} colour={PALETTE.rust}>
         Despair
       </WorldWord>
-      <WorldWord position={[1.2, -0.8, -6]} size={0.78} flicker={0.7}>
+      <WorldWord position={[2.4, 0.7, 6]} size={0.64} flicker={0.7}>
         Encouraged
       </WorldWord>
-      <WorldWord position={[4.8, -2.6, -9]} size={0.78} flicker={0.5} colour={PALETTE.rust}>
+      <WorldWord position={[7.2, -1.4, 0]} size={0.58} flicker={0.5} colour={PALETTE.rust}>
         Back in the dumps
       </WorldWord>
     </group>
@@ -297,13 +297,13 @@ function Weight() {
       <group ref={figure} position={[0, -1.7, 0]}>
         <Figure pose={collapsed ? 'collapsing' : 'bearing'} />
       </group>
-      <WorldWord position={[0.6, 4.4, 3]} size={0.72} flicker={0.4}>
+      <WorldWord position={[1.6, 4.3, 5]} size={0.62} flicker={0.4}>
         Another course
       </WorldWord>
-      <WorldWord position={[5, 3, 2]} size={0.72} flicker={0.5}>
+      <WorldWord position={[6.6, 2.6, 1.5]} size={0.6} flicker={0.5}>
         And another
       </WorldWord>
-      <WorldWord position={[2.6, -4.2, 4]} size={1.05} colour={PALETTE.rust}>
+      <WorldWord position={[2.4, 0.7, 6]} size={0.64} colour={PALETTE.rust}>
         Enough
       </WorldWord>
     </group>
@@ -555,13 +555,13 @@ function Machine() {
       </group>
 
       <Figure position={[0, -3.2, 1.5]} scale={0.95} pose="unsteady" />
-      <WorldWord position={[0.4, 1.4, 6]} size={0.72} flicker={0.5}>
+      <WorldWord position={[1.6, 4.3, 5]} size={0.62} flicker={0.5}>
         Why this?
       </WorldWord>
-      <WorldWord position={[4.6, -0.2, 5]} size={0.7} flicker={0.4}>
+      <WorldWord position={[6.6, 2.6, 1.5]} size={0.6} flicker={0.4}>
         Why now?
       </WorldWord>
-      <WorldWord position={[2.4, -4.4, 6]} size={0.9} colour={PALETTE.rust}>
+      <WorldWord position={[2.4, 0.7, 6]} size={0.64} colour={PALETTE.rust}>
         Nobody said
       </WorldWord>
     </group>
@@ -601,98 +601,93 @@ function Glass() {
   ]
 
   return (
-    <group position={[3.6, 0.5, 0]} scale={0.5}>
-      <SceneLight intensity={0.55} />
-      <Motes count={350} spread={16} />
+    <group>
+      <group position={[3.6, 0.5, 0]} scale={0.5}>
+        <SceneLight intensity={0.55} />
+        <Motes count={350} spread={16} />
 
-      {/* the room: warm, and completely ordinary */}
-      <Ground y={-2.06} size={70} opacity={0.7} />
-      <mesh position={[-2, -2.02, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
-        <planeGeometry args={[11, 13]} />
-        <meshStandardMaterial color={PALETTE.deep} roughness={0.85} />
-      </mesh>
-      <pointLight
-        position={[-2.5, 2.4, 1]}
-        intensity={288}
-        color={PALETTE.ember}
-        distance={39}
-        decay={2}
-      />
-      {[
-        [-7.4, 0.6, 0, Math.PI / 2],
-        [-2, 0.6, -6.4, 0],
-      ].map(([x, y, z, ry], i) => (
-        <mesh key={i} position={[x, y, z]} rotation={[0, ry, 0]}>
-          <planeGeometry args={[13, 7]} />
-          <meshStandardMaterial color={PALETTE.deep} roughness={0.95} side={THREE.DoubleSide} />
+        {/* the room: warm, and completely ordinary */}
+        <Ground y={-2.06} size={70} opacity={0.7} />
+        <mesh position={[-2, -2.02, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+          <planeGeometry args={[11, 13]} />
+          <meshStandardMaterial color={PALETTE.deep} roughness={0.85} />
         </mesh>
-      ))}
-
-      {/* the panes */}
-      <group ref={panes}>
-        {[3.4, 4.3, 5.2].map((x) => (
-          <mesh key={x} position={[x, 0.4, 0]} rotation={[0, Math.PI / 2, 0]}>
+        <pointLight
+          position={[-2.5, 2.4, 1]}
+          intensity={288}
+          color={PALETTE.ember}
+          distance={39}
+          decay={2}
+        />
+        {[
+          [-7.4, 0.6, 0, Math.PI / 2],
+          [-2, 0.6, -6.4, 0],
+        ].map(([x, y, z, ry], i) => (
+          <mesh key={i} position={[x, y, z]} rotation={[0, ry, 0]}>
             <planeGeometry args={[13, 7]} />
-            <MeshTransmissionMaterial
-              samples={4}
-              resolution={128}
-              transmission={0.97}
-              roughness={0.14}
-              thickness={0.5}
-              ior={1.3}
-              chromaticAberration={0.06}
-              anisotropy={0.2}
-              distortion={0.15}
-              distortionScale={0.3}
-              temporalDistortion={0.05}
-              color={PALETTE.glass}
-              side={THREE.DoubleSide}
-            />
+            <meshStandardMaterial color={PALETTE.deep} roughness={0.95} side={THREE.DoubleSide} />
           </mesh>
         ))}
+
+        {/* the panes */}
+        <group ref={panes}>
+          {[3.4, 4.3, 5.2].map((x) => (
+            <mesh key={x} position={[x, 0.4, 0]} rotation={[0, Math.PI / 2, 0]}>
+              <planeGeometry args={[13, 7]} />
+              <MeshTransmissionMaterial
+                samples={4}
+                resolution={128}
+                transmission={0.97}
+                roughness={0.14}
+                thickness={0.5}
+                ior={1.3}
+                chromaticAberration={0.06}
+                anisotropy={0.2}
+                distortion={0.15}
+                distortionScale={0.3}
+                temporalDistortion={0.05}
+                color={PALETTE.glass}
+                side={THREE.DoubleSide}
+              />
+            </mesh>
+          ))}
+        </group>
+
+        <Figure position={[-2, -2, 0]} pose="retreating" turn={0.5} />
+        {visitors.map((p, i) => (
+          <OtherFigure key={i} position={p} scale={0.98} opacity={0.7} turn={-Math.PI / 2} />
+        ))}
+        {/* the people outside are lit too. They did not leave. */}
+        <pointLight
+          position={[7.5, 2.4, 0]}
+          intensity={110}
+          color={PALETTE.glass}
+          distance={18}
+          decay={2}
+        />
       </group>
 
-      {/* the thoughts, settled on the glass */}
-      <WorldWord
-        position={[3.45, 2.3, 2.6]}
-        size={0.44}
-        colour={PALETTE.bone}
-        opacity={0.5}
-        flicker={0.3}
-      >
+      {/*
+        Deliberately outside the room group. At room scale these sat in the same
+        plane as the glass, and a transmission material renders through its own
+        backbuffer — so every word came out sliced in half. Out here they clear
+        the panes and read at a proper size.
+      */}
+      <WorldWord position={[1.6, 4.3, 5]} size={0.62} opacity={0.9} flicker={0.3}>
         Am I dangerous?
       </WorldWord>
-      <WorldWord
-        position={[3.45, 0.4, -2.2]}
-        size={0.44}
-        colour={PALETTE.bone}
-        opacity={0.45}
-        flicker={0.25}
-      >
+      <WorldWord position={[6.6, 2.6, 1.5]} size={0.6} opacity={0.85} flicker={0.25}>
         Am I contagious?
       </WorldWord>
       <WorldWord
-        position={[3.45, -1.4, 3.4]}
-        size={0.46}
+        position={[1.6, 4.3, 5]}
+        size={0.96}
         colour={PALETTE.rust}
-        opacity={0.6}
+        opacity={0.95}
         flicker={0.2}
       >
         Am I dirty?
       </WorldWord>
-
-      <Figure position={[-2, -2, 0]} pose="retreating" turn={0.5} />
-      {visitors.map((p, i) => (
-        <OtherFigure key={i} position={p} scale={0.98} opacity={0.7} turn={-Math.PI / 2} />
-      ))}
-      {/* the people outside are lit too. They did not leave. */}
-      <pointLight
-        position={[7.5, 1.5, 0]}
-        intensity={144}
-        color={PALETTE.glass}
-        distance={36}
-        decay={2}
-      />
     </group>
   )
 }
@@ -799,7 +794,7 @@ function Ocean() {
       </instancedMesh>
 
       <Figure position={[0, -2.3, 0]} pose="standing" />
-      <WorldWord position={[2.4, 3, 5]} size={0.82} opacity={0.85} flicker={0.3}>
+      <WorldWord position={[1.6, 4.3, 5]} size={0.62} opacity={0.85} flicker={0.3}>
         Nobody else
       </WorldWord>
     </group>

@@ -3,6 +3,7 @@ import { useFrame } from '@react-three/fiber'
 import { Text } from '@react-three/drei'
 import * as THREE from 'three'
 import { buildPerson, POSES, type Pose } from './person'
+import { PersonModel, useHasPersonModel } from './PersonModel'
 
 /**
  * Shared craft for the narrative: the palette, the light, the figure, and text
@@ -54,30 +55,53 @@ export function Figure({
   grounded?: boolean
 }) {
   const geometry = useMemo(() => buildPerson(typeof pose === 'string' ? POSES[pose] : pose), [pose])
+  // Swapped for a real character model if one has been supplied — see
+  // PersonModel.tsx and public/models/README.md.
+  const hasModel = useHasPersonModel()
+
+  const procedural = (
+    <mesh geometry={geometry} castShadow>
+      <meshStandardMaterial
+        color={colour}
+        emissive={colour}
+        emissiveIntensity={emissive}
+        roughness={0.55}
+        metalness={0.05}
+        transparent={opacity < 1}
+        opacity={opacity}
+      />
+    </mesh>
+  )
 
   return (
     <group position={position} rotation={[0, turn, 0]} scale={scale}>
-      <mesh geometry={geometry} castShadow>
-        <meshStandardMaterial
-          color={colour}
-          emissive={colour}
-          emissiveIntensity={emissive}
-          roughness={0.55}
-          metalness={0.05}
-          transparent={opacity < 1}
-          opacity={opacity}
-        />
-      </mesh>
+      {hasModel ? (
+        <PersonModel colour={colour} emissive={emissive} opacity={opacity} fallback={procedural} />
+      ) : (
+        procedural
+      )}
       {grounded ? (
-        <mesh position={[0, 0.012, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-          <circleGeometry args={[0.7, 28]} />
-          <meshBasicMaterial
-            color={colour}
-            transparent
-            opacity={0.09 * opacity}
-            depthWrite={false}
-          />
-        </mesh>
+        <>
+          {/* contact: dark right under the feet, warm just beyond it */}
+          <mesh position={[0, 0.008, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+            <circleGeometry args={[0.42, 24]} />
+            <meshBasicMaterial
+              color="#000000"
+              transparent
+              opacity={0.5 * opacity}
+              depthWrite={false}
+            />
+          </mesh>
+          <mesh position={[0, 0.014, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+            <circleGeometry args={[0.95, 28]} />
+            <meshBasicMaterial
+              color={colour}
+              transparent
+              opacity={0.07 * opacity}
+              depthWrite={false}
+            />
+          </mesh>
+        </>
       ) : null}
     </group>
   )

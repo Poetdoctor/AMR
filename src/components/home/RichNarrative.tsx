@@ -127,7 +127,7 @@ export function RichNarrative({ onFallback }: { onFallback: () => void }) {
             scene.background = PALETTE.void
             // Dense enough that the next scene down the corridor is genuinely gone,
             // not faintly readable through the dark.
-            scene.fog = new THREE.FogExp2(PALETTE.void.getHex(), 0.027)
+            scene.fog = new THREE.FogExp2(PALETTE.void.getHex(), 0.034)
             gl.domElement.addEventListener('webglcontextlost', (event) => {
               event.preventDefault()
               onFallback()
@@ -172,9 +172,20 @@ export function RichNarrative({ onFallback }: { onFallback: () => void }) {
       */}
       <div className="relative -mt-[100dvh]">
         {BEATS.map((beat) => (
-          <section key={beat.id} data-beat={beat.id} className="flex min-h-dvh items-center py-24">
+          <section
+            key={beat.id}
+            data-beat={beat.id}
+            /*
+             * Bottom-aligned, not centred. The scene is the point; the words sit
+             * under it like a subtitle rather than covering the thing they are
+             * describing. Previously the card was centred and full-height, so a
+             * reader parked on a beat saw almost none of the scene — it only
+             * appeared in the gaps, which is backwards.
+             */
+            className="flex min-h-dvh items-end pb-[8vh]"
+          >
             <Container width="wide">
-              <div className="max-w-xl rounded-[var(--radius-card)] border border-cream/15 bg-[#0d0b09]/88 p-7 text-cream shadow-[0_24px_70px_-30px_rgba(0,0,0,0.9)] backdrop-blur-xl md:p-9">
+              <div className="max-w-[27rem] rounded-2xl border border-cream/12 bg-[#0d0b09]/72 p-6 text-cream shadow-[0_20px_60px_-24px_rgba(0,0,0,0.95)] backdrop-blur-lg">
                 <BeatPanel beat={beat} compact onDark />
               </div>
             </Container>
