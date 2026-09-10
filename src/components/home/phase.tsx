@@ -52,6 +52,19 @@ export function easeInOut(t: number): number {
   return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2
 }
 
+/**
+ * How present this beat's floating words should be, 0-1.
+ *
+ * Neighbouring stations stay mounted so beats can cross-fade, and words ignore
+ * the depth buffer so scenery cannot cut them in half. Together those mean a
+ * word from an adjacent beat would otherwise hang over the one being read. A
+ * station the reader has passed sits at exactly 1 and one they have not reached
+ * sits near 0, so fading at both ends leaves only the beat they are on.
+ */
+export function presence(phase: number): number {
+  return Math.min(clamp01((phase - 0.06) / 0.22), clamp01((1 - phase) / 0.1))
+}
+
 /** Maps a phase into a sub-window of itself, so beats can stage their events. */
 export function stage(phase: number, from: number, to: number): number {
   return clamp01((phase - from) / (to - from))

@@ -165,9 +165,21 @@ export function PersonModel({
       current.time = duration * (plan.at ?? 0)
       mixer.update(0)
     } else {
-      // Scrubbed: the reader's position in the story is the playhead.
-      const t = Math.min(1, Math.max(0, (phase.current - 0.28) / 0.5))
-      current.time = duration * (t * t * (3 - 2 * t))
+      /*
+       * Scrubbed: the reader's position in the story is the playhead.
+       *
+       * Stops well short of the end of the clip. The only clip in this model
+       * that buckles a body is "Death", and its last frames lay the body out
+       * flat and still — which, on "The invisible weight", read as a corpse on
+       * the floor rather than somebody carrying something. The first half is
+       * the part that is about weight: the knees going, the shoulders folding.
+       *
+       * It also starts later than the beat does, because the camera is at
+       * phase 0.78 when a beat is centred; scrubbing from 0.28 meant the whole
+       * movement had already played out before the reader arrived.
+       */
+      const t = Math.min(1, Math.max(0, (phase.current - 0.52) / 0.46))
+      current.time = duration * 0.52 * (t * t * (3 - 2 * t))
       mixer.update(0)
     }
   })

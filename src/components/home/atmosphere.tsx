@@ -3,6 +3,10 @@ import { useFrame } from '@react-three/fiber'
 import { Text } from '@react-three/drei'
 import * as THREE from 'three'
 import { PersonModel, type PersonPose } from './PersonModel'
+import { presence, useScenePhase } from './phase'
+
+/** drei forwards the troika instance; these two uniforms are driven per frame. */
+type TroikaText = THREE.Object3D & { fillOpacity: number; outlineOpacity: number }
 
 /**
  * Shared craft for the narrative: the palette, the light, the figure, and text
@@ -204,31 +208,55 @@ export function WorldWord({
   anchorX?: 'center' | 'left' | 'right'
 }) {
   const group = useRef<THREE.Group>(null)
-  const base = useRef(position[1])
+  const text = useRef<TroikaText | null>(null)
+  const seed = useRef(position[0] * 1.7 + position[1] * 0.9)
+  const phase = useScenePhase()
 
+  /*
+   * Deliberately only a small float now.
+   *
+   * These used to sink 3.4 units and fade out, which looked good in isolation
+   * and was wrong in practice: a word left its slot, slid across the frame and
+   * collided with the subject, the reading card and the other fragments. Worse,
+   * the fade only ever reached the fill material — troika renders the outline
+   * with a second material — so a word half-way through the cycle was an empty
+   * outline with no letters inside it, which is what "not rendering right"
+   * looked like.
+   *
+   * Legibility is the whole job here. A gentle drift keeps the frame alive
+   * without any of that.
+   */
   useFrame((state) => {
     if (!group.current) return
     const t = state.clock.elapsedTime
-    if (drift) {
-      // Sinking, then quietly returning — like something going under water and
-      // being remembered again.
-      const cycle = ((t * drift * 0.12) % 1) ** 1.4
-      group.current.position.y = base.current - cycle * 3.4
-      const material = (group.current.children[0] as THREE.Mesh | undefined)?.material as
-        THREE.Material | undefined
-      if (material) material.opacity = opacity * (1 - cycle)
-    }
-    if (flicker) {
-      const material = (group.current.children[0] as THREE.Mesh | undefined)?.material as
-        THREE.Material | undefined
-      if (material)
-        material.opacity = opacity * (0.55 + 0.45 * Math.sin(t * flicker + base.current))
+    const amount = drift || flicker ? 0.075 : 0
+    if (amount) group.current.position.y = position[1] + Math.sin(t * 0.5 + seed.current) * amount
+
+    // A word belongs to its own beat, and only its own beat.
+    const shown =
+      opacity *
+      presence(phase.current) *
+      (flicker ? 0.62 + 0.38 * Math.sin(t * flicker + seed.current) : 1)
+    if (text.current) {
+      text.current.fillOpacity = shown
+      text.current.outlineOpacity = shown * 0.85
     }
   })
 
   return (
     <group ref={group} position={position}>
       <Text
+        ref={(node: TroikaText | null) => {
+          text.current = node
+        }}
+        /*
+         * These are thoughts, not objects in the room, so they are not subject
+         * to the room. Without this a piston, a strut or a passing shoulder
+         * lands across a word and it stops being readable — and the reader has
+         * no way to know a word was ever there.
+         */
+        renderOrder={20}
+        material-depthTest={false}
         fontSize={size}
         color={colour}
         anchorX={anchorX}
@@ -241,9 +269,9 @@ export function WorldWord({
          */
         outlineWidth={size * 0.045}
         outlineColor="#0d0b09"
-        outlineOpacity={0.85}
+        outlineOpacity={0}
+        fillOpacity={0}
         material-transparent
-        material-opacity={opacity}
         material-depthWrite={false}
       >
         {children}

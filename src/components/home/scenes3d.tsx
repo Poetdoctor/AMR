@@ -5,7 +5,7 @@ import { MeshTransmissionMaterial, Text } from '@react-three/drei'
 import * as THREE from 'three'
 import type { SceneId } from '@/lib/beats'
 import { Figure, Ground, OtherFigure, PALETTE, SceneLight, WorldWord } from './atmosphere'
-import { easeOut, stage, StationPhase, useScenePhase } from './phase'
+import { easeOut, presence, stage, StationPhase, useScenePhase } from './phase'
 
 /**
  * Eleven scenes. One person.
@@ -26,6 +26,22 @@ import { easeOut, stage, StationPhase, useScenePhase } from './phase'
  */
 
 export const STATION_GAP = 56
+
+/*
+ * How far a scene may reach from its own origin.
+ *
+ * Adjacent stations stay mounted so beats can cross-fade, and the camera sits
+ * ~9.5 units in front of the station it is reading. So anything deeper than
+ * -(STATION_GAP - 9.5) from its own origin is in front of the *next* beat's
+ * camera, at close range, in full focus. Two scenes broke this and both were
+ * visible: the corridor ran to -74, putting its staff and flying words in the
+ * middle of "The missing explanation" at four times that scene's own type; the
+ * ocean's crowd reached 63, and hung a lit blob under "The monster is a word".
+ *
+ * Fog covers the other direction. Nothing covers this one but staying inside
+ * the slot, so any new scene has to be measured against this.
+ */
+const STATION_REACH = 40
 export const SCENE_ORDER: SceneId[] = [
   'fall',
   'rollercoaster',
@@ -234,7 +250,7 @@ function Weight() {
    * exists to show them.
    */
   const [collapsed, setCollapsed] = useState(false)
-  const COUNT = 2600
+  const COUNT = 900
 
   const particles = useMemo(() => {
     const random = seeded(17)
@@ -242,9 +258,12 @@ function Weight() {
       angle: random() * Math.PI * 2,
       radius: 0.5 + random() * 3.2,
       height: 0.6 + random() * 5,
-      size: 0.02 + random() * 0.07,
+      size: 0.055 + random() * 0.075,
       speed: 0.1 + random() * 0.4,
       phase: random() * Math.PI * 2,
+      spin: new THREE.Quaternion().setFromEuler(
+        new THREE.Euler(random() * Math.PI, random() * Math.PI, random() * Math.PI),
+      ),
     }))
   }, [])
 
@@ -253,22 +272,25 @@ function Weight() {
     const p = phase.current
     if (cloud.current) {
       const matrix = new THREE.Matrix4()
+      const position = new THREE.Vector3()
+      const scale = new THREE.Vector3()
       // The cloud gathers and settles as the reader comes down the corridor.
       const settle = easeOut(stage(p, 0.05, 0.72))
       particles.forEach((p, i) => {
         const angle = p.angle + t * p.speed * 0.16
         const radius = p.radius * (1 - settle * 0.28)
-        matrix.makeScale(p.size, p.size, p.size)
-        matrix.setPosition(
+        position.set(
           Math.cos(angle) * radius,
           p.height * (1 - settle * 0.42) + Math.sin(t * 0.4 + p.phase) * 0.12,
           Math.sin(angle) * radius,
         )
+        scale.setScalar(p.size)
+        matrix.compose(position, p.spin, scale)
         cloud.current!.setMatrixAt(i, matrix)
       })
       cloud.current.instanceMatrix.needsUpdate = true
     }
-    const giving = p > 0.62
+    const giving = p > 0.72
     if (giving !== collapsed) setCollapsed(giving)
     if (figure.current) {
       figure.current.position.y = THREE.MathUtils.damp(
@@ -285,17 +307,23 @@ function Weight() {
       <SceneLight intensity={0.65} colour={PALETTE.rust} />
       <Ground y={-2.1} size={54} />
       <instancedMesh ref={cloud} args={[undefined, undefined, COUNT]} position={[-1.2, 0, 0]}>
-        <sphereGeometry args={[1, 5, 5]} />
+        {/*
+          Capsules, not spheres. 2600 dark five-segment spheres at 0.02 units
+          across merged into one grey slab hanging beside the person; what the
+          beat needs is a mass you can see is made of doses.
+        */}
+        <capsuleGeometry args={[0.36, 0.62, 4, 8]} />
         <meshStandardMaterial
-          color={PALETTE.ink}
-          emissive={PALETTE.ink}
-          emissiveIntensity={0.5}
+          color={PALETTE.bone}
+          emissive={PALETTE.bone}
+          emissiveIntensity={0.2}
+          roughness={0.55}
           transparent
-          opacity={0.55}
+          opacity={0.82}
         />
       </instancedMesh>
       <group ref={figure} position={[-1.2, -1.7, 0]}>
-        <Figure pose={collapsed ? 'collapsing' : 'bearing'} />
+        <Figure pose={collapsed ? 'collapsing' : 'bearing'} scale={1.45} />
       </group>
       <WorldWord position={[2.4, 2.6, 2]} size={0.46} flicker={0.4}>
         Another course
@@ -317,31 +345,78 @@ function Weight() {
  * patient's own height, not looking down one from outside. Staff pass near
  * enough to fill the frame and keep going. The words come at you and go past.
  */
+/*
+ * One lane each, and consecutive words on opposite sides.
+ *
+ * These used to be laid out with `(i % 2)` and `(i % 3)`, which put five words
+ * on six grid points, so words shared a screen position and stacked into an
+ * unreadable pile at the vanishing point. Alternating sides matters for the
+ * same reason: perspective pulls everything towards one point, so the words
+ * that can be in view together have to start far apart to stay apart.
+ *
+ * Four, not five — these are the beat's own words, and `beats.ts` is the only
+ * place they are allowed to come from. "Results" was invented here.
+ */
+const CORRIDOR_WORDS = [
+  { word: 'Diagnosis', x: 4.3, y: 4.3 },
+  { word: 'Prescription', x: 0.8, y: 1.6 },
+  { word: 'Test', x: 4.5, y: 0.2 },
+  { word: 'Procedure', x: 0.9, y: 3.5 },
+]
+type TroikaText = THREE.Object3D & { fillOpacity: number; outlineOpacity: number }
+
+const WORD_NEAR = -5
+const WORD_SPAN = 34
+
 function Corridor() {
   const staff = useRef<THREE.Group>(null)
   const words = useRef<THREE.Group>(null)
   const patient = useRef<THREE.Group>(null)
+  const wordText = useRef<(TroikaText | null)[]>([])
   const phase = useScenePhase()
 
   const people = useMemo(() => {
     const random = seeded(37)
     return Array.from({ length: 26 }, () => ({
       x: (random() - 0.5) * 9,
-      z: -random() * 74,
+      z: -random() * 40,
       speed: 9 + random() * 12,
       scale: 1 + random() * 0.22,
-      turn: random() > 0.5 ? Math.PI : Math.PI * 0.92,
+      // +1 walks toward the reader, -1 away. A figure must face the way it is
+      // going; rotating them π while moving them forward is a moonwalk.
+      direction: random() > 0.45 ? 1 : -1,
     }))
   }, [])
 
   useFrame((_, delta) => {
     staff.current?.children.forEach((child, i) => {
-      child.position.z += people[i].speed * delta
-      if (child.position.z > 20) child.position.z = -74
+      const person = people[i]
+      child.position.z += person.speed * delta * person.direction
+      if (person.direction > 0 && child.position.z > 18) child.position.z = -STATION_REACH
+      if (person.direction < 0 && child.position.z < -STATION_REACH) child.position.z = 18
     })
-    words.current?.children.forEach((child) => {
-      child.position.z += 13 * delta
-      if (child.position.z > 18) child.position.z = -58
+    words.current?.children.forEach((child, i) => {
+      child.position.z += 11 * delta
+      if (child.position.z > WORD_NEAR) child.position.z -= WORD_SPAN
+      /*
+       * Lit only in a band partway down the corridor.
+       *
+       * Perspective converges everything on the vanishing point, so a word far
+       * enough away to be small is also close enough to its neighbours to
+       * overlap them — "Prescription" landed on top of "Procedure" on top of
+       * "Diagnosis" in one smear. And a word allowed to reach the reader blew
+       * up to fill the frame and sat over the reading card. So they surface out
+       * of the dark at a distance where they are legible and separate, read,
+       * and are gone before either happens.
+       */
+      const z = child.position.z
+      const clamp = (v: number) => Math.min(1, Math.max(0, v))
+      const shown = Math.min(clamp((z + 21) / 5), clamp((WORD_NEAR - z) / 5))
+      const text = wordText.current[i]
+      if (text) {
+        text.fillOpacity = 0.85 * shown
+        text.outlineOpacity = 0.9 * shown
+      }
     })
     // The reach goes out as the reader arrives, and finds nothing.
     if (patient.current) {
@@ -355,26 +430,26 @@ function Corridor() {
       <Motes count={500} spread={22} />
 
       {/* the corridor: tall, tight, and long enough to have no end */}
-      <Ground y={-2.2} size={120} />
+      <Ground y={-2.2} size={90} />
       {[-7.5, 7.5].map((x) => (
         <mesh
           key={x}
-          position={[x, 2.6, -32]}
+          position={[x, 2.6, -13]}
           rotation={[0, x > 0 ? -Math.PI / 2 : Math.PI / 2, 0]}
           receiveShadow
         >
-          <planeGeometry args={[96, 9.6]} />
+          <planeGeometry args={[62, 9.6]} />
           <meshStandardMaterial color={PALETTE.deep} roughness={0.95} />
         </mesh>
       ))}
-      <mesh position={[0, 7.4, -32]} rotation={[Math.PI / 2, 0, 0]}>
-        <planeGeometry args={[15, 96]} />
+      <mesh position={[0, 7.4, -13]} rotation={[Math.PI / 2, 0, 0]}>
+        <planeGeometry args={[15, 62]} />
         <meshStandardMaterial color={PALETTE.void} roughness={1} />
       </mesh>
 
       {/* strip lights overhead, receding to a point */}
-      {Array.from({ length: 20 }, (_, i) => (
-        <group key={i} position={[0, 7.1, 12 - i * 4.6]}>
+      {Array.from({ length: 13 }, (_, i) => (
+        <group key={i} position={[0, 7.1, 12 - i * 4.3]}>
           <mesh>
             <boxGeometry args={[3.4, 0.1, 0.5]} />
             <meshStandardMaterial
@@ -397,24 +472,30 @@ function Corridor() {
               scale={p.scale}
               opacity={0.72}
               pose="walking"
-              turn={p.turn}
+              turn={p.direction > 0 ? 0 : Math.PI}
             />
           </group>
         ))}
       </group>
 
       <group ref={words}>
-        {['Diagnosis', 'Prescription', 'Test', 'Procedure', 'Results'].map((word, i) => (
-          <group key={word} position={[2.6 + (i % 2) * 2.6, 1.6 + (i % 3) * 1.5, -14 * i - 6]}>
+        {CORRIDOR_WORDS.map(({ word, x, y }, i) => (
+          <group key={word} position={[x, y, WORD_NEAR - WORD_SPAN * (i / CORRIDOR_WORDS.length)]}>
             <Text
-              fontSize={1.1}
+              ref={(node: TroikaText | null) => {
+                wordText.current[i] = node
+              }}
+              fontSize={1}
               color={PALETTE.bone}
               anchorX="center"
               anchorY="middle"
-              outlineWidth={0.05}
+              renderOrder={20}
+              outlineWidth={0.045}
               outlineColor="#0d0b09"
+              fillOpacity={0}
+              outlineOpacity={0}
               material-transparent
-              material-opacity={0.72}
+              material-depthTest={false}
               material-depthWrite={false}
             >
               {word}
@@ -679,13 +760,14 @@ function Glass() {
       <WorldWord position={[3.3, 1.3, 2]} size={0.46} opacity={0.85} flicker={0.25}>
         Am I contagious?
       </WorldWord>
-      <WorldWord
-        position={[1.6, 4.3, 5]}
-        size={0.96}
-        colour={PALETTE.rust}
-        opacity={0.95}
-        flicker={0.2}
-      >
+      {/*
+        On the grid like every other fragment. At size 0.96 and three units
+        nearer the camera this one rendered at twice the height of the words it
+        belongs with and ran off the top of the frame — the emphasis is the
+        colour, not the scale.
+      */}
+      {/* the fourth slot, not the third: the third sits on the person */}
+      <WorldWord position={[3.4, -1.3, 2]} size={0.46} colour={PALETTE.rust} flicker={0.2}>
         Am I dirty?
       </WorldWord>
     </group>
@@ -703,13 +785,13 @@ function Ocean() {
   const lights = useRef<THREE.InstancedMesh>(null)
   const links = useRef<THREE.LineSegments>(null)
   const COUNT = 220
-  const geometry = useMemo(() => new THREE.PlaneGeometry(140, 140, 90, 90), [])
+  const geometry = useMemo(() => new THREE.PlaneGeometry(84, 84, 72, 72), [])
 
   const others = useMemo(() => {
     const random = seeded(71)
     return Array.from({ length: COUNT }, () => {
       const angle = random() * Math.PI * 2
-      const distance = 11 + random() * 52
+      const distance = 11 + random() * (STATION_REACH - 13)
       return {
         p: new THREE.Vector3(Math.cos(angle) * distance, -2.1, Math.sin(angle) * distance),
         phase: random() * Math.PI * 2,
@@ -797,6 +879,12 @@ function Ocean() {
       <WorldWord position={[2.4, 2.6, 2]} size={0.46} opacity={0.85} flicker={0.3}>
         Nobody else
       </WorldWord>
+      <WorldWord position={[3.3, 1.3, 2]} size={0.46} opacity={0.8} flicker={0.25}>
+        Anywhere
+      </WorldWord>
+      <WorldWord position={[2.6, 0.0, 2]} size={0.48} opacity={0.85} colour={PALETTE.rust}>
+        Surely somebody
+      </WorldWord>
     </group>
   )
 }
@@ -814,27 +902,33 @@ function Monster() {
   const shell = useRef<THREE.Group>(null)
   const debris = useRef<THREE.InstancedMesh>(null)
   const organism = useRef<THREE.Mesh>(null)
+  const monsterText = useRef<(TroikaText | null)[]>([])
+  const wordGroups = useRef<(THREE.Group | null)[]>([])
   const COUNT = 900
 
+  /*
+   * Hand-placed, because random placement did not work here.
+   *
+   * Each label used to draw its own generator from `seeded(89 + i)`. Adjacent
+   * seeds in this LCG return near-identical first values, so all six labels
+   * computed nearly the same theta and phi and landed in one illegible pile —
+   * six words rendering as one smear. They also lived inside the rotating
+   * shell, which carried them off together.
+   *
+   * These slots clear the reading card on the left and the frame edge on the
+   * right, which is the whole constraint; the menace comes from the size and
+   * the letter-spacing, not from where they happen to fall.
+   */
   const words = useMemo(
     () =>
-      ['SUPERBUG', 'UNTREATABLE', 'DOOMED', 'INFECTIOUS', 'SUPERBUG', 'UNTREATABLE'].map(
-        (word, i) => {
-          const random = seeded(89 + i)
-          const theta = random() * Math.PI * 2
-          const phi = Math.acos(2 * random() - 1)
-          const r = 5.4
-          return {
-            word,
-            p: [
-              r * Math.sin(phi) * Math.cos(theta),
-              r * Math.sin(phi) * Math.sin(theta) * 0.7,
-              r * Math.cos(phi),
-            ] as [number, number, number],
-            delay: i * 0.9,
-          }
-        },
-      ),
+      [
+        { word: 'SUPERBUG', p: [2.9, 3.3, 1.2] },
+        { word: 'UNTREATABLE', p: [0.8, 2.0, 0.4] },
+        { word: 'DOOMED', p: [3.1, 0.7, 1.6] },
+        { word: 'INFECTIOUS', p: [1.1, -0.6, 0.6] },
+        { word: 'SUPERBUG', p: [2.9, -2.0, 1.2] },
+        { word: 'UNTREATABLE', p: [0.5, -3.2, 0.4] },
+      ].map((w, i) => ({ ...w, p: w.p as [number, number, number], delay: i * 0.9 })),
     [],
   )
 
@@ -843,7 +937,7 @@ function Monster() {
     return Array.from({ length: COUNT }, () => {
       const theta = random() * Math.PI * 2
       const phi = Math.acos(2 * random() - 1)
-      const r = 4.4 + random() * 2.4
+      const r = 2.8 + random() * 2
       return {
         dir: new THREE.Vector3(
           Math.sin(phi) * Math.cos(theta),
@@ -851,7 +945,10 @@ function Monster() {
           Math.cos(phi),
         ),
         r,
-        size: 0.05 + random() * 0.16,
+        // Scaled against a 1 x 0.45 x 0.14 box: at 0.05 these were five-
+        // centimetre slivers of unlit dark material on a dark ground, so 900 of
+        // them rendered as nothing at all.
+        size: 0.35 + random() * 0.75,
         delay: random() * 6,
       }
     })
@@ -863,18 +960,40 @@ function Monster() {
     if (debris.current) {
       const matrix = new THREE.Matrix4()
       fragments.forEach((f, i) => {
-        // The words peel away and drift outwards, thinning as they go.
-        const shed = easeOut(
-          stage(phase.current, 0.28 + (f.delay / 6) * 0.3, 0.72 + (f.delay / 6) * 0.28),
-        )
-        const radius = f.r * (1 + shed * 3.4)
-        const size = f.size * (1 - shed)
+        /*
+         * The shell peels away and drifts outwards, thinning as it goes —
+         * while the reader is here, not before they arrive.
+         *
+         * The camera sits at phase 0.78 when a beat is centred, so anything
+         * staged to finish by 0.72 has already finished. Eased over 0.28-0.72
+         * this shed completely and expanded to nearly four times its radius
+         * before the reader saw a frame of it: 900 fragments scaled to zero,
+         * outside the frame. It now begins as they arrive and empties out as
+         * they leave.
+         */
+        const shed = stage(phase.current, 0.62 + (f.delay / 6) * 0.14, 1)
+        const radius = f.r * (1 + shed * 1.5)
+        const size = f.size * (1 - shed * 0.85)
         matrix.makeScale(size, size, size)
         matrix.setPosition(f.dir.x * radius, f.dir.y * radius * 0.75, f.dir.z * radius)
         debris.current!.setMatrixAt(i, matrix)
       })
       debris.current.instanceMatrix.needsUpdate = true
     }
+    // The labels loosen their grip as the reader arrives, and thin out.
+    words.forEach((w, i) => {
+      const node = wordGroups.current[i]
+      const text = monsterText.current[i]
+      const loosen = easeOut(stage(phase.current, 0.3 + w.delay * 0.04, 0.9 + w.delay * 0.04))
+      if (node) {
+        node.position.set(w.p[0] * (1 + loosen * 0.16), w.p[1] * (1 + loosen * 0.16), w.p[2])
+      }
+      if (text) {
+        const shown = presence(phase.current) * (0.92 - loosen * 0.22)
+        text.fillOpacity = shown
+        text.outlineOpacity = shown * 0.9
+      }
+    })
     if (organism.current) {
       // What was underneath all of it, breathing.
       const reveal = stage(phase.current, 0.5, 0.95)
@@ -887,10 +1006,10 @@ function Monster() {
 
   return (
     <group>
-      <ambientLight intensity={0.08} />
+      <ambientLight intensity={0.18} />
       <pointLight
         position={[0, 0, 4]}
-        intensity={180}
+        intensity={320}
         color={PALETTE.rust}
         distance={42}
         decay={2}
@@ -898,25 +1017,44 @@ function Monster() {
       <group ref={shell}>
         <instancedMesh ref={debris} args={[undefined, undefined, COUNT]}>
           <boxGeometry args={[1, 0.45, 0.14]} />
-          <meshStandardMaterial color={PALETTE.ink} roughness={0.8} transparent opacity={0.75} />
+          <meshStandardMaterial
+            color={PALETTE.ink}
+            emissive={PALETTE.rust}
+            emissiveIntensity={0.22}
+            roughness={0.7}
+            transparent
+            opacity={0.85}
+          />
         </instancedMesh>
-        {words.map((w, i) => (
-          <group key={i} position={w.p}>
-            <Text
-              fontSize={0.72}
-              color={PALETTE.bone}
-              anchorX="center"
-              anchorY="middle"
-              letterSpacing={0.06}
-              material-transparent
-              material-opacity={0.7}
-              material-depthWrite={false}
-            >
-              {w.word}
-            </Text>
-          </group>
-        ))}
       </group>
+
+      {words.map((w, i) => (
+        <group
+          key={i}
+          position={w.p}
+          ref={(node) => {
+            wordGroups.current[i] = node
+          }}
+        >
+          <Text
+            ref={(node: TroikaText | null) => {
+              monsterText.current[i] = node
+            }}
+            fontSize={0.72}
+            color={PALETTE.bone}
+            anchorX="center"
+            anchorY="middle"
+            letterSpacing={0.06}
+            renderOrder={20}
+            fillOpacity={0}
+            material-transparent
+            material-depthTest={false}
+            material-depthWrite={false}
+          >
+            {w.word}
+          </Text>
+        </group>
+      ))}
 
       {/* one organism. Nothing else in this story is biology. */}
       <mesh ref={organism}>
@@ -946,14 +1084,26 @@ function World() {
   const pinGroup = useRef<THREE.InstancedMesh>(null)
   const phase = useScenePhase()
 
+  /*
+   * Positions are relative to the cluster's own centre, which is parked well
+   * ahead of the reader.
+   *
+   * They used to be absolute, spanning z -11 to +5 around the world origin —
+   * so the nearest rooms sat four units from a camera at z 9.5, filling the
+   * frame with unlit boxes, and the group's rotation swung the whole
+   * constellation through the lens rather than turning it in place. What
+   * reached the screen was a tangle of tube passing inches from the camera. A
+   * cluster you are meant to look across has to be somewhere you can see it
+   * from.
+   */
   const places = useMemo(
     () => [
-      { p: [-9, 2.4, -5] as [number, number, number], s: 3.2, warm: 1 },
-      { p: [8, 4.2, -11] as [number, number, number], s: 2.4, warm: 0.6 },
-      { p: [-7, -3.4, 5] as [number, number, number], s: 2.8, warm: 0.9 },
-      { p: [9.5, -2.4, 2] as [number, number, number], s: 2.1, warm: 0.5 },
-      { p: [0.5, 6, -4] as [number, number, number], s: 2.6, warm: 0.75 },
-      { p: [-2, -6, -8] as [number, number, number], s: 2.2, warm: 0.4 },
+      { p: [-8, -0.5, 3] as [number, number, number], s: 3, warm: 1 },
+      { p: [7.5, 1.8, -2] as [number, number, number], s: 2.4, warm: 0.6 },
+      { p: [-5.5, -3, 6] as [number, number, number], s: 2.6, warm: 0.9 },
+      { p: [8.5, -2, 0] as [number, number, number], s: 2.2, warm: 0.5 },
+      { p: [0.5, 3.6, -5] as [number, number, number], s: 2.4, warm: 0.75 },
+      { p: [-2, 0.8, -7] as [number, number, number], s: 2, warm: 0.4 },
     ],
     [],
   )
@@ -973,18 +1123,18 @@ function World() {
   const routeGeometry = useMemo(() => {
     const random = seeded(101)
     const points: THREE.Vector3[] = []
-    for (let i = 0; i < 90; i++) {
+    for (let i = 0; i < 26; i++) {
       const place = places[i % places.length]
       points.push(
         new THREE.Vector3(
-          place.p[0] + (random() - 0.5) * 4,
-          place.p[1] + (random() - 0.5) * 4,
-          place.p[2] + (random() - 0.5) * 4,
+          place.p[0] + (random() - 0.5) * 3,
+          place.p[1] + (random() - 0.5) * 3,
+          place.p[2] + (random() - 0.5) * 3,
         ),
       )
     }
     const curve = new THREE.CatmullRomCurve3(points, false, 'catmullrom', 0.35)
-    return new THREE.TubeGeometry(curve, 600, 0.045, 6, false)
+    return new THREE.TubeGeometry(curve, 400, 0.028, 6, false)
   }, [places])
 
   useFrame((_, delta) => {
@@ -1014,33 +1164,49 @@ function World() {
     <group>
       <SceneLight intensity={0.4} />
       <Motes count={700} spread={34} />
-      <group ref={group}>
+      <group ref={group} position={[0, 3.6, -17]}>
         {places.map((place, i) => (
           <group key={i} position={place.p}>
             {/* a room, lit from inside — somebody lives here */}
+            {/*
+              Translucent on purpose. At opacity 0.9 the shell simply hid the
+              light inside it, so six lit rooms rendered as six invisible dark
+              boxes on a dark ground and all the reader saw was the route.
+            */}
             <mesh castShadow receiveShadow>
               <boxGeometry args={[place.s, place.s, place.s]} />
               <meshStandardMaterial
                 color={PALETTE.deep}
+                emissive={PALETTE.ember}
+                emissiveIntensity={0.3 * place.warm}
                 roughness={0.8}
                 metalness={0.1}
                 transparent
-                opacity={0.9}
+                opacity={0.42}
               />
             </mesh>
-            <mesh scale={0.94}>
+            {/* the light that is on inside it. Somebody is home. */}
+            <mesh scale={0.82}>
+              <boxGeometry args={[place.s, place.s, place.s]} />
+              <meshBasicMaterial
+                color={PALETTE.ember}
+                transparent
+                opacity={0.3 + 0.4 * place.warm}
+              />
+            </mesh>
+            <mesh scale={0.95}>
               <boxGeometry args={[place.s, place.s, place.s]} />
               <meshBasicMaterial
                 color={PALETTE.ember}
                 wireframe
                 transparent
-                opacity={0.18 * place.warm}
+                opacity={0.3 * place.warm}
               />
             </mesh>
             <pointLight
-              intensity={26 * place.warm}
+              intensity={90 * place.warm}
               color={PALETTE.ember}
-              distance={place.s * 4.5}
+              distance={place.s * 7}
               decay={2}
             />
           </group>
@@ -1062,8 +1228,22 @@ function World() {
           />
         </instancedMesh>
       </group>
-      <Figure position={[0, -8.5, 9]} scale={1.1} pose="walking" />
-      <Ground y={-8.5} size={70} opacity={0.8} />
+      {/* the person the rooms belong to, at the reader's own height */}
+      <Figure position={[-0.2, -3.4, 3]} scale={1.5} pose="walking" />
+      <Ground y={-3.4} size={80} opacity={0.8} />
+
+      <WorldWord position={[2.4, 2.6, 2]} size={0.46} flicker={0.35} colour={PALETTE.ember}>
+        Work
+      </WorldWord>
+      <WorldWord position={[3.3, 1.3, 2]} size={0.46} flicker={0.3}>
+        School
+      </WorldWord>
+      <WorldWord position={[2.6, 0.0, 2]} size={0.48} flicker={0.4} colour={PALETTE.rust}>
+        Money
+      </WorldWord>
+      <WorldWord position={[3.4, -1.3, 2]} size={0.44} flicker={0.25}>
+        Getting there
+      </WorldWord>
     </group>
   )
 }
@@ -1108,17 +1288,20 @@ function Whole() {
         { word: 'Care', from: [0, -6, 5] as [number, number, number] },
       ].map((w, i) => ({
         ...w,
-        to: [
-          Math.cos((i / 6) * Math.PI * 2) * 4.6,
-          Math.sin((i / 6) * Math.PI * 2) * 2.2,
-          Math.sin((i / 6) * Math.PI * 2) * 2.6,
-        ] as [number, number, number],
+        /*
+         * They still converge from every direction — that is the beat — but
+         * they land in a column beside the person rather than on a ring around
+         * them. The ring put two of the six behind the reading card and a third
+         * off the right edge, so half of what arrives could not be read.
+         */
+        to: [2, 3.2 - i * 1.05, 1.8] as [number, number, number],
         delay: i * 0.7,
       })),
     [],
   )
 
   const wordRefs = useRef<(THREE.Group | null)[]>([])
+  const wholeText = useRef<(TroikaText | null)[]>([])
 
   useFrame((state, delta) => {
     const t = state.clock.elapsedTime
@@ -1146,9 +1329,8 @@ function Whole() {
         w.from[1] + (w.to[1] - w.from[1]) * eased,
         w.from[2] + (w.to[2] - w.from[2]) * eased,
       )
-      const text = node.children[0] as THREE.Mesh | undefined
-      const material = text?.material as THREE.Material | undefined
-      if (material) material.opacity = eased * 0.85
+      const text = wholeText.current[i]
+      if (text) text.fillOpacity = eased * 0.9 * presence(phase.current)
     })
   })
 
@@ -1170,12 +1352,20 @@ function Whole() {
           }}
         >
           <Text
-            fontSize={0.5}
+            ref={(node: TroikaText | null) => {
+              wholeText.current[i] = node
+            }}
+            fontSize={0.42}
             color={PALETTE.bone}
             anchorX="center"
             anchorY="middle"
+            renderOrder={20}
+            outlineWidth={0.02}
+            outlineColor="#0d0b09"
+            outlineOpacity={0.8}
+            fillOpacity={0}
             material-transparent
-            material-opacity={0}
+            material-depthTest={false}
             material-depthWrite={false}
           >
             {w.word}
@@ -1207,16 +1397,43 @@ function Breath() {
   const many = useRef<THREE.InstancedMesh>(null)
   const COUNT = 700
 
+  /*
+   * The beat is called "And it was never one person", so there have to be
+   * other people in it. The far lights carry the idea at a distance; these
+   * carry it at human scale, standing around the person rather than passing
+   * them — every other crowd in this story was somewhere else, or on its way
+   * somewhere else.
+   */
+  const others = useMemo(() => {
+    const random = seeded(223)
+    return Array.from({ length: 11 }, (_, i) => {
+      const angle = (i / 11) * Math.PI * 2 + random() * 0.3
+      const radius = 3.6 + random() * 3.4
+      return {
+        p: [Math.cos(angle) * radius, -1.7, Math.sin(angle) * radius - 1.4] as [
+          number,
+          number,
+          number,
+        ],
+        scale: 0.94 + random() * 0.16,
+        // Turned inwards, towards the person in the middle.
+        turn: Math.atan2(-Math.cos(angle), -Math.sin(angle)) + Math.PI / 2,
+        offset: random(),
+        opacity: 0.5 + random() * 0.24,
+      }
+    })
+  }, [])
+
   const lights = useMemo(() => {
     const random = seeded(211)
     return Array.from({ length: COUNT }, () => {
       const angle = random() * Math.PI * 2
-      const distance = 6 + random() * 46
+      const distance = 6 + random() * 24
       return {
         p: [
           Math.cos(angle) * distance,
           (random() - 0.5) * 16,
-          Math.sin(angle) * distance - random() * 20,
+          Math.sin(angle) * distance - random() * 8,
         ] as [number, number, number],
         phase: random() * Math.PI * 2,
         delay: 4 + random() * 7,
@@ -1263,7 +1480,21 @@ function Breath() {
         <sphereGeometry args={[1, 8, 8]} />
         <meshBasicMaterial color={PALETTE.ember} />
       </instancedMesh>
+      {others.map((o, i) => (
+        <OtherFigure
+          key={i}
+          position={o.p}
+          scale={o.scale}
+          turn={o.turn}
+          offset={o.offset}
+          // Deliberately not faded in on phase: `phase.current` is a mutable ref
+          // read inside `useFrame`, so reading it here would freeze at whatever
+          // it held on mount. They are simply already there, which is the point.
+          opacity={o.opacity}
+        />
+      ))}
       <Figure position={[0, -1.7, 0]} scale={1.15} pose="open" emissive={0.32} />
+      <Ground y={-1.7} size={60} opacity={0.7} />
     </group>
   )
 }
