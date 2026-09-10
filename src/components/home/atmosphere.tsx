@@ -1,9 +1,8 @@
-import { useMemo, useRef } from 'react'
+import { Suspense, useMemo, useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
 import { Text } from '@react-three/drei'
 import * as THREE from 'three'
-import { buildPerson, POSES, type Pose } from './person'
-import { PersonModel, useHasPersonModel } from './PersonModel'
+import { PersonModel, type PersonPose } from './PersonModel'
 
 /**
  * Shared craft for the narrative: the palette, the light, the figure, and text
@@ -43,48 +42,36 @@ export function Figure({
   emissive = 0.3,
   opacity = 1,
   grounded = true,
+  offset = 0,
 }: {
   position?: [number, number, number]
   scale?: number
-  pose?: keyof typeof POSES | Pose
+  pose?: PersonPose
   turn?: number
   colour?: THREE.Color
   emissive?: number
   opacity?: number
-  /** A soft pool of light under the feet, so nobody is floating. */
+  /** A soft pool under the feet, so nobody is floating. */
   grounded?: boolean
+  /** Staggers looping animations so a crowd is not in lockstep. */
+  offset?: number
 }) {
-  const geometry = useMemo(() => buildPerson(typeof pose === 'string' ? POSES[pose] : pose), [pose])
-  // Swapped for a real character model if one has been supplied — see
-  // PersonModel.tsx and public/models/README.md.
-  const hasModel = useHasPersonModel()
-
-  const procedural = (
-    <mesh geometry={geometry} castShadow>
-      <meshStandardMaterial
-        color={colour}
-        emissive={colour}
-        emissiveIntensity={emissive}
-        roughness={0.55}
-        metalness={0.05}
-        transparent={opacity < 1}
-        opacity={opacity}
-      />
-    </mesh>
-  )
-
   return (
     <group position={position} rotation={[0, turn, 0]} scale={scale}>
-      {hasModel ? (
-        <PersonModel colour={colour} emissive={emissive} opacity={opacity} fallback={procedural} />
-      ) : (
-        procedural
-      )}
+      <Suspense fallback={null}>
+        <PersonModel
+          pose={pose}
+          colour={colour}
+          emissive={emissive}
+          opacity={opacity}
+          offset={offset}
+        />
+      </Suspense>
       {grounded ? (
         <>
           {/* contact: dark right under the feet, warm just beyond it */}
           <mesh position={[0, 0.008, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-            <circleGeometry args={[0.42, 24]} />
+            <circleGeometry args={[0.34, 24]} />
             <meshBasicMaterial
               color="#000000"
               transparent
@@ -93,7 +80,7 @@ export function Figure({
             />
           </mesh>
           <mesh position={[0, 0.014, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-            <circleGeometry args={[0.95, 28]} />
+            <circleGeometry args={[0.85, 28]} />
             <meshBasicMaterial
               color={colour}
               transparent
@@ -114,12 +101,14 @@ export function OtherFigure({
   opacity = 0.6,
   pose = 'standing',
   turn = 0,
+  offset = 0,
 }: {
   position: [number, number, number]
   scale?: number
   opacity?: number
-  pose?: keyof typeof POSES | Pose
+  pose?: PersonPose
   turn?: number
+  offset?: number
 }) {
   return (
     <Figure
@@ -127,6 +116,7 @@ export function OtherFigure({
       scale={scale}
       pose={pose}
       turn={turn}
+      offset={offset}
       colour={PALETTE.ink}
       emissive={0.05}
       opacity={opacity}

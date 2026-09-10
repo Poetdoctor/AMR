@@ -147,13 +147,13 @@ function Fall() {
         </group>
       </group>
 
-      <WorldWord position={[1.6, 4.3, 5]} size={0.62} drift={1} colour={PALETTE.ember}>
+      <WorldWord position={[2.4, 2.6, 2]} size={0.46} drift={1} colour={PALETTE.ember}>
         Hope
       </WorldWord>
-      <WorldWord position={[6.6, 2.6, 1.5]} size={0.6} drift={0.8}>
+      <WorldWord position={[3.3, 1.3, 2]} size={0.46} drift={0.8}>
         Again?
       </WorldWord>
-      <WorldWord position={[2.4, 0.7, 6]} size={0.64} drift={0.6} colour={PALETTE.rust}>
+      <WorldWord position={[2.6, 0.0, 2]} size={0.48} drift={0.6} colour={PALETTE.rust}>
         Fear
       </WorldWord>
     </group>
@@ -204,16 +204,16 @@ function Rollercoaster() {
         />
       </mesh>
       <Figure position={[0, -1.9, 5]} pose="standing" />
-      <WorldWord position={[1.6, 4.3, 5]} size={0.62} flicker={0.8} colour={PALETTE.ember}>
+      <WorldWord position={[2.4, 2.6, 2]} size={0.46} flicker={0.8} colour={PALETTE.ember}>
         Happiness
       </WorldWord>
-      <WorldWord position={[6.6, 2.6, 1.5]} size={0.6} flicker={0.6} colour={PALETTE.rust}>
+      <WorldWord position={[3.3, 1.3, 2]} size={0.46} flicker={0.6} colour={PALETTE.rust}>
         Despair
       </WorldWord>
-      <WorldWord position={[2.4, 0.7, 6]} size={0.64} flicker={0.7}>
+      <WorldWord position={[2.6, 0.0, 2]} size={0.48} flicker={0.7}>
         Encouraged
       </WorldWord>
-      <WorldWord position={[7.2, -1.4, 0]} size={0.58} flicker={0.5} colour={PALETTE.rust}>
+      <WorldWord position={[3.4, -1.3, 2]} size={0.44} flicker={0.5} colour={PALETTE.rust}>
         Back in the dumps
       </WorldWord>
     </group>
@@ -240,7 +240,7 @@ function Weight() {
     const random = seeded(17)
     return Array.from({ length: COUNT }, () => ({
       angle: random() * Math.PI * 2,
-      radius: 0.6 + random() * 5.2,
+      radius: 0.5 + random() * 3.2,
       height: 0.6 + random() * 5,
       size: 0.02 + random() * 0.07,
       speed: 0.1 + random() * 0.4,
@@ -284,7 +284,7 @@ function Weight() {
     <group>
       <SceneLight intensity={0.65} colour={PALETTE.rust} />
       <Ground y={-2.1} size={54} />
-      <instancedMesh ref={cloud} args={[undefined, undefined, COUNT]}>
+      <instancedMesh ref={cloud} args={[undefined, undefined, COUNT]} position={[-1.2, 0, 0]}>
         <sphereGeometry args={[1, 5, 5]} />
         <meshStandardMaterial
           color={PALETTE.ink}
@@ -294,16 +294,16 @@ function Weight() {
           opacity={0.55}
         />
       </instancedMesh>
-      <group ref={figure} position={[0, -1.7, 0]}>
+      <group ref={figure} position={[-1.2, -1.7, 0]}>
         <Figure pose={collapsed ? 'collapsing' : 'bearing'} />
       </group>
-      <WorldWord position={[1.6, 4.3, 5]} size={0.62} flicker={0.4}>
+      <WorldWord position={[2.4, 2.6, 2]} size={0.46} flicker={0.4}>
         Another course
       </WorldWord>
-      <WorldWord position={[6.6, 2.6, 1.5]} size={0.6} flicker={0.5}>
+      <WorldWord position={[3.3, 1.3, 2]} size={0.46} flicker={0.5}>
         And another
       </WorldWord>
-      <WorldWord position={[2.4, 0.7, 6]} size={0.64} colour={PALETTE.rust}>
+      <WorldWord position={[2.6, 0.0, 2]} size={0.48} colour={PALETTE.rust}>
         Enough
       </WorldWord>
     </group>
@@ -555,13 +555,13 @@ function Machine() {
       </group>
 
       <Figure position={[0, -3.2, 1.5]} scale={0.95} pose="unsteady" />
-      <WorldWord position={[1.6, 4.3, 5]} size={0.62} flicker={0.5}>
+      <WorldWord position={[2.4, 2.6, 2]} size={0.46} flicker={0.5}>
         Why this?
       </WorldWord>
-      <WorldWord position={[6.6, 2.6, 1.5]} size={0.6} flicker={0.4}>
+      <WorldWord position={[3.3, 1.3, 2]} size={0.46} flicker={0.4}>
         Why now?
       </WorldWord>
-      <WorldWord position={[2.4, 0.7, 6]} size={0.64} colour={PALETTE.rust}>
+      <WorldWord position={[2.6, 0.0, 2]} size={0.48} colour={PALETTE.rust}>
         Nobody said
       </WorldWord>
     </group>
@@ -673,10 +673,10 @@ function Glass() {
         backbuffer — so every word came out sliced in half. Out here they clear
         the panes and read at a proper size.
       */}
-      <WorldWord position={[1.6, 4.3, 5]} size={0.62} opacity={0.9} flicker={0.3}>
+      <WorldWord position={[2.4, 2.6, 2]} size={0.46} opacity={0.9} flicker={0.3}>
         Am I dangerous?
       </WorldWord>
-      <WorldWord position={[6.6, 2.6, 1.5]} size={0.6} opacity={0.85} flicker={0.25}>
+      <WorldWord position={[3.3, 1.3, 2]} size={0.46} opacity={0.85} flicker={0.25}>
         Am I contagious?
       </WorldWord>
       <WorldWord
@@ -794,7 +794,7 @@ function Ocean() {
       </instancedMesh>
 
       <Figure position={[0, -2.3, 0]} pose="standing" />
-      <WorldWord position={[1.6, 4.3, 5]} size={0.62} opacity={0.85} flicker={0.3}>
+      <WorldWord position={[2.4, 2.6, 2]} size={0.46} opacity={0.85} flicker={0.3}>
         Nobody else
       </WorldWord>
     </group>

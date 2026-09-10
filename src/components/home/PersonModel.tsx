@@ -1,125 +1,183 @@
-import { Suspense, useEffect, useMemo, useState, type ReactNode } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
+import { useFrame } from '@react-three/fiber'
 import { useGLTF } from '@react-three/drei'
+import { clone as cloneSkinned } from 'three/examples/jsm/utils/SkeletonUtils.js'
 import * as THREE from 'three'
+import { useScenePhase } from './phase'
 
 /**
- * Optional real character model.
+ * The figures.
  *
- * If `public/models/person.glb` exists it is used for every figure; if it does
- * not, the procedural body is used and nothing else changes. A missing model is
- * the normal state of this repository, not an error.
+ * A real rigged human rather than geometry assembled from primitives. The model
+ * is CC0 (Quaternius, via Poly Pizza) — which is the licence that matters here,
+ * because a mesh served from a public website is downloadable by anyone, and
+ * most photoreal human scans forbid exactly that. See public/models/README.md.
  *
- * The model is normalised on load — scaled to a consistent height and sat on
- * the floor — because a downloaded character will arrive at whatever scale and
- * origin its author used, and the scenes place figures by their feet.
- *
- * See public/models/README.md for the format, and for the constraint that
- * actually decides this: a mesh served from a public site is downloadable by
- * anyone, so the licence has to permit redistribution. Renderpeople's does not.
+ * It arrives with a skeleton and eight animation clips, which does more for the
+ * storytelling than any amount of extra polygons would: the collapse in beat
+ * three is a real animation, scrubbed by the reader's scroll position rather
+ * than played at them.
  */
 
 const MODEL_URL = '/models/person.glb'
 const TARGET_HEIGHT = 1.78
 
 /**
- * One HEAD request for the whole page, not one per figure.
+ * Which clip each beat's posture maps to.
  *
- * `response.ok` is not enough on its own. This is a single-page app, so the
- * host rewrites unknown paths to index.html and a missing model comes back as
- * 200 text/html — the loader then tries to parse a web page as glTF and throws
- * inside the render tree. The content type is what actually answers the
- * question.
+ * `still` freezes a clip at a given point rather than playing it — a person
+ * standing in an isolation room should not be walking on the spot, and a
+ * collapse should happen when the reader arrives at it, not on a loop.
  */
-let availability: Promise<boolean> | null = null
-function checkAvailability(): Promise<boolean> {
-  if (!availability) {
-    availability = fetch(MODEL_URL, { method: 'HEAD' })
-      .then((response) => {
-        if (!response.ok) return false
-        const type = response.headers.get('content-type') ?? ''
-        return !type.includes('text/html')
-      })
-      .catch(() => false)
-  }
-  return availability
+export type PersonPose =
+  | 'standing'
+  | 'unsteady'
+  | 'bearing'
+  | 'collapsing'
+  | 'reaching'
+  | 'retreating'
+  | 'open'
+  | 'walking'
+
+interface ClipPlan {
+  clip: string
+  /** Loop it (ambient), or hold one frame / scrub it against scroll. */
+  mode: 'loop' | 'hold' | 'scrub'
+  /** For 'hold', where in the clip to freeze, 0–1. */
+  at?: number
+  speed?: number
 }
 
-export function useHasPersonModel(): boolean {
-  const [has, setHas] = useState(false)
-  useEffect(() => {
-    let cancelled = false
-    void checkAvailability().then((ok) => {
-      if (!cancelled) setHas(ok)
-    })
-    return () => {
-      cancelled = true
-    }
-  }, [])
-  return has
+const POSE_CLIPS: Record<PersonPose, ClipPlan> = {
+  standing: { clip: 'Idle', mode: 'loop', speed: 1 },
+  // Barely-there motion reads as someone who is not quite steady.
+  unsteady: { clip: 'Idle', mode: 'loop', speed: 0.55 },
+  // Part-way into the collapse: bent, not yet down.
+  bearing: { clip: 'Death', mode: 'hold', at: 0.22 },
+  // The reader's scroll drives this one all the way through.
+  collapsing: { clip: 'Death', mode: 'scrub' },
+  reaching: { clip: 'Punch', mode: 'hold', at: 0.28 },
+  retreating: { clip: 'Idle', mode: 'loop', speed: 0.4 },
+  open: { clip: 'Idle', mode: 'loop', speed: 0.7 },
+  walking: { clip: 'Walk', mode: 'loop', speed: 1 },
 }
 
-function Model({
+useGLTF.preload(MODEL_URL)
+
+export function PersonModel({
+  pose = 'standing',
   colour,
   emissive,
   opacity,
+  /** Staggers looping clips so a crowd is not in lockstep. */
+  offset = 0,
 }: {
+  pose?: PersonPose
   colour: THREE.Color
   emissive: number
   opacity: number
+  offset?: number
 }) {
-  const { scene } = useGLTF(MODEL_URL)
+  const { scene, animations } = useGLTF(MODEL_URL)
+  const phase = useScenePhase()
 
-  // Cloned per instance: several figures share one scene graph otherwise, and
-  // the second one to mount steals the first one's transform.
-  const object = useMemo(() => {
-    const clone = scene.clone(true)
-    const box = new THREE.Box3().setFromObject(clone)
-    const size = new THREE.Vector3()
-    box.getSize(size)
-    const scale = size.y > 0 ? TARGET_HEIGHT / size.y : 1
-    clone.scale.setScalar(scale)
+  // SkeletonUtils.clone, not scene.clone: a plain clone copies the meshes but
+  // leaves them bound to the original skeleton, so every figure on screen
+  // inherits one pose and they all move as a single puppet.
+  const model = useMemo(() => {
+    const copy = cloneSkinned(scene) as THREE.Group
 
-    // Re-measure after scaling and sit the feet on y = 0.
-    const scaled = new THREE.Box3().setFromObject(clone)
-    clone.position.y -= scaled.min.y
-    clone.position.x -= (scaled.max.x + scaled.min.x) / 2
+    /*
+     * Measure the skeleton, not the mesh.
+     *
+     * Box3.setFromObject reads a mesh's geometry bounds through its world
+     * matrix — but a skinned mesh's vertices are placed by bone matrices, not
+     * by that matrix. This model stores an 0.08-unit mesh under an armature
+     * that scales bones by 69, so measuring the geometry said "eight
+     * centimetres tall", the figure was scaled up twenty-two times, and the
+     * camera ended up inside a hundred-metre person. Bone positions are where
+     * the body actually is.
+     */
+    copy.updateMatrixWorld(true)
+    const bounds = new THREE.Box3()
+    const point = new THREE.Vector3()
+    copy.traverse((child) => {
+      if ((child as THREE.Bone).isBone) bounds.expandByPoint(child.getWorldPosition(point))
+    })
+    const span = bounds.max.y - bounds.min.y
+    // The topmost bone sits inside the skull, so the skeleton spans a little
+    // less than the person does.
+    const scale = span > 0.001 ? (TARGET_HEIGHT * 0.92) / span : 1
+    copy.scale.setScalar(scale)
+    copy.position.y -= bounds.min.y * scale
 
-    clone.traverse((child) => {
-      if (!(child as THREE.Mesh).isMesh) return
+    copy.traverse((child) => {
       const mesh = child as THREE.Mesh
+      if (!mesh.isMesh) return
       mesh.castShadow = true
-      // The sequence is lit as one world; a model's own material would arrive
-      // with its own lighting assumptions and read as pasted in.
+      mesh.frustumCulled = false
+      // The sequence is lit as one world. The model's own material would bring
+      // its own lighting assumptions and read as pasted in.
       mesh.material = new THREE.MeshStandardMaterial({
         color: colour,
         emissive: colour,
         emissiveIntensity: emissive,
-        roughness: 0.55,
-        metalness: 0.05,
+        roughness: 0.62,
+        metalness: 0.03,
         transparent: opacity < 1,
         opacity,
       })
     })
-    return clone
+    return copy
   }, [scene, colour, emissive, opacity])
 
-  return <primitive object={object} />
-}
+  const mixer = useMemo(() => new THREE.AnimationMixer(model), [model])
+  const action = useRef<THREE.AnimationAction | null>(null)
+  const plan = POSE_CLIPS[pose]
 
-export function PersonModel({
-  colour,
-  emissive,
-  opacity,
-  fallback,
-}: {
-  colour: THREE.Color
-  emissive: number
-  opacity: number
-  fallback: ReactNode
-}) {
-  return (
-    <Suspense fallback={fallback}>
-      <Model colour={colour} emissive={emissive} opacity={opacity} />
-    </Suspense>
-  )
+  useEffect(() => {
+    const clip = animations.find((c) => c.name.split('|').pop() === plan.clip) ?? animations[0]
+    if (!clip) return
+    const next = mixer.clipAction(clip)
+    next.reset()
+    next.play()
+    if (plan.mode !== 'loop') {
+      // Held and scrubbed clips must not advance on their own.
+      next.paused = true
+      next.clampWhenFinished = true
+      next.setLoop(THREE.LoopOnce, 1)
+    }
+    action.current = next
+    return () => {
+      next.stop()
+      mixer.uncacheAction(clip)
+    }
+  }, [animations, mixer, plan.clip, plan.mode])
+
+  useFrame((_, delta) => {
+    const current = action.current
+    if (!current) return
+    const duration = current.getClip().duration
+
+    if (plan.mode === 'loop') {
+      mixer.update(delta * (plan.speed ?? 1))
+    } else if (plan.mode === 'hold') {
+      current.time = duration * (plan.at ?? 0)
+      mixer.update(0)
+    } else {
+      // Scrubbed: the reader's position in the story is the playhead.
+      const t = Math.min(1, Math.max(0, (phase.current - 0.28) / 0.5))
+      current.time = duration * (t * t * (3 - 2 * t))
+      mixer.update(0)
+    }
+  })
+
+  // Stagger looping crowds so they are not marching in step.
+  useEffect(() => {
+    if (plan.mode === 'loop' && action.current && offset) {
+      action.current.time = action.current.getClip().duration * offset
+    }
+  }, [offset, plan.mode])
+
+  return <primitive object={model} />
 }
