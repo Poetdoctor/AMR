@@ -49,7 +49,7 @@ function CameraRig({
     // reads as a rendering, and a breathing one reads as a place.
     const t = state.clock.elapsedTime
     camera.position.set(Math.sin(t * 0.14) * 0.45, Math.sin(t * 0.11) * 0.3, current.current + 17)
-    camera.lookAt(Math.sin(t * 0.09) * 0.2, 0, current.current - 9)
+    camera.lookAt(Math.sin(t * 0.09) * 0.2, 0, current.current - 6)
 
     // Fractional station position: what every scene animates against.
     stationRef.current = -current.current / STATION_GAP
@@ -154,8 +154,8 @@ export function RichNarrative({ onFallback }: { onFallback: () => void }) {
           */}
           <EffectComposer enableNormalPass={false}>
             <Bloom
-              intensity={0.85}
-              luminanceThreshold={0.55}
+              intensity={0.7}
+              luminanceThreshold={0.78}
               luminanceSmoothing={0.3}
               mipmapBlur
               radius={0.7}

@@ -405,7 +405,7 @@ function Corridor() {
 
       <group ref={words}>
         {['Diagnosis', 'Prescription', 'Test', 'Procedure', 'Results'].map((word, i) => (
-          <group key={word} position={[i % 2 === 0 ? -4.2 : 4.2, 1.4 + (i % 3) * 1.4, -14 * i - 6]}>
+          <group key={word} position={[2.6 + (i % 2) * 2.6, 1.6 + (i % 3) * 1.5, -14 * i - 6]}>
             <Text
               fontSize={1.1}
               color={PALETTE.bone}
@@ -1189,7 +1189,7 @@ function Whole() {
         distance={48}
         decay={2}
       />
-      <Figure position={[0, -2.1, 2.5]} scale={1.75} pose="open" emissive={1.6} />
+      <Figure position={[0, -2.1, 2.5]} scale={1.75} pose="open" emissive={0.32} />
     </group>
   )
 }
@@ -1263,7 +1263,7 @@ function Breath() {
         <sphereGeometry args={[1, 8, 8]} />
         <meshBasicMaterial color={PALETTE.ember} />
       </instancedMesh>
-      <Figure position={[0, -1.7, 0]} scale={1.15} pose="open" emissive={1.2} />
+      <Figure position={[0, -1.7, 0]} scale={1.15} pose="open" emissive={0.32} />
     </group>
   )
 }

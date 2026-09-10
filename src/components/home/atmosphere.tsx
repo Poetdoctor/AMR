@@ -40,7 +40,7 @@ export function Figure({
   pose = 'standing',
   turn = 0,
   colour = PALETTE.ember,
-  emissive = 0.85,
+  emissive = 0.3,
   opacity = 1,
   grounded = true,
 }: {
@@ -128,7 +128,7 @@ export function OtherFigure({
       pose={pose}
       turn={turn}
       colour={PALETTE.ink}
-      emissive={0.16}
+      emissive={0.05}
       opacity={opacity}
       grounded={false}
     />
