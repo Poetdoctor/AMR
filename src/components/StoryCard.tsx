@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom'
+import { Link } from '@/components/LocaleLink'
 import type { Story } from '@/lib/content'
 
 /**
@@ -8,7 +8,7 @@ import type { Story } from '@/lib/content'
 export function StoryCard({ story }: { story: Story }) {
   return (
     <article className="card flex h-full flex-col p-7 transition-shadow hover:shadow-[var(--shadow-card-lift)] md:p-9">
-      <blockquote className="border-l-2 border-rust pl-5 md:pl-6">
+      <blockquote className="border-s-2 border-rust ps-5 md:ps-6">
         <p className="font-display text-xl leading-snug font-semibold text-ink md:text-2xl">
           “{story.signatureQuote}”
         </p>

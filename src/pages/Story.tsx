@@ -1,14 +1,18 @@
-import { Link, useParams } from 'react-router-dom'
+import { useParams } from 'react-router-dom'
+import { Link } from '@/components/LocaleLink'
 import { Container } from '@/components/Container'
 import { Markdown } from '@/components/Markdown'
+import { UntranslatedNotice } from '@/components/UntranslatedNotice'
 import { getStories, getStory } from '@/lib/content'
+import { useT } from '@/lib/i18n'
 import { usePageTitle } from '@/lib/usePageTitle'
 import NotFound from './NotFound'
 
 export default function Story() {
+  const t = useT()
   const { slug } = useParams()
   const story = slug ? getStory(slug) : undefined
-  usePageTitle(story ? `${story.displayName} — Stories` : undefined)
+  usePageTitle(story ? `${story.displayName} — ${t.titles.stories}` : undefined)
 
   if (!story) return <NotFound />
 
@@ -16,6 +20,7 @@ export default function Story() {
 
   return (
     <>
+      <UntranslatedNotice />
       <header className="border-b border-sand-line bg-cream-deep py-14 md:py-20">
         <Container width="wide">
           <Link

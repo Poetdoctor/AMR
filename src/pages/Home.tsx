@@ -1,8 +1,9 @@
 import { lazy, Suspense, useCallback, useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link } from '@/components/LocaleLink'
 import { Container } from '@/components/Container'
 import { FlatNarrative } from '@/components/home/FlatNarrative'
 import { NarrativeBoundary } from '@/components/home/NarrativeBoundary'
+import { UntranslatedNotice } from '@/components/UntranslatedNotice'
 import { useCapability, readFlatPreference, writeFlatPreference } from '@/lib/capability'
 import { usePageTitle } from '@/lib/usePageTitle'
 
@@ -44,6 +45,7 @@ export default function Home() {
 
   return (
     <>
+      <UntranslatedNotice />
       <section className="border-b border-sand-line bg-cream-deep py-20 md:py-28">
         <Container width="wide">
           <p className="eyebrow mb-6">iGEM UBC · Human Practices</p>

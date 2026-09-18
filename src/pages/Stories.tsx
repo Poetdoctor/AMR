@@ -1,9 +1,11 @@
-import { Link } from 'react-router-dom'
+import { Link } from '@/components/LocaleLink'
 import { Container } from '@/components/Container'
 import { PageHeader } from '@/components/PageHeader'
 import { Callout } from '@/components/Callout'
 import { StoryCard } from '@/components/StoryCard'
+import { UntranslatedNotice } from '@/components/UntranslatedNotice'
 import { getStories } from '@/lib/content'
+import { useT } from '@/lib/i18n'
 import { usePageTitle } from '@/lib/usePageTitle'
 
 /**
@@ -13,11 +15,13 @@ import { usePageTitle } from '@/lib/usePageTitle'
  * lib/content.ts.
  */
 export default function Stories() {
-  usePageTitle('Stories')
+  const t = useT()
+  usePageTitle(t.titles.stories)
   const stories = getStories()
 
   return (
     <>
+      <UntranslatedNotice />
       <PageHeader
         eyebrow="Stories"
         title="In their own words"

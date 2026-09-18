@@ -1,33 +1,45 @@
-import { Link } from 'react-router-dom'
+import { Link } from './LocaleLink'
 import { Container } from './Container'
 import { Disclaimer } from './Disclaimer'
+import { useT } from '@/lib/i18n'
+import type { Dict } from '@/locales/en'
+
+type NavKey = keyof Dict['nav']
+type FooterKey = keyof Dict['footer']
 
 const COLUMNS = [
   {
-    heading: 'Read',
+    heading: 'read',
     links: [
-      { to: '/learn', label: 'Learn' },
-      { to: '/stories', label: 'Stories' },
-      { to: '/', label: 'The narrative' },
+      { to: '/learn', nav: 'learn' },
+      { to: '/stories', nav: 'stories' },
+      { to: '/', footer: 'narrative' },
     ],
   },
   {
-    heading: 'Use',
+    heading: 'use',
     links: [
-      { to: '/tool', label: 'Prepare for a visit' },
-      { to: '/community', label: 'Community' },
+      { to: '/tool', footer: 'toolLong' },
+      { to: '/community', nav: 'community' },
     ],
   },
   {
-    heading: 'About',
+    heading: 'about',
     links: [
-      { to: '/team', label: 'Team' },
-      { to: '/mission', label: 'Mission' },
+      { to: '/team', nav: 'team' },
+      { to: '/mission', nav: 'mission' },
     ],
   },
-]
+] as const satisfies readonly {
+  heading: FooterKey
+  links: readonly ({ to: string } & ({ nav: NavKey } | { footer: FooterKey }))[]
+}[]
 
 export function SiteFooter() {
+  const t = useT()
+  const label = (link: (typeof COLUMNS)[number]['links'][number]) =>
+    'nav' in link ? t.nav[link.nav] : t.footer[link.footer]
+
   return (
     <footer className="print-hide mt-24 border-t border-sand-line bg-cream-deep">
       <Container width="wide">
@@ -37,25 +49,22 @@ export function SiteFooter() {
           <div className="grid gap-10 md:grid-cols-[1.4fr_repeat(3,1fr)]">
             <div>
               <p className="font-display text-xl font-bold tracking-tight text-ink">
-                AMR — the human side
+                {t.site.name}
               </p>
-              <p className="mt-3 max-w-xs text-sm leading-relaxed text-ink-soft">
-                A Human Practices project by iGEM UBC, on the psychosocial impact of antimicrobial
-                resistance.
-              </p>
+              <p className="mt-3 max-w-xs text-sm leading-relaxed text-ink-soft">{t.site.blurb}</p>
             </div>
 
             {COLUMNS.map((column) => (
-              <nav key={column.heading} aria-label={column.heading}>
-                <h2 className="eyebrow mb-4">{column.heading}</h2>
+              <nav key={column.heading} aria-label={t.footer[column.heading]}>
+                <h2 className="eyebrow mb-4">{t.footer[column.heading]}</h2>
                 <ul className="space-y-2.5">
                   {column.links.map((link) => (
-                    <li key={link.label}>
+                    <li key={label(link)}>
                       <Link
                         to={link.to}
                         className="text-sm text-ink-soft underline-offset-4 hover:text-rust-deep hover:underline"
                       >
-                        {link.label}
+                        {label(link)}
                       </Link>
                     </li>
                   ))}
@@ -67,8 +76,10 @@ export function SiteFooter() {
           <hr className="rule my-10" />
 
           <div className="flex flex-col gap-4 text-sm text-ink-faint sm:flex-row sm:items-center sm:justify-between">
-            <p>iGEM UBC Human Practices · {new Date().getFullYear()}</p>
-            <p>No analytics. No trackers. Nothing you type here is recorded.</p>
+            <p>
+              {t.site.credit} · {new Date().getFullYear()}
+            </p>
+            <p>{t.site.noTrackers}</p>
           </div>
         </div>
       </Container>

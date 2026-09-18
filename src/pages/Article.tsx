@@ -1,15 +1,19 @@
-import { Link, useParams } from 'react-router-dom'
+import { useParams } from 'react-router-dom'
+import { Link } from '@/components/LocaleLink'
 import { Container } from '@/components/Container'
 import { Markdown } from '@/components/Markdown'
 import { Disclaimer } from '@/components/Disclaimer'
+import { UntranslatedNotice } from '@/components/UntranslatedNotice'
 import { getArticle, getArticles } from '@/lib/content'
+import { useT } from '@/lib/i18n'
 import { usePageTitle } from '@/lib/usePageTitle'
 import NotFound from './NotFound'
 
 export default function Article() {
+  const t = useT()
   const { slug } = useParams()
   const article = slug ? getArticle(slug) : undefined
-  usePageTitle(article ? `${article.title} — Learn` : undefined)
+  usePageTitle(article ? `${article.title} — ${t.titles.learn}` : undefined)
 
   if (!article) return <NotFound />
 
@@ -17,6 +21,7 @@ export default function Article() {
 
   return (
     <>
+      <UntranslatedNotice />
       <header className="border-b border-sand-line bg-cream-deep py-14 md:py-20">
         <Container width="wide">
           <Link

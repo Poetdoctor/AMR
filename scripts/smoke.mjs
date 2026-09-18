@@ -37,6 +37,31 @@ const ROUTES = [
   '/no-such-page',
 ]
 
+/**
+ * Every route, in every language the site currently offers.
+ *
+ * Not a token sample. The two things that break a translated layout are text
+ * that is longer than the English it replaced — which overflows on a narrow
+ * screen, where nobody on the team is looking — and a route that quietly falls
+ * back to English because a link forgot its prefix. Both are per-route and
+ * per-viewport, so both dimensions have to be walked.
+ */
+const { READY_LOCALES, DEFAULT_LOCALE, localePath } = await import('../src/lib/locales.ts')
+
+const DICTS = Object.fromEntries(
+  await Promise.all(
+    READY_LOCALES.map(async (l) => [l.code, (await import(`../src/locales/${l.code}.ts`)).default]),
+  ),
+)
+
+const LOCALISED = READY_LOCALES.flatMap((locale) =>
+  ROUTES.map((route) => ({
+    url: localePath(locale.code, route),
+    locale,
+    expect: DICTS[locale.code],
+  })),
+)
+
 const VIEWPORTS = [
   { name: 'mobile', width: 390, height: 844, deviceScaleFactor: 2, isMobile: true },
   { name: 'desktop', width: 1280, height: 900, deviceScaleFactor: 1 },
@@ -76,9 +101,9 @@ try {
     page.on('pageerror', (e) => errors.push(String(e)))
     page.on('console', (m) => m.type() === 'error' && errors.push(m.text()))
 
-    for (const route of ROUTES) {
+    for (const { url, locale, expect } of LOCALISED) {
       errors.length = 0
-      await page.goto(BASE + route, { waitUntil: 'networkidle0' })
+      await page.goto(BASE + url, { waitUntil: 'networkidle0' })
 
       const r = await page.evaluate(() => {
         const de = document.documentElement
@@ -96,12 +121,14 @@ try {
           ).length,
           hasMain: Boolean(document.querySelector('main#main')),
           hasSkipLink: Boolean(document.querySelector('a[href="#main"]')),
-          hasDisclaimer: /not medical advice/i.test(document.body.innerText),
+          text: document.body.innerText,
+          lang: document.documentElement.lang,
+          dir: document.documentElement.dir,
           title: document.title,
         }
       })
 
-      const at = `${viewport.name} ${route}`
+      const at = `${viewport.name} ${url}`
       if (r.scrollWidth > r.clientWidth + 1)
         fail(
           `${at}: horizontal overflow (${r.scrollWidth} > ${r.clientWidth}) — ${r.overflowing.join(', ')}`,
@@ -112,8 +139,19 @@ try {
         fail(`${at}: ${r.controlsNoName} link/button without an accessible name`)
       if (!r.hasMain) fail(`${at}: missing main#main landmark`)
       if (!r.hasSkipLink) fail(`${at}: missing skip link`)
-      // Hard constraint: every page carries the educational/not-medical-advice notice.
-      if (!r.hasDisclaimer) fail(`${at}: disclaimer not present on the page`)
+      /*
+       * Hard constraint: every page carries the educational/not-medical-advice
+       * notice — and carries it in the language the page is being read in. An
+       * English disclaimer on a French page is not a disclaimer to the person
+       * it was written for.
+       */
+      if (!r.text.includes(expect.disclaimer.lead))
+        fail(
+          `${at}: disclaimer missing or not in ${locale.code} (expected "${expect.disclaimer.lead}")`,
+        )
+      if (r.lang !== locale.htmlLang)
+        fail(`${at}: document lang is "${r.lang}", expected "${locale.htmlLang}"`)
+      if (r.dir !== locale.dir) fail(`${at}: document dir is "${r.dir}", expected "${locale.dir}"`)
       if (!r.title.trim()) fail(`${at}: empty document title`)
       if (errors.length) fail(`${at}: console/page errors — ${errors.join(' | ')}`)
     }
@@ -124,13 +162,13 @@ try {
   const reduced = await browser.newPage()
   await reduced.setViewport(VIEWPORTS[1])
   await reduced.emulateMediaFeatures([{ name: 'prefers-reduced-motion', value: 'reduce' }])
-  for (const route of ROUTES) {
-    await reduced.goto(BASE + route, { waitUntil: 'networkidle0' })
+  for (const { url } of LOCALISED) {
+    await reduced.goto(BASE + url, { waitUntil: 'networkidle0' })
     const textLength = await reduced.evaluate(
       () => document.querySelector('main')?.innerText.length ?? 0,
     )
     if (textLength < 120)
-      fail(`reduced-motion ${route}: main content did not render (${textLength} chars)`)
+      fail(`reduced-motion ${url}: main content did not render (${textLength} chars)`)
   }
   await reduced.close()
 
@@ -223,5 +261,5 @@ if (problems.length) {
   process.exit(1)
 }
 console.log(
-  `✓ smoke passed — ${ROUTES.length} routes × ${VIEWPORTS.length} viewports + reduced-motion`,
+  `✓ smoke passed — ${ROUTES.length} routes × ${READY_LOCALES.length} language(s) (${READY_LOCALES.map((l) => l.code).join(', ')}) × ${VIEWPORTS.length} viewports + reduced-motion`,
 )

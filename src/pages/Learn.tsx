@@ -1,15 +1,19 @@
-import { Link } from 'react-router-dom'
+import { Link } from '@/components/LocaleLink'
 import { Container } from '@/components/Container'
 import { PageHeader } from '@/components/PageHeader'
+import { UntranslatedNotice } from '@/components/UntranslatedNotice'
 import { getArticles, LEARN_SOURCES } from '@/lib/content'
+import { useT } from '@/lib/i18n'
 import { usePageTitle } from '@/lib/usePageTitle'
 
 export default function Learn() {
-  usePageTitle('Learn')
+  const t = useT()
+  usePageTitle(t.titles.learn)
   const articles = getArticles()
 
   return (
     <>
+      <UntranslatedNotice />
       <PageHeader
         eyebrow="Learn"
         title="What nobody had time to explain"

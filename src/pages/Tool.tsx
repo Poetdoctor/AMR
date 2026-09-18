@@ -5,8 +5,10 @@ import { TextAreaField, TextField } from '@/components/tool/Field'
 import { QuestionPicker } from '@/components/tool/QuestionPicker'
 import { CustomQuestions } from '@/components/tool/CustomQuestions'
 import { PrepSheet } from '@/components/tool/PrepSheet'
+import { UntranslatedNotice } from '@/components/UntranslatedNotice'
 import { EMPTY_PREP, isEmpty, toPlainText, type VisitPrep } from '@/lib/visitPrep'
 import * as storage from '@/lib/visitPrepStorage'
+import { useT } from '@/lib/i18n'
 import { usePageTitle } from '@/lib/usePageTitle'
 
 /**
@@ -21,7 +23,8 @@ import { usePageTitle } from '@/lib/usePageTitle'
  * this page makes to the people using it.
  */
 export default function Tool() {
-  usePageTitle('Prepare for a visit')
+  const t = useT()
+  usePageTitle(t.titles.tool)
 
   const [prep, setPrep] = useState<VisitPrep>(EMPTY_PREP)
   const [saving, setSaving] = useState(false)
@@ -110,6 +113,7 @@ export default function Tool() {
 
   return (
     <>
+      <UntranslatedNotice />
       <PageHeader
         eyebrow="Visit prep"
         title="Walk in with your questions already written"

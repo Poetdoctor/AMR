@@ -51,7 +51,7 @@ export function BeatPanel({
       {(compact ? beat.quotes.slice(0, 1) : beat.quotes).map((quote) => (
         <figure
           key={quote.text.slice(0, 30)}
-          className="mt-7 max-w-2xl border-l-2 border-rust pl-6"
+          className="mt-7 max-w-2xl border-s-2 border-rust ps-6"
         >
           <blockquote>
             <p
@@ -79,7 +79,7 @@ export function BeatPanel({
           </summary>
           <div className={`prose-amr mt-4 ${prose}`}>
             {beat.quotes.slice(1).map((quote) => (
-              <figure key={quote.text.slice(0, 30)} className="border-l-2 border-rust pl-4">
+              <figure key={quote.text.slice(0, 30)} className="border-s-2 border-rust ps-4">
                 <blockquote>
                   <p className={`font-display leading-snug font-semibold ${quoteText}`}>
                     “{quote.text}”

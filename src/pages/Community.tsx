@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link } from '@/components/LocaleLink'
 import { Container } from '@/components/Container'
 import { PageHeader } from '@/components/PageHeader'
 import { PostCard } from '@/components/community/PostCard'
 import { CrisisLine } from '@/components/community/CrisisLine'
 import { Disclaimer } from '@/components/Disclaimer'
+import { UntranslatedNotice } from '@/components/UntranslatedNotice'
 import {
   ensureProfile,
   currentProfile,
@@ -23,6 +24,7 @@ import {
   type Post,
   type Profile,
 } from '@/lib/community'
+import { useT } from '@/lib/i18n'
 import { usePageTitle } from '@/lib/usePageTitle'
 
 /**
@@ -37,7 +39,8 @@ import { usePageTitle } from '@/lib/usePageTitle'
  * months.
  */
 export default function Community() {
-  usePageTitle('Community')
+  const t = useT()
+  usePageTitle(t.titles.community)
 
   const [community, setCommunity] = useState<CommunityRecord | null>(null)
   const [posts, setPosts] = useState<Post[]>([])
@@ -143,6 +146,7 @@ export default function Community() {
 
   return (
     <>
+      <UntranslatedNotice />
       <header className="bg-forest py-14 text-cream md:py-16">
         <Container width="wide">
           <p className="text-xs font-semibold tracking-[0.16em] text-cream/70 uppercase">
@@ -266,7 +270,7 @@ export default function Community() {
             {community?.guidelines ? (
               <section className="card p-5">
                 <h2 className="font-display text-base font-bold text-ink">
-                  <span aria-hidden="true" className="mr-1.5">
+                  <span aria-hidden="true" className="me-1.5">
                     🛡
                   </span>
                   Community guidelines

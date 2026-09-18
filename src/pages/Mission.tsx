@@ -3,6 +3,8 @@ import { Container } from '@/components/Container'
 import { PageHeader } from '@/components/PageHeader'
 import { Callout } from '@/components/Callout'
 import { site } from '@/config/site'
+import { UntranslatedNotice } from '@/components/UntranslatedNotice'
+import { useT } from '@/lib/i18n'
 import { usePageTitle } from '@/lib/usePageTitle'
 
 function Stage({
@@ -38,10 +40,12 @@ function Stage({
 }
 
 export default function Mission() {
-  usePageTitle('Mission')
+  const t = useT()
+  usePageTitle(t.titles.mission)
 
   return (
     <>
+      <UntranslatedNotice />
       <PageHeader
         eyebrow="Our work"
         title="What we're doing, and why"

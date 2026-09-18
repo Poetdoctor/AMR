@@ -202,7 +202,7 @@
   }
   .markdown ul,
   .markdown ol {
-    padding-left: 1.25rem;
+    padding-inline-start: 1.25rem;
     list-style: disc;
   }
   .markdown ol {
@@ -213,9 +213,11 @@
   }
 
   /* Pull quote — the site's one voice-of-the-patient treatment. */
+  /* Logical, not left: in a right-to-left language the rule belongs on the
+     right, and `border-left` would leave it stranded across the text. */
   .markdown blockquote {
-    border-left: 2px solid var(--color-rust);
-    padding-left: 1.5rem;
+    border-inline-start: 2px solid var(--color-rust);
+    padding-inline-start: 1.5rem;
     margin-top: 2em;
     margin-bottom: 2em;
   }

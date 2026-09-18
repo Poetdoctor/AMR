@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom'
+import { Link } from '@/components/LocaleLink'
 import { Container } from './Container'
 import { PageHeader } from './PageHeader'
 

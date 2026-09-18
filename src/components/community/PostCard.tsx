@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom'
+import { Link } from '@/components/LocaleLink'
 import { Avatar } from './Avatar'
 import { ContentWarningGate } from './ContentWarningGate'
 import { ReportMenu } from './ReportMenu'
@@ -105,12 +105,12 @@ export function PostCard({
               }`}
             >
               {reaction.label}
-              {count > 0 ? <span className="ml-1.5 tabular-nums">{count}</span> : null}
+              {count > 0 ? <span className="ms-1.5 tabular-nums">{count}</span> : null}
             </button>
           )
         })}
 
-        <span className="ml-auto flex items-center gap-4 text-sm text-ink-faint">
+        <span className="ms-auto flex items-center gap-4 text-sm text-ink-faint">
           <Link
             to={`/community/story/${post.id}`}
             className="hover:text-ink"

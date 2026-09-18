@@ -3,7 +3,9 @@ import { PageHeader } from '@/components/PageHeader'
 import { Callout } from '@/components/Callout'
 import { TeamCard } from '@/components/TeamCard'
 import { ImageFrame } from '@/components/ImageFrame'
+import { UntranslatedNotice } from '@/components/UntranslatedNotice'
 import { getTeam } from '@/lib/content'
+import { useT } from '@/lib/i18n'
 import { usePageTitle } from '@/lib/usePageTitle'
 
 /**
@@ -14,11 +16,13 @@ import { usePageTitle } from '@/lib/usePageTitle'
  * lib/content.ts.
  */
 export default function Team() {
-  usePageTitle('Team')
+  const t = useT()
+  usePageTitle(t.titles.team)
   const members = getTeam()
 
   return (
     <>
+      <UntranslatedNotice />
       <PageHeader
         eyebrow="Who we are"
         title="The six people reading your story"
