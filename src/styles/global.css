@@ -4,6 +4,24 @@
 @import '@fontsource-variable/fraunces';
 @import '@fontsource-variable/inter';
 
+/*
+ * Scripts Fraunces and Inter do not cover.
+ *
+ * Fontsource splits each of these by unicode range, so a browser only fetches
+ * the ranges a page actually uses — a reader of English never downloads a byte
+ * of the Chinese. They are listed after the Latin faces in every stack below,
+ * so Latin text inside a Chinese or Persian page still renders in the site's
+ * own type rather than the fallback's.
+ *
+ * These are the DOM fonts. The 3D narrative needs its own subset files, built
+ * separately; see scripts/build-narrative-fonts.mjs.
+ */
+@import '@fontsource/noto-sans-sc/400.css';
+@import '@fontsource/noto-sans-sc/600.css';
+@import '@fontsource/noto-sans-gurmukhi/400.css';
+@import '@fontsource/noto-sans-gurmukhi/600.css';
+@import '@fontsource-variable/vazirmatn';
+
 /* ---------------------------------------------------------------------------
    Design tokens.
 
@@ -45,9 +63,27 @@
   --color-forest-soft: #e6eae4;
   --color-forest-line: #cdd6ca;
 
-  --font-display: 'Fraunces Variable', 'Iowan Old Style', Georgia, 'Times New Roman', serif;
+  /*
+   * Fraunces has no Chinese, Gurmukhi or Arabic glyphs, so those scripts fall
+   * through to Noto and Vazirmatn. There is no serif display face for them
+   * here: a mismatched serif reads worse than a well-set sans, and Noto Sans is
+   * what those readers expect to see.
+   */
+  /*
+   * The script faces come before the generic fallbacks, not after.
+   *
+   * Font matching runs per character, not per stack: the browser walks the list
+   * until it finds a face containing that glyph. Listed after Georgia and Times
+   * New Roman, Vazirmatn never got reached — Times has Arabic coverage, so
+   * every Persian heading silently rendered in Times instead, in a different
+   * style from the body text on the same page.
+   */
+  --font-display:
+    'Fraunces Variable', 'Noto Sans SC', 'Noto Sans Gurmukhi', 'Vazirmatn Variable',
+    'Iowan Old Style', Georgia, 'Times New Roman', serif;
   --font-sans:
-    'Inter Variable', -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+    'Inter Variable', 'Noto Sans SC', 'Noto Sans Gurmukhi', 'Vazirmatn Variable', -apple-system,
+    BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
 
   --radius-card: 1.25rem;
   --radius-callout: 1.5rem;
@@ -383,4 +419,58 @@
   .prep-sheet section {
     break-inside: avoid;
   }
+}
+
+/* ---------------------------------------------------------------------------
+   Per-script adjustments.
+
+   The type scale was drawn for Latin. Chinese has no ascenders or descenders
+   and reads cramped at Latin line heights; Gurmukhi and Arabic both need more
+   room above and below than Latin does, because their marks and descenders go
+   further. These are small corrections, not a second design.
+--------------------------------------------------------------------------- */
+:root:lang(zh) body,
+:root:lang(pa) body,
+:root:lang(fa) body {
+  line-height: 1.75;
+}
+
+/* The display face is Latin-only for these, so the tight tracking drawn for
+   Fraunces does not apply — it just crushes the glyphs together. */
+:root:lang(zh) h1,
+:root:lang(zh) h2,
+:root:lang(zh) h3,
+:root:lang(zh) h4,
+:root:lang(pa) h1,
+:root:lang(pa) h2,
+:root:lang(pa) h3,
+:root:lang(pa) h4,
+:root:lang(fa) h1,
+:root:lang(fa) h2,
+:root:lang(fa) h3,
+:root:lang(fa) h4,
+:root:lang(zh) .display-xl,
+:root:lang(zh) .display-lg,
+:root:lang(zh) .display-md,
+:root:lang(pa) .display-xl,
+:root:lang(pa) .display-lg,
+:root:lang(pa) .display-md,
+:root:lang(fa) .display-xl,
+:root:lang(fa) .display-lg,
+:root:lang(fa) .display-md {
+  letter-spacing: 0;
+  line-height: 1.3;
+}
+
+/* The eyebrow's wide tracking and upper-casing are Latin typographic devices.
+   Neither Chinese, Gurmukhi nor Arabic has a case distinction, and letter
+   spacing in Arabic pulls joined letters apart into nonsense. */
+:root:lang(zh) .eyebrow,
+:root:lang(pa) .eyebrow,
+:root:lang(fa) .eyebrow {
+  letter-spacing: 0.04em;
+  text-transform: none;
+}
+:root:lang(fa) .eyebrow {
+  letter-spacing: 0;
 }

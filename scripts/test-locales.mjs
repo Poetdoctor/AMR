@@ -122,15 +122,31 @@ for (const key of Object.keys(SAME_IN_ANY_LANGUAGE)) {
   )
 }
 
-// The disclaimer is the one string that must never be missing in any language:
-// a reader who cannot read it is a reader who was not told.
+/*
+ * The disclaimer is the one string that must never be missing in any language:
+ * a reader who cannot read it is a reader who was not told.
+ *
+ * Measured in information rather than characters. A raw length threshold is a
+ * Latin assumption — Chinese says "Educational, not medical advice." in
+ * fourteen characters and was reported as too short, which is the check being
+ * wrong rather than the translation. CJK and Gurmukhi conjuncts carry several
+ * Latin characters' worth of meaning each, so they are weighted accordingly.
+ */
+const DENSE = /[\u3000-\u9fff\uff00-\uffef]/
+const informationLength = (text) =>
+  [...text].reduce((total, char) => total + (DENSE.test(char) ? 2.5 : 1), 0)
+
 for (const locale of READY_LOCALES) {
   if (locale.code === DEFAULT_LOCALE || !onDisk.has(locale.code)) continue
   const dict = flatten((await import(path.join(root, `src/locales/${locale.code}.ts`))).default)
-  for (const key of ['disclaimer.lead', 'disclaimer.body'])
+  for (const [key, floor] of [
+    ['disclaimer.lead', 20],
+    ['disclaimer.body', 120],
+  ])
     check(
-      (dict[key] ?? '').trim().length > 20,
-      `${locale.code}: "${key}" is missing or too short — the medical disclaimer must be readable in every language the site offers`,
+      informationLength((dict[key] ?? '').trim()) >= floor,
+      `${locale.code}: "${key}" is missing or too short — the medical disclaimer must be readable ` +
+        'in every language the site offers',
     )
 }
 

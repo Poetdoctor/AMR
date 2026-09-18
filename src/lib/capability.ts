@@ -16,7 +16,7 @@ import { useEffect, useState } from 'react'
 export interface Capability {
   /** True only when the 3D path is both wanted and likely to run well. */
   rich: boolean
-  reason: 'reduced-motion' | 'no-webgl' | 'low-power' | 'save-data' | 'ok' | 'checking'
+  reason: 'reduced-motion' | 'no-webgl' | 'low-power' | 'save-data' | 'script' | 'ok' | 'checking'
 }
 
 function detect(): Capability {

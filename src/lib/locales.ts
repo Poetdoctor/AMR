@@ -23,20 +23,84 @@ export interface Locale {
   name: string
   dir: 'ltr' | 'rtl'
   ready: boolean
+  /**
+   * Whether the 3D narrative can render this language's script correctly.
+   *
+   * It draws text with troika, which applies a font's GSUB substitutions — so
+   * Arabic letters join and Chinese renders cleanly — but not its GPOS mark
+   * attachment. Gurmukhi depends on GPOS: compared against the browser's own
+   * rendering of the same string in the same font, troika leaves the vowel
+   * signs and bindi floating detached from their consonants. Punjabi comes out
+   * visibly wrong, so Punjabi is served the flat narrative unconditionally.
+   *
+   * That is not a downgrade. The flat path is a first-class requirement of this
+   * project, carries the same beats and the same words, and renders Gurmukhi
+   * correctly because the browser does the shaping.
+   */
+  richNarrative: boolean
+
+  /**
+   * The font file the 3D narrative draws this language's words with.
+   *
+   * `null` means troika's built-in face, which covers Latin and nothing else —
+   * it draws no glyph at all for a character it lacks, with no error and no
+   * fallback box. Every non-Latin language needs its own file, subset at build
+   * time to the handful of characters its beat words actually use.
+   */
+  narrativeFont: string | null
 }
 
 export const DEFAULT_LOCALE: LocaleCode = 'en'
 
 export const LOCALES: Locale[] = [
-  { code: 'en', htmlLang: 'en', name: 'English', dir: 'ltr', ready: true },
-  { code: 'fr', htmlLang: 'fr', name: 'Français', dir: 'ltr', ready: true },
-  // Phase 3: these need their dictionaries, their content collections, and —
-  // for the Home narrative — a subset font per script, because the 3D text
-  // renderer ships a Latin-only default and draws nothing for a glyph it does
-  // not have. See docs/i18n.md.
-  { code: 'zh', htmlLang: 'zh-Hans', name: '简体中文', dir: 'ltr', ready: false },
-  { code: 'pa', htmlLang: 'pa', name: 'ਪੰਜਾਬੀ', dir: 'ltr', ready: false },
-  { code: 'fa', htmlLang: 'fa', name: 'فارسی', dir: 'rtl', ready: false },
+  {
+    code: 'en',
+    htmlLang: 'en',
+    richNarrative: true,
+    name: 'English',
+    dir: 'ltr',
+    ready: true,
+    narrativeFont: null,
+  },
+  {
+    code: 'fr',
+    htmlLang: 'fr',
+    richNarrative: true,
+    name: 'Français',
+    dir: 'ltr',
+    ready: true,
+    narrativeFont: null,
+  },
+  // The 3D narrative ships a Latin-only default font and draws nothing at all
+  // for a glyph it does not have, so each of these carries its own subset.
+  {
+    code: 'zh',
+    htmlLang: 'zh-Hans',
+    name: '简体中文',
+    dir: 'ltr',
+    ready: true,
+    richNarrative: true,
+    narrativeFont: '/fonts/narrative-zh.woff',
+  },
+  {
+    code: 'pa',
+    htmlLang: 'pa',
+    name: 'ਪੰਜਾਬੀ',
+    dir: 'ltr',
+    ready: true,
+    // Gurmukhi needs GPOS mark attachment, which troika does not do.
+    richNarrative: false,
+    narrativeFont: null,
+  },
+  {
+    code: 'fa',
+    htmlLang: 'fa',
+    name: 'فارسی',
+    dir: 'rtl',
+    ready: true,
+    richNarrative: true,
+    narrativeFont: '/fonts/narrative-fa.woff',
+  },
 ]
 
 export const READY_LOCALES = LOCALES.filter((locale) => locale.ready)

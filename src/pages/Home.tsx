@@ -40,8 +40,15 @@ export default function Home() {
   useEffect(() => setPreferFlat(readFlatPreference()), [])
 
   const [crashed, setCrashed] = useState(false)
-  const rich = capability.rich && !preferFlat && !crashed
-  const canChoose = capability.reason === 'ok' || preferFlat
+  /*
+   * A language whose script the 3D path cannot draw never gets offered it, and
+   * the toggle disappears with it — there is nothing to switch to. See
+   * `richNarrative` in lib/locales.ts: troika does not apply GPOS mark
+   * attachment, so Gurmukhi comes out with its vowel signs detached.
+   */
+  const scriptRenders = locale.richNarrative
+  const rich = scriptRenders && capability.rich && !preferFlat && !crashed
+  const canChoose = scriptRenders && (capability.reason === 'ok' || preferFlat)
 
   // A lost WebGL context or a render error drops to the still version for the
   // rest of the visit rather than flickering between the two.

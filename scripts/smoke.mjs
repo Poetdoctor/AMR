@@ -162,13 +162,38 @@ try {
   const reduced = await browser.newPage()
   await reduced.setViewport(VIEWPORTS[1])
   await reduced.emulateMediaFeatures([{ name: 'prefers-reduced-motion', value: 'reduce' }])
-  for (const { url } of LOCALISED) {
+  /*
+   * Judged against the same route in English rather than an absolute length.
+   *
+   * This check exists to catch a page that rendered nothing. A fixed character
+   * count cannot do that across languages — it is a Latin assumption, and it
+   * twice reported a perfectly complete page as broken: Chinese says what the
+   * English 404 says in a third of the characters. Comparing each page with its
+   * own English counterpart calibrates itself, and a page that is genuinely
+   * blank is still nowhere near half of one that is not.
+   */
+  const measure = async (url) => {
     await reduced.goto(BASE + url, { waitUntil: 'networkidle0' })
-    const textLength = await reduced.evaluate(
-      () => document.querySelector('main')?.innerText.length ?? 0,
-    )
-    if (textLength < 120)
-      fail(`reduced-motion ${url}: main content did not render (${textLength} chars)`)
+    return reduced.evaluate(() => (document.querySelector('main')?.innerText ?? '').trim().length)
+  }
+
+  for (const route of ROUTES) {
+    const baseline = await measure(localePath(DEFAULT_LOCALE, route))
+    if (baseline < 120)
+      fail(`reduced-motion ${route}: main content did not render (${baseline} chars)`)
+
+    for (const locale of READY_LOCALES) {
+      if (locale.code === DEFAULT_LOCALE) continue
+      const url = localePath(locale.code, route)
+      const length = await measure(url)
+      // A third of the English is a floor no rendered page falls through and no
+      // blank one clears; Chinese sits near a half of it purely on density.
+      if (length < baseline / 3)
+        fail(
+          `reduced-motion ${url}: main content did not render ` +
+            `(${length} chars against ${baseline} in ${DEFAULT_LOCALE})`,
+        )
+    }
   }
   await reduced.close()
 
@@ -273,6 +298,17 @@ try {
   const isCitation = (text) => CITATIONS.some((c) => flatten(text).startsWith(c))
   const ALLOWED_IDENTICAL = [/^\/community/]
 
+  /*
+   * A page that already says it is showing English is not what this is looking
+   * for. The check exists to catch copy that is English *without saying so* —
+   * a page whose words still live in a component, which renders perfectly in
+   * every language because it renders the English and never admits it. Where
+   * the notice is on screen, the site has been honest and the reader knows.
+   */
+  const noticeFor = Object.fromEntries(
+    READY_LOCALES.map((l) => [l.code, DICTS[l.code].untranslated.notice]),
+  )
+
   const reader = await browser.newPage()
   await reader.setViewport(VIEWPORTS[1])
   const readBlocks = async (url) => {
@@ -304,11 +340,18 @@ try {
     const english = new Set(await readBlocks(localePath(DEFAULT_LOCALE, route)))
     for (const locale of READY_LOCALES) {
       if (locale.code === DEFAULT_LOCALE) continue
-      const blocks = await readBlocks(localePath(locale.code, route))
+      const url = localePath(locale.code, route)
+      const blocks = await readBlocks(url)
+      const declared = await reader.evaluate(
+        (notice) => document.body.innerText.includes(notice),
+        noticeFor[locale.code],
+      )
+      if (declared) continue
       const untranslated = blocks.filter((text) => english.has(text) && !isCitation(text))
       for (const text of untranslated.slice(0, 3))
         fail(
-          `${locale.code} ${route}: this is still the English text — "${text.slice(0, 70)}…" ` +
+          `${locale.code} ${route}: this is still the English text, and the page does not say so — ` +
+            `"${text.slice(0, 70)}…" ` +
             '(move it into src/locales/, or add the route to ALLOWED_IDENTICAL with a reason)',
         )
     }

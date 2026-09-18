@@ -3,7 +3,6 @@ import { Container } from '@/components/Container'
 import { PageHeader } from '@/components/PageHeader'
 import { Callout } from '@/components/Callout'
 import { site } from '@/config/site'
-import { UntranslatedNotice } from '@/components/UntranslatedNotice'
 import { useT } from '@/lib/i18n'
 import { usePageTitle } from '@/lib/usePageTitle'
 
@@ -45,7 +44,6 @@ export default function Mission() {
 
   return (
     <>
-      <UntranslatedNotice />
       <PageHeader
         eyebrow={t.pages.mission.eyebrow}
         title={t.pages.mission.title}

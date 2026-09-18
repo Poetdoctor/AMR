@@ -4,6 +4,32 @@ import { Text } from '@react-three/drei'
 import * as THREE from 'three'
 import { PersonModel, type PersonPose } from './PersonModel'
 import { presence, useScenePhase } from './phase'
+import { useI18n } from '@/lib/i18n'
+
+/**
+ * The font this language's 3D words are drawn with.
+ *
+ * `undefined` means troika's built-in face, which covers Latin and nothing
+ * else — it draws no glyph at all for a character it lacks, silently. Every
+ * non-Latin language carries its own subset; see scripts/build-narrative-fonts.mjs.
+ */
+export const useNarrativeFont = () => useI18n().locale.narrativeFont ?? undefined
+
+/**
+ * -1 in a right-to-left language, 1 otherwise.
+ *
+ * Multiply an x position by it to put a word on the other side of the frame.
+ *
+ * Only the text moves. The scene itself is a picture, and pictures are not
+ * mirrored for right-to-left any more than photographs are — and flipping a lit
+ * 3D scene with a negative scale reverses every face's winding order, which
+ * breaks backface culling and shadows for a gain nobody asked for.
+ *
+ * What does have to move is the words, because the reading card moves: it sits
+ * at the inline start of its container, so it crosses to the right on its own,
+ * and words left where they were would end up underneath it.
+ */
+export const useMirror = () => (useI18n().locale.dir === 'rtl' ? -1 : 1)
 
 /** drei forwards the troika instance; these two uniforms are driven per frame. */
 type TroikaText = THREE.Object3D & { fillOpacity: number; outlineOpacity: number }
@@ -211,6 +237,8 @@ export function WorldWord({
   const text = useRef<TroikaText | null>(null)
   const seed = useRef(position[0] * 1.7 + position[1] * 0.9)
   const phase = useScenePhase()
+  const font = useNarrativeFont()
+  const mirror = useMirror()
 
   /*
    * Deliberately only a small float now.
@@ -244,7 +272,7 @@ export function WorldWord({
   })
 
   return (
-    <group ref={group} position={position}>
+    <group ref={group} position={[position[0] * mirror, position[1], position[2]]}>
       <Text
         ref={(node: TroikaText | null) => {
           text.current = node
@@ -257,6 +285,7 @@ export function WorldWord({
          */
         renderOrder={20}
         material-depthTest={false}
+        font={font}
         fontSize={size}
         color={colour}
         anchorX={anchorX}

@@ -4,7 +4,16 @@ import { useFrame } from '@react-three/fiber'
 import { MeshTransmissionMaterial, Text } from '@react-three/drei'
 import * as THREE from 'three'
 import type { SceneId } from '@/lib/beats'
-import { Figure, Ground, OtherFigure, PALETTE, SceneLight, WorldWord } from './atmosphere'
+import {
+  Figure,
+  Ground,
+  OtherFigure,
+  PALETTE,
+  SceneLight,
+  useMirror,
+  useNarrativeFont,
+  WorldWord,
+} from './atmosphere'
 import { easeOut, presence, stage, StationPhase, useScenePhase } from './phase'
 
 /**
@@ -388,6 +397,8 @@ const WORD_SPAN = 34
 function Corridor() {
   const words = useSceneWords()
   const staff = useRef<THREE.Group>(null)
+  const font = useNarrativeFont()
+  const mirror = useMirror()
   const wordGroup = useRef<THREE.Group>(null)
   const patient = useRef<THREE.Group>(null)
   const wordText = useRef<(TroikaText | null)[]>([])
@@ -498,11 +509,15 @@ function Corridor() {
 
       <group ref={wordGroup}>
         {CORRIDOR_LANES.map(({ x, y }, i) => (
-          <group key={i} position={[x, y, WORD_NEAR - WORD_SPAN * (i / CORRIDOR_LANES.length)]}>
+          <group
+            key={i}
+            position={[x * mirror, y, WORD_NEAR - WORD_SPAN * (i / CORRIDOR_LANES.length)]}
+          >
             <Text
               ref={(node: TroikaText | null) => {
                 wordText.current[i] = node
               }}
+              font={font}
               fontSize={1}
               color={PALETTE.bone}
               anchorX="center"
@@ -918,6 +933,8 @@ function Ocean() {
 function Monster() {
   const labels = useSceneWords()
   const phase = useScenePhase()
+  const font = useNarrativeFont()
+  const mirror = useMirror()
   const shell = useRef<THREE.Group>(null)
   const debris = useRef<THREE.InstancedMesh>(null)
   const organism = useRef<THREE.Mesh>(null)
@@ -1012,7 +1029,11 @@ function Monster() {
       const text = monsterText.current[i]
       const loosen = easeOut(stage(phase.current, 0.3 + w.delay * 0.04, 0.9 + w.delay * 0.04))
       if (node) {
-        node.position.set(w.p[0] * (1 + loosen * 0.16), w.p[1] * (1 + loosen * 0.16), w.p[2])
+        node.position.set(
+          w.p[0] * mirror * (1 + loosen * 0.16),
+          w.p[1] * (1 + loosen * 0.16),
+          w.p[2],
+        )
       }
       if (text) {
         const shown = presence(phase.current) * (0.92 - loosen * 0.22)
@@ -1057,7 +1078,7 @@ function Monster() {
       {words.map((w, i) => (
         <group
           key={i}
-          position={w.p}
+          position={[w.p[0] * mirror, w.p[1], w.p[2]]}
           ref={(node) => {
             wordGroups.current[i] = node
           }}
@@ -1066,11 +1087,17 @@ function Monster() {
             ref={(node: TroikaText | null) => {
               monsterText.current[i] = node
             }}
+            font={font}
             fontSize={0.72}
             color={PALETTE.bone}
             anchorX="center"
             anchorY="middle"
-            letterSpacing={0.06}
+            /*
+              Latin tracking only. In Arabic it pulls joined letters apart, and
+              in Chinese it adds gaps to glyphs that are already full-width — a
+              custom narrative font is the signal that this is not Latin.
+            */
+            letterSpacing={font ? 0 : 0.06}
             renderOrder={20}
             fillOpacity={0}
             material-transparent
@@ -1284,6 +1311,8 @@ function World() {
 function Whole() {
   const wholeWords = useSceneWords()
   const phase = useScenePhase()
+  const font = useNarrativeFont()
+  const mirror = useMirror()
   const orbit = useRef<THREE.Group>(null)
   const swarm = useRef<THREE.InstancedMesh>(null)
   const COUNT = 1400
@@ -1322,7 +1351,7 @@ function Whole() {
          * them. The ring put two of the six behind the reading card and a third
          * off the right edge, so half of what arrives could not be read.
          */
-        to: [2, 3.2 - i * 1.05, 1.8] as [number, number, number],
+        to: [2 * mirror, 3.2 - i * 1.05, 1.8] as [number, number, number],
         delay: i * 0.7,
       })),
     [wholeWords],
@@ -1383,6 +1412,7 @@ function Whole() {
             ref={(node: TroikaText | null) => {
               wholeText.current[i] = node
             }}
+            font={font}
             fontSize={0.42}
             color={PALETTE.bone}
             anchorX="center"
