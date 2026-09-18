@@ -251,6 +251,70 @@ try {
     fail(`/admin did not render a login screen (got: ${adminText.slice(0, 120)})`)
   await admin.close()
 
+  /*
+   * Copy that never got translated.
+   *
+   * Nothing in the type system can see this one: a page whose words still live
+   * in a component renders perfectly in every language, because it renders the
+   * English. So compare what each localised route actually puts on screen with
+   * what the English route does, and treat a block of prose that is
+   * byte-identical as untranslated.
+   *
+   * Two things are identical on purpose. Academic citations are the reference
+   * as published — translating an author or a journal makes a source harder to
+   * find, not easier. And the Community section's own words come from the
+   * database, in English, which is why that page carries the notice saying so.
+   */
+  const { LEARN_SOURCES } = await import('../src/lib/learnSources.ts')
+  // Compared on a normalised prefix: the rendered list item wraps the citation
+  // differently from the source string and carries its DOI link alongside it.
+  const flatten = (text) => text.replace(/\s+/g, ' ').trim()
+  const CITATIONS = LEARN_SOURCES.map((source) => flatten(source.citation).slice(0, 60))
+  const isCitation = (text) => CITATIONS.some((c) => flatten(text).startsWith(c))
+  const ALLOWED_IDENTICAL = [/^\/community/]
+
+  const reader = await browser.newPage()
+  await reader.setViewport(VIEWPORTS[1])
+  const readBlocks = async (url) => {
+    await reader.goto(BASE + url, { waitUntil: 'networkidle0' })
+    return reader.evaluate(() =>
+      [...document.querySelectorAll('main p, main h1, main h2, main h3, main li')]
+        /*
+         * Text explicitly marked as another language is not untranslated copy —
+         * it is a quotation kept in the words it was said in. The narrative
+         * shows the English original beside every translated quote, tagged
+         * `lang="en"` so a screen reader switches voice for it.
+         *
+         * The root element is excluded from that rule on purpose: <html> always
+         * carries a lang, so matching it would drop every block on the page —
+         * including the English side of the comparison, which silently made
+         * this whole check pass no matter what.
+         */
+        .filter((el) => {
+          const tagged = el.closest('[lang]')
+          return !tagged || tagged === document.documentElement
+        })
+        .map((el) => el.innerText.trim())
+        .filter((text) => text.length > 45),
+    )
+  }
+
+  for (const route of ROUTES) {
+    if (ALLOWED_IDENTICAL.some((pattern) => pattern.test(route))) continue
+    const english = new Set(await readBlocks(localePath(DEFAULT_LOCALE, route)))
+    for (const locale of READY_LOCALES) {
+      if (locale.code === DEFAULT_LOCALE) continue
+      const blocks = await readBlocks(localePath(locale.code, route))
+      const untranslated = blocks.filter((text) => english.has(text) && !isCitation(text))
+      for (const text of untranslated.slice(0, 3))
+        fail(
+          `${locale.code} ${route}: this is still the English text — "${text.slice(0, 70)}…" ` +
+            '(move it into src/locales/, or add the route to ALLOWED_IDENTICAL with a reason)',
+        )
+    }
+  }
+  await reader.close()
+
   await browser.close()
 } finally {
   server.kill()

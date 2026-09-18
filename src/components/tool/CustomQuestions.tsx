@@ -1,4 +1,5 @@
 import { useId, useState } from 'react'
+import { useT } from '@/lib/i18n'
 
 export function CustomQuestions({
   questions,
@@ -7,6 +8,7 @@ export function CustomQuestions({
   questions: string[]
   onChange: (questions: string[]) => void
 }) {
+  const t = useT()
   const [draft, setDraft] = useState('')
   const id = useId()
 
@@ -20,11 +22,9 @@ export function CustomQuestions({
   return (
     <div>
       <label htmlFor={id} className="block text-sm font-semibold text-ink">
-        Your own questions
+        {t.tool.ownTitle}
       </label>
-      <p className="mt-1 text-sm leading-relaxed text-ink-soft">
-        Anything the list above does not cover. This is the part that matters most.
-      </p>
+      <p className="mt-1 text-sm leading-relaxed text-ink-soft">{t.tool.ownNote}</p>
 
       <div className="mt-3 flex gap-2">
         <input
@@ -32,7 +32,7 @@ export function CustomQuestions({
           type="text"
           value={draft}
           autoComplete="off"
-          placeholder="Type a question and press Enter"
+          placeholder={t.tool.ownQuestionPlaceholder}
           onChange={(event) => setDraft(event.target.value)}
           onKeyDown={(event) => {
             if (event.key === 'Enter') {
@@ -48,7 +48,7 @@ export function CustomQuestions({
           disabled={!draft.trim()}
           className="btn btn-ghost shrink-0 disabled:opacity-50"
         >
-          Add
+          {t.tool.add}
         </button>
       </div>
 
@@ -65,8 +65,8 @@ export function CustomQuestions({
                 onClick={() => onChange(questions.filter((_, i) => i !== index))}
                 className="shrink-0 rounded-lg px-2 py-1 text-sm font-semibold text-rust-deep hover:bg-cream"
               >
-                Remove
-                <span className="sr-only">{` question: ${question}`}</span>
+                {t.tool.remove}
+                <span className="sr-only">{t.tool.removeLabel.replace('{q}', question)}</span>
               </button>
             </li>
           ))}

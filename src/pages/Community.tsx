@@ -127,17 +127,14 @@ export default function Community() {
     return (
       <>
         <PageHeader
-          eyebrow="Community"
-          title="Somewhere to say it out loud"
-          subhead="Both of the patients we interviewed told us the same thing, separately: a community for this does not exist. This is our attempt at one."
+          eyebrow={t.nav.community}
+          title={t.pages.community.title}
+          subhead={t.pages.community.subhead}
         />
         <Container width="wide" className="py-16">
           <div className="callout max-w-2xl p-7">
-            <p className="eyebrow mb-4">Opening shortly</p>
-            <p className="prose-amr">
-              This section is built but not yet connected. It will open once the team has finished
-              setting it up.
-            </p>
+            <p className="eyebrow mb-4">{t.pages.community.openingSoon}</p>
+            <p className="prose-amr">{t.pages.community.openingSoonBody}</p>
           </div>
         </Container>
       </>
@@ -146,6 +143,13 @@ export default function Community() {
 
   return (
     <>
+      {/*
+        Deliberately unconditional. Most of this page's words come from
+        `community_settings` in the database — the intro, the guidelines, the
+        glossary — which the team writes in English through Supabase Studio,
+        and so does every post. There is nothing here to key a `when` off, and
+        a reader in French should be told that before they start reading.
+      */}
       <UntranslatedNotice />
       <header className="bg-forest py-14 text-cream md:py-16">
         <Container width="wide">
@@ -205,7 +209,7 @@ export default function Community() {
             ) : null}
 
             <section>
-              <h2 className="display-md text-ink">Latest lived experiences</h2>
+              <h2 className="display-md text-ink">{t.pages.community.latest}</h2>
 
               {error ? (
                 <p
@@ -221,12 +225,9 @@ export default function Community() {
 
                 {!loading && posts.length === 0 ? (
                   <div className="card p-7">
-                    <p className="prose-amr">
-                      Nobody has written anything yet. If you have lived through any of this, you
-                      would be the first — and the reason the next person finds this page not empty.
-                    </p>
+                    <p className="prose-amr">{t.pages.community.empty}</p>
                     <Link to="/community/share" className="btn btn-primary mt-5">
-                      Share an experience
+                      {t.titles.share}
                     </Link>
                   </div>
                 ) : null}
@@ -283,7 +284,9 @@ export default function Community() {
 
             {community && community.glossary.length > 0 ? (
               <section className="card p-5">
-                <h2 className="font-display text-base font-bold text-ink">AMR glossary</h2>
+                <h2 className="font-display text-base font-bold text-ink">
+                  {t.pages.community.glossary}
+                </h2>
                 <dl className="mt-3 space-y-3.5">
                   {community.glossary.map((entry) => (
                     <div key={entry.term}>

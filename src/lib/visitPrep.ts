@@ -10,6 +10,8 @@
  * Saving to the browser is opt-in and off by default; see `storage.ts`.
  */
 
+import { DEFAULT_LOCALE, type LocaleCode } from './locales.ts'
+
 export interface VisitPrep {
   appointmentWith: string
   appointmentWhen: string
@@ -43,6 +45,44 @@ export interface QuestionGroup {
   note: string
   questions: { id: string; text: string }[]
 }
+
+/**
+ * The bank in one language.
+ *
+ * Ids are structure and never translated — they are what a saved sheet stores,
+ * so a person who filled the form in English and comes back to it in French
+ * still gets their own questions back, now in French. Translating an id would
+ * silently empty somebody's saved sheet.
+ */
+/**
+ * The subset of the interface catalogue the plain-text export needs.
+ *
+ * Structural, not a copy of it: `toPlainText` runs outside React — it is called
+ * from a download handler — so it cannot reach the provider and is handed what
+ * it needs. Typed against the real dictionary so a renamed key breaks the build
+ * rather than printing `undefined` onto somebody's sheet.
+ */
+export type PlainTextCopy = Pick<
+  import('@/locales/en').Dict['tool'],
+  | 'sheetTitle'
+  | 'prepared'
+  | 'sheetWith'
+  | 'when'
+  | 'sheetDiagnosis'
+  | 'sheetMedications'
+  | 'basics'
+  | 'sheetHappening'
+  | 'sheetQuestions'
+  | 'sheetOwnQuestions'
+  | 'sheetAffecting'
+  | 'sheetLeaveWith'
+  | 'sheetDisclaimer'
+>
+
+export type QuestionCopy = Record<
+  string,
+  { label: string; note: string; questions: Record<string, string> }
+>
 
 /**
  * The question bank.
@@ -158,44 +198,113 @@ function section(title: string, body: string): string {
  * Plain text on purpose: it opens anywhere, it prints legibly, and it does not
  * carry any metadata about where it came from.
  */
-export function toPlainText(prep: VisitPrep, today = new Date()): string {
-  const date = today.toLocaleDateString(undefined, {
+export function toPlainText(
+  prep: VisitPrep,
+  copy: PlainTextCopy,
+  locale: LocaleCode = DEFAULT_LOCALE,
+  today = new Date(),
+): string {
+  /*
+   * The headings here are the ones on the printed sheet, upper-cased for a
+   * plain-text file rather than written out a second time — two copies of the
+   * same heading is two things to translate and one of them to forget.
+   * `toLocaleUpperCase` because upper-casing is language-dependent.
+   */
+  const up = (value: string) => value.toLocaleUpperCase(locale)
+  const groups = getQuestionGroups(locale)
+  const date = today.toLocaleDateString(locale, {
     day: 'numeric',
     month: 'long',
     year: 'numeric',
   })
 
-  let out = `VISIT PREPARATION\nPrepared ${date}\n\n`
+  let out = `${up(copy.sheetTitle)}\n${copy.prepared.replace('{date}', date)}\n\n`
 
   const facts = [
-    prep.appointmentWith && `Appointment with: ${prep.appointmentWith}`,
-    prep.appointmentWhen && `When: ${prep.appointmentWhen}`,
-    prep.diagnosis && `What I have been told I have: ${prep.diagnosis}`,
-    prep.medications && `What I am taking: ${prep.medications}`,
+    prep.appointmentWith && `${copy.sheetWith}: ${prep.appointmentWith}`,
+    prep.appointmentWhen && `${copy.when}: ${prep.appointmentWhen}`,
+    prep.diagnosis && `${copy.sheetDiagnosis}: ${prep.diagnosis}`,
+    prep.medications && `${copy.sheetMedications}: ${prep.medications}`,
   ]
     .filter(Boolean)
     .join('\n')
-  out += section('THE BASICS', facts)
+  out += section(up(copy.basics), facts)
 
-  out += section("WHAT'S BEEN HAPPENING", prep.whatsBeenHappening)
+  out += section(up(copy.sheetHappening), prep.whatsBeenHappening)
 
-  const chosen = QUESTION_GROUPS.map((group) => {
-    const picked = group.questions.filter((q) => prep.selectedQuestions.includes(q.id))
-    if (picked.length === 0) return ''
-    return `${group.label}\n${picked.map((q) => `  [ ] ${q.text}`).join('\n')}`
-  }).filter(Boolean)
+  const chosen = groups
+    .map((group) => {
+      const picked = group.questions.filter((q) => prep.selectedQuestions.includes(q.id))
+      if (picked.length === 0) return ''
+      return `${group.label}\n${picked.map((q) => `  [ ] ${q.text}`).join('\n')}`
+    })
+    .filter(Boolean)
 
   const custom = prep.customQuestions.filter((q) => q.trim())
   if (custom.length > 0)
-    chosen.push(`My own questions\n${custom.map((q) => `  [ ] ${q}`).join('\n')}`)
+    chosen.push(`${copy.sheetOwnQuestions}\n${custom.map((q) => `  [ ] ${q}`).join('\n')}`)
 
-  out += section('QUESTIONS I WANT TO ASK', chosen.join('\n\n'))
-  out += section('HOW THIS IS ACTUALLY AFFECTING ME', prep.howItsAffectingMe)
-  out += section('WHAT I WANT TO LEAVE WITH', prep.wantToLeaveWith)
+  out += section(up(copy.sheetQuestions), chosen.join('\n\n'))
+  out += section(up(copy.sheetAffecting), prep.howItsAffectingMe)
+  out += section(up(copy.sheetLeaveWith), prep.wantToLeaveWith)
 
-  out +=
-    '---\nEducational, not medical advice. This worksheet is for your own use and does\n' +
-    'not replace consultation with a healthcare provider.\n'
+  out += `---\n${copy.sheetDisclaimer}\n`
 
   return out
+}
+
+/* -------------------------------------------------------------------------- */
+/*  Translations                                                               */
+/* -------------------------------------------------------------------------- */
+
+/*
+ * Assigned inside a try because this module is also imported by
+ * scripts/test-locales.mjs, which runs under plain Node where `import.meta.glob`
+ * does not exist.
+ *
+ * It has to be try/catch rather than a `typeof import.meta.glob` guard: Vite
+ * replaces the *call* with a static object at build time and does not define
+ * `import.meta.glob` at runtime, so that guard is false in the browser too and
+ * silently drops every translation. Which is exactly what it did.
+ */
+let QUESTION_COPY: Record<string, { default: QuestionCopy }> = {}
+try {
+  QUESTION_COPY = import.meta.glob<{ default: QuestionCopy }>('/src/locales/questions/*.ts', {
+    eager: true,
+  })
+} catch {
+  // Not running under Vite; the bank falls back to English.
+}
+
+/** Whether the question bank exists in this language. */
+export function areQuestionsTranslated(locale: LocaleCode): boolean {
+  return (
+    locale === DEFAULT_LOCALE || QUESTION_COPY[`/src/locales/questions/${locale}.ts`] !== undefined
+  )
+}
+
+/**
+ * The question bank in the requested language.
+ *
+ * A question that has no translation keeps its English text rather than
+ * disappearing: this sheet gets printed and carried into an appointment, and a
+ * question silently missing from it is worse than one in the wrong language.
+ */
+export function getQuestionGroups(locale: LocaleCode = DEFAULT_LOCALE): QuestionGroup[] {
+  const copy =
+    locale === DEFAULT_LOCALE
+      ? undefined
+      : QUESTION_COPY[`/src/locales/questions/${locale}.ts`]?.default
+  if (!copy) return QUESTION_GROUPS
+
+  return QUESTION_GROUPS.map((group) => {
+    const g = copy[group.id]
+    if (!g) return group
+    return {
+      ...group,
+      label: g.label,
+      note: g.note,
+      questions: group.questions.map((q) => ({ ...q, text: g.questions[q.id] ?? q.text })),
+    }
+  })
 }

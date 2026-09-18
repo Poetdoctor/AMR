@@ -5,23 +5,24 @@ import { Markdown } from '@/components/Markdown'
 import { Disclaimer } from '@/components/Disclaimer'
 import { UntranslatedNotice } from '@/components/UntranslatedNotice'
 import { getArticle, getArticles } from '@/lib/content'
-import { useT } from '@/lib/i18n'
+import { useI18n, useT } from '@/lib/i18n'
 import { usePageTitle } from '@/lib/usePageTitle'
 import NotFound from './NotFound'
 
 export default function Article() {
   const t = useT()
+  const { locale } = useI18n()
   const { slug } = useParams()
-  const article = slug ? getArticle(slug) : undefined
+  const article = slug ? getArticle(slug, locale.code) : undefined
   usePageTitle(article ? `${article.title} — ${t.titles.learn}` : undefined)
 
   if (!article) return <NotFound />
 
-  const others = getArticles().filter((item) => item.slug !== article.slug)
+  const others = getArticles(locale.code).filter((item) => item.slug !== article.slug)
 
   return (
     <>
-      <UntranslatedNotice />
+      <UntranslatedNotice when={!article.translated} />
       <header className="border-b border-sand-line bg-cream-deep py-14 md:py-20">
         <Container width="wide">
           <Link

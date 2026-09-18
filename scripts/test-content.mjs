@@ -78,19 +78,49 @@ const COLLECTIONS = {
   learn: ['title', 'summary', 'order'],
 }
 
-for (const [collection, required] of Object.entries(COLLECTIONS)) {
-  const dir = path.join(root, 'src/content', collection)
-  let files
-  try {
-    files = readdirSync(dir).filter((f) => f.endsWith('.md'))
-  } catch {
-    failures.push(`collection ${collection}: directory missing`)
-    continue
-  }
-  check(files.length > 0, `collection ${collection}: no entries`)
+/*
+ * Content lives one folder per language — src/content/learn/en/foo.md — and
+ * every language's files are held to the same standard. A French article with
+ * an empty title or a body that never got pasted in is exactly as broken as an
+ * English one, and rather less likely to be spotted by the team.
+ */
+const { READY_LOCALES, DEFAULT_LOCALE } = await import(path.join(root, 'src/lib/locales.ts'))
 
-  for (const file of files) {
-    const { data, body } = parseFrontmatter(readFileSync(path.join(dir, file), 'utf8'))
+for (const [collection, required] of Object.entries(COLLECTIONS)) {
+  const files = []
+  for (const locale of READY_LOCALES) {
+    const dir = path.join(root, 'src/content', collection, locale.code)
+    let names
+    try {
+      names = readdirSync(dir).filter((f) => f.endsWith('.md'))
+    } catch {
+      // Only the default locale must exist; the rest are translated over time.
+      if (locale.code === DEFAULT_LOCALE)
+        failures.push(`collection ${collection}: ${locale.code} directory missing`)
+      continue
+    }
+    if (locale.code === DEFAULT_LOCALE)
+      check(names.length > 0, `collection ${collection}: no entries`)
+    files.push(...names.map((name) => ({ name, locale: locale.code, dir })))
+  }
+
+  /*
+   * A translation is keyed by filename, so a typo in one is not a new article —
+   * it is an article that silently never shows up in that language.
+   */
+  const english = new Set(files.filter((f) => f.locale === DEFAULT_LOCALE).map((f) => f.name))
+  for (const file of files)
+    if (file.locale !== DEFAULT_LOCALE)
+      check(
+        english.has(file.name),
+        `${collection}/${file.locale}/${file.name}: no ${DEFAULT_LOCALE} entry with this filename — ` +
+          'a translation is matched to its original by filename, so this one can never be reached',
+      )
+
+  for (const { name, locale, dir } of files) {
+    // Name the language: with several, `learn/foo.md` does not say which broke.
+    const file = `${locale}/${name}`
+    const { data, body } = parseFrontmatter(readFileSync(path.join(dir, name), 'utf8'))
     for (const field of required) {
       // The team collection deliberately allows blank fields (an entry that
       // hasn't been filled in yet); it just must parse.

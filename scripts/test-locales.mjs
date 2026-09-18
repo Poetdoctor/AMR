@@ -38,7 +38,9 @@ const { LOCALES, READY_LOCALES, DEFAULT_LOCALE } = await import(
 const SAME_IN_ANY_LANGUAGE = {
   'site.short': 'the wordmark in the header lockup',
   'notFound.eyebrow': 'the number 404',
+  'home.eyebrow': 'the team\u2019s own name, and iGEM\u2019s',
   'nav.menu': 'borrowed into French unchanged',
+  'pages.learn.sources': 'identical in French',
   'nav.mission': 'identical in French',
   'titles.mission': 'identical in French',
 }
@@ -130,6 +132,99 @@ for (const locale of READY_LOCALES) {
       (dict[key] ?? '').trim().length > 20,
       `${locale.code}: "${key}" is missing or too short — the medical disclaimer must be readable in every language the site offers`,
     )
+}
+
+/* -------------------------------------------------------------------------- */
+/*  Narrative and question bank                                                */
+/* -------------------------------------------------------------------------- */
+
+/*
+ * These two are not part of the interface catalogue and so are not covered by
+ * its type: the narrative is keyed by beat, the question bank by question id.
+ * Both fall back to English silently and correctly at runtime, which is the
+ * right behaviour and also the reason a half-finished translation of either
+ * would never announce itself.
+ */
+const { BEATS } = await import(path.join(root, 'src/lib/beats.ts'))
+const { QUESTION_GROUPS } = await import(path.join(root, 'src/lib/visitPrep.ts'))
+
+for (const locale of READY_LOCALES) {
+  if (locale.code === DEFAULT_LOCALE) continue
+
+  const narrativePath = path.join(root, `src/locales/narrative/${locale.code}.ts`)
+  let narrative
+  try {
+    narrative = (await import(narrativePath)).default
+  } catch {
+    failures.push(
+      `${locale.code}: no narrative translation (src/locales/narrative/${locale.code}.ts) — ` +
+        'the Home page will silently render the English story',
+    )
+  }
+
+  if (narrative) {
+    for (const beat of BEATS) {
+      const copy = narrative.beats[beat.id]
+      if (!copy) {
+        failures.push(`${locale.code} narrative: beat "${beat.id}" is missing`)
+        continue
+      }
+      check(copy.title?.trim(), `${locale.code} narrative: beat "${beat.id}" has no title`)
+      check(
+        copy.words.length === beat.words.length,
+        `${locale.code} narrative: beat "${beat.id}" has ${copy.words.length} words, English has ${beat.words.length}`,
+      )
+      check(
+        copy.body.length === beat.body.length,
+        `${locale.code} narrative: beat "${beat.id}" has ${copy.body.length} paragraphs, English has ${beat.body.length}`,
+      )
+      /*
+       * Quotes are matched to their English original by position, so a missing
+       * one does not shift the others — it just loses the original that the
+       * page promises to keep reachable.
+       */
+      check(
+        copy.quotes.length === beat.quotes.length,
+        `${locale.code} narrative: beat "${beat.id}" has ${copy.quotes.length} quotes, English has ${beat.quotes.length} — ` +
+          'quotes are paired with their originals by position',
+      )
+    }
+    for (const act of [1, 2, 3, 4])
+      check(narrative.acts[act]?.trim(), `${locale.code} narrative: act ${act} has no heading`)
+  }
+
+  const questionsPath = path.join(root, `src/locales/questions/${locale.code}.ts`)
+  let questions
+  try {
+    questions = (await import(questionsPath)).default
+  } catch {
+    failures.push(
+      `${locale.code}: no question bank (src/locales/questions/${locale.code}.ts) — ` +
+        'the visit-prep sheet somebody prints and carries would be in English',
+    )
+  }
+
+  if (questions)
+    for (const group of QUESTION_GROUPS) {
+      const copy = questions[group.id]
+      if (!copy) {
+        failures.push(`${locale.code} questions: group "${group.id}" is missing`)
+        continue
+      }
+      check(copy.label?.trim(), `${locale.code} questions: group "${group.id}" has no label`)
+      check(copy.note?.trim(), `${locale.code} questions: group "${group.id}" has no note`)
+      for (const question of group.questions)
+        check(
+          copy.questions[question.id]?.trim(),
+          `${locale.code} questions: "${group.id}/${question.id}" is missing — ` +
+            'it would print in English on a sheet that is otherwise translated',
+        )
+      for (const id of Object.keys(copy.questions))
+        check(
+          group.questions.some((q) => q.id === id),
+          `${locale.code} questions: "${group.id}/${id}" is not a question in the English bank`,
+        )
+    }
 }
 
 if (failures.length) {

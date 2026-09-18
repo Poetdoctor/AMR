@@ -47,59 +47,39 @@ export default function Mission() {
     <>
       <UntranslatedNotice />
       <PageHeader
-        eyebrow="Our work"
-        title="What we're doing, and why"
-        subhead="Three stages, in order. The literature search is finished; we're at the start of the second one, which is where you come in."
+        eyebrow={t.pages.mission.eyebrow}
+        title={t.pages.mission.title}
+        subhead={t.pages.mission.subhead}
       />
 
       <Container width="wide" className="pb-8">
-        <Stage number="01" title="The problem">
-          <p>
-            Antimicrobial resistance is usually counted: prescriptions written, resistant samples,
-            days in hospital, dollars. British Columbia has some of the best of that data anywhere:
-            nineteen years of it, fifty-one million prescriptions, a stewardship programme that cut
-            antibiotic use in small children by more than half. It is genuinely good work, and it
-            describes an organism rather than a person.
-          </p>
-          <p>
-            We spent this spring reading everything we could find on the other side of it, and three
-            things stood out. Most of what exists comes from hospital samples, which systematically
-            misses the people least likely to end up in a hospital record. The studies that do ask
-            patients directly are small, scattered across different countries and different
-            infections, and almost none of them are from BC. And the same barriers keep surfacing in
-            all of them anyway: shame, isolation, silence, cost, and the plain fact that nobody
-            explained the diagnosis.
-          </p>
-          <p>
-            The burden also falls unevenly. Our review kept landing on the same groups: people in
-            long-term care, people experiencing homelessness, refugees, Indigenous communities
-            living with underfunded infrastructure, cancer patients, newborns, and the healthcare
-            workers alongside them. Resistance follows the fault lines that were already there. That
-            makes it an equity problem, not just a microbiology one.
-          </p>
+        <Stage number="01" title={t.pages.mission.s1Title}>
+          <p>{t.pages.mission.s1a}</p>
+          <p>{t.pages.mission.s1b}</p>
+          <p>{t.pages.mission.s1c}</p>
         </Stage>
 
         <Stage
           number="02"
-          title="What we're doing"
+          title={t.pages.mission.s2Title}
           aside={
             <ul className="grid list-none gap-5 sm:grid-cols-2">
               {[
                 {
-                  title: 'Ask the people it happened to.',
-                  body: 'Surveys, one-to-one interviews and written accounts, from patients, from the family and friends who looked after them, and from the nurses and physicians who treat these infections in BC.',
+                  title: t.pages.mission.card1Title,
+                  body: t.pages.mission.card1Body,
                 },
                 {
-                  title: 'Name the barriers, in their words.',
-                  body: 'Turn what we hear into an honest map of the psychosocial barriers people actually run into, starting from what exists in each community rather than what it lacks.',
+                  title: t.pages.mission.card2Title,
+                  body: t.pages.mission.card2Body,
                 },
                 {
-                  title: 'Fix the explaining problem.',
-                  body: 'With UBC Geering Up we’re building AMR teaching for school-age students, and we publish patient and clinician interviews on our social channels, because “nobody told me” came up too often to ignore.',
+                  title: t.pages.mission.card3Title,
+                  body: t.pages.mission.card3Body,
                 },
                 {
-                  title: 'Take it back to the bench.',
-                  body: 'Use the map to steer our own team’s laboratory work, and publish the whole thing in plain language, free to read, for patients as well as researchers.',
+                  title: t.pages.mission.card4Title,
+                  body: t.pages.mission.card4Body,
                 },
               ].map((item) => (
                 <li key={item.title} className="card p-6">
@@ -114,40 +94,22 @@ export default function Mission() {
             </ul>
           }
         >
-          <p>
-            The reading is done, and we've been learning from people who know this from the inside.
-            Dr. Bob Hancock, Canada Research Chair in Health and Genomics at UBC, walked us through
-            the science and where public understanding of it falls short. Dr. Richard Lester, an
-            infectious disease physician, showed us how this looks from the clinic. And Sunny Loo,
-            who lives with vasculitis and long-term antibiotic dependency and is a patient partner
-            on the BC Antimicrobial Stewardship Program, has been shaping what we ask, and how we
-            ask it. Now we're going to the people the papers are about.
-          </p>
+          <p>{t.pages.mission.s2a}</p>
         </Stage>
 
-        <Stage number="03" title="What we hope changes">
-          <p>
-            That a patient with a resistant infection gets asked how they're coping, not only how
-            the wound looks. That nobody spends a week in an isolation room without being told why,
-            in words they can use with their own family. That BC has patient-side evidence at all,
-            so the next strategy written here can be built for the people it lands hardest on,
-            rather than around them. And that the next team of students designing something for AMR
-            starts by reading what patients said, because it exists and it's easy to find.
-          </p>
-          <p>
-            We're one undergraduate team with one season. We're not going to fix this. We can make
-            the human side of it harder to overlook.
-          </p>
+        <Stage number="03" title={t.pages.mission.s3Title}>
+          <p>{t.pages.mission.s3a}</p>
+          <p>{t.pages.mission.s3b}</p>
         </Stage>
       </Container>
 
       <Container width="wide" className="pb-20 md:pb-28">
         <Callout
-          title="Stage two only works if people talk to us"
+          title={t.pages.mission.calloutTitle}
           footer={
             site.shareExperienceUrl ? (
               <a className="btn btn-primary" href={site.shareExperienceUrl}>
-                Share your experience
+                {t.pages.mission.share}
               </a>
             ) : (
               <div>
@@ -155,19 +117,14 @@ export default function Mission() {
                   className="btn btn-primary cursor-not-allowed opacity-60"
                   aria-disabled="true"
                 >
-                  Share your experience
+                  {t.pages.mission.share}
                 </span>
-                <p className="mt-3 text-sm text-ink-faint">
-                  We're setting up the intake form for this. It opens shortly.
-                </p>
+                <p className="mt-3 text-sm text-ink-faint">{t.pages.mission.shareSoon}</p>
               </div>
             )
           }
         >
-          <p>
-            Everything above depends on hearing from people who have lived it. If you have, ten
-            minutes of your time changes what we're able to say.
-          </p>
+          <p>{t.pages.mission.calloutBody}</p>
         </Callout>
       </Container>
     </>

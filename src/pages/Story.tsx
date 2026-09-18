@@ -4,23 +4,24 @@ import { Container } from '@/components/Container'
 import { Markdown } from '@/components/Markdown'
 import { UntranslatedNotice } from '@/components/UntranslatedNotice'
 import { getStories, getStory } from '@/lib/content'
-import { useT } from '@/lib/i18n'
+import { useI18n, useT } from '@/lib/i18n'
 import { usePageTitle } from '@/lib/usePageTitle'
 import NotFound from './NotFound'
 
 export default function Story() {
   const t = useT()
+  const { locale } = useI18n()
   const { slug } = useParams()
-  const story = slug ? getStory(slug) : undefined
+  const story = slug ? getStory(slug, locale.code) : undefined
   usePageTitle(story ? `${story.displayName} — ${t.titles.stories}` : undefined)
 
   if (!story) return <NotFound />
 
-  const others = getStories().filter((item) => item.slug !== story.slug)
+  const others = getStories(locale.code).filter((item) => item.slug !== story.slug)
 
   return (
     <>
-      <UntranslatedNotice />
+      <UntranslatedNotice when={!story.translated} />
       <header className="border-b border-sand-line bg-cream-deep py-14 md:py-20">
         <Container width="wide">
           <Link

@@ -19,13 +19,24 @@ import { Container } from './Container'
  * wraps a whole page, so a screen reader switches voice instead of reading
  * English words with French phonetics.
  *
- * Phase 2 note: once the content collections carry translations, the pages
- * that render this should ask whether *their own* content was translated
- * rather than assuming it was not. Every use of this component is a to-do.
+ * A bare `<UntranslatedNotice />` with no `when` is a to-do: it means that
+ * page's copy still lives in a component and has not been moved anywhere a
+ * translator can reach it.
  */
-export function UntranslatedNotice({ className = '' }: { className?: string }) {
+export function UntranslatedNotice({
+  when = true,
+  className = '',
+}: {
+  /**
+   * Whether this page's content actually fell back to English. Pages backed by
+   * the content collections pass the entry's own `translated` flag; pages whose
+   * copy still lives in components leave it at the default until it moves.
+   */
+  when?: boolean
+  className?: string
+}) {
   const { locale, t } = useI18n()
-  if (locale.code === DEFAULT_LOCALE) return null
+  if (!when || locale.code === DEFAULT_LOCALE) return null
 
   return (
     <div className={`border-b border-sand-line bg-sand ${className}`}>

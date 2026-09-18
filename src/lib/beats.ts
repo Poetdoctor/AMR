@@ -18,6 +18,8 @@
  * Every quote is verbatim from docs/doc-a-amr-beyond-the-diagnosis.pdf.
  */
 
+import { DEFAULT_LOCALE, type LocaleCode } from './locales.ts'
+
 export type SceneId =
   | 'fall' // a path, and the floor tilting under it
   | 'rollercoaster' // the terrain moving while the person stands still
@@ -31,13 +33,37 @@ export type SceneId =
   | 'whole' // everything turns, and faces the person
   | 'breath' // the last thing: one light, one sentence, and then everyone else
 
+export type BeatId =
+  | 'fall'
+  | 'rollercoaster'
+  | 'weight'
+  | 'corridor'
+  | 'machine'
+  | 'glass'
+  | 'ocean'
+  | 'monster'
+  | 'world'
+  | 'whole'
+  | 'breath'
+
 export interface Quote {
   text: string
   attribution: string
+  /**
+   * The words as they were actually said, present only when `text` is a
+   * translation of them.
+   *
+   * These are real people's sentences, taken verbatim from the interviews. A
+   * translation of somebody's words is not their words, and on a project whose
+   * whole argument is that patients are not listened to properly, quietly
+   * swapping one for the other would be the wrong thing to do. So a translated
+   * quote is shown as a translation with the original kept beside it.
+   */
+  original?: string
 }
 
 export interface Beat {
-  id: string
+  id: BeatId
   act: 1 | 2 | 3 | 4
   actLabel: string
   title: string
@@ -47,6 +73,27 @@ export interface Beat {
   quotes: Quote[]
   body: string[]
   scene: SceneId
+}
+
+/**
+ * Everything in a beat that is words.
+ *
+ * A translation supplies this and nothing else: the acts, the scenes, the
+ * order and which quote belongs where are structure, identical in every
+ * language, and live once in `BEATS` below.
+ */
+export interface BeatCopy {
+  title: string
+  words: string[]
+  body: string[]
+  /** Parallel to the English `quotes`, in the same order. */
+  quotes: { text: string; attribution: string }[]
+}
+
+export interface NarrativeCopy {
+  acts: Record<1 | 2 | 3 | 4, string>
+  /** `Record`, not a partial — a language cannot translate nine of eleven beats. */
+  beats: Record<BeatId, BeatCopy>
 }
 
 export const ACTS: Record<number, string> = {
@@ -263,3 +310,77 @@ export const BEATS: Beat[] = [
     ],
   },
 ]
+
+/* -------------------------------------------------------------------------- */
+/*  Translations                                                               */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * Narrative copy per language, loaded eagerly.
+ *
+ * Eager because the Home page renders the narrative immediately and both the
+ * 3D and flat paths read from it on their first frame — a lazy import here
+ * would mean a beat of empty scenes, which is the one place on the site where
+ * that would be most visible.
+ */
+/*
+ * Assigned inside a try because this module is also imported by
+ * scripts/test-locales.mjs, which runs under plain Node where `import.meta.glob`
+ * does not exist.
+ *
+ * It has to be try/catch rather than a `typeof import.meta.glob` guard: Vite
+ * replaces the *call* with a static object at build time and does not define
+ * `import.meta.glob` at runtime, so that guard is false in the browser too and
+ * silently drops every translation. Which is exactly what it did.
+ */
+let NARRATIVES: Record<string, { default: NarrativeCopy }> = {}
+try {
+  NARRATIVES = import.meta.glob<{ default: NarrativeCopy }>('/src/locales/narrative/*.ts', {
+    eager: true,
+  })
+} catch {
+  // Not running under Vite; every language falls back to English.
+}
+
+function narrativeFor(locale: LocaleCode): NarrativeCopy | undefined {
+  return NARRATIVES[`/src/locales/narrative/${locale}.ts`]?.default
+}
+
+/** Whether the narrative exists in this language at all. */
+export function isNarrativeTranslated(locale: LocaleCode): boolean {
+  return locale === DEFAULT_LOCALE || narrativeFor(locale) !== undefined
+}
+
+/**
+ * The eleven beats in the requested language, falling back to English whole.
+ *
+ * Falls back as a unit rather than beat by beat: half a story in each of two
+ * languages is worse than one story in a language you may not read, and the
+ * page says which it gave you either way.
+ */
+export function getBeats(locale: LocaleCode = DEFAULT_LOCALE): Beat[] {
+  const copy = locale === DEFAULT_LOCALE ? undefined : narrativeFor(locale)
+  if (!copy) return BEATS
+
+  return BEATS.map((beat) => {
+    const translated = copy.beats[beat.id]
+    return {
+      ...beat,
+      actLabel: copy.acts[beat.act],
+      title: translated.title,
+      words: translated.words,
+      body: translated.body,
+      quotes: beat.quotes.map((quote, i) => {
+        const swap = translated.quotes[i]
+        // A quote nobody translated stays in the words it was said in.
+        if (!swap) return quote
+        return { text: swap.text, attribution: swap.attribution, original: quote.text }
+      }),
+    }
+  })
+}
+
+/** Act headings in the requested language. */
+export function getActs(locale: LocaleCode = DEFAULT_LOCALE): Record<number, string> {
+  return (locale === DEFAULT_LOCALE ? undefined : narrativeFor(locale)?.acts) ?? ACTS
+}

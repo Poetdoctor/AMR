@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { Container } from '@/components/Container'
 import { BeatPanel } from './BeatPanel'
-import { BEATS } from '@/lib/beats'
+import { getBeats } from '@/lib/beats'
+import { useI18n } from '@/lib/i18n'
 import { SceneStill } from './SceneStill'
 
 /**
@@ -18,19 +19,21 @@ import { SceneStill } from './SceneStill'
  * added itself.
  */
 export function FlatNarrative({ animate }: { animate: boolean }) {
+  const { locale } = useI18n()
+  const beats = getBeats(locale.code)
   const [visible, setVisible] = useState<Set<string>>(
-    new Set(animate ? [] : BEATS.map((b) => b.id)),
+    new Set(animate ? [] : beats.map((b) => b.id)),
   )
   const refs = useRef(new Map<string, HTMLElement>())
 
   useEffect(() => {
     if (!animate) {
-      setVisible(new Set(BEATS.map((b) => b.id)))
+      setVisible(new Set(beats.map((b) => b.id)))
       return
     }
     if (typeof IntersectionObserver === 'undefined') {
       // No observer: show everything rather than leaving the page blank.
-      setVisible(new Set(BEATS.map((b) => b.id)))
+      setVisible(new Set(beats.map((b) => b.id)))
       return
     }
 
@@ -52,7 +55,7 @@ export function FlatNarrative({ animate }: { animate: boolean }) {
 
   return (
     <div>
-      {BEATS.map((beat, index) => (
+      {beats.map((beat, index) => (
         <section
           key={beat.id}
           data-beat={beat.id}

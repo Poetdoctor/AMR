@@ -1,15 +1,62 @@
-import { parseFrontmatter, readString } from './frontmatter'
+import { parseFrontmatter, readString } from './frontmatter.ts'
+import { DEFAULT_LOCALE, type LocaleCode } from './locales.ts'
 
 /**
  * Content collections.
  *
- * Every collection here is markdown on disk under `src/content/`, edited
- * through the Decap CMS admin UI rather than by hand. Nothing in this file
- * hardcodes an entry: adding, editing or removing a person or an article is a
- * content change, never a code change.
+ * Every collection here is markdown on disk under `src/content/<name>/<locale>/`,
+ * edited through the Decap CMS admin UI rather than by hand. Nothing in this
+ * file hardcodes an entry: adding, editing or removing a person or an article
+ * is a content change, never a code change.
+ *
+ * Translations sit beside the English rather than replacing it. A page asks for
+ * a locale; if the entry has not been translated yet it gets the English one
+ * with `translated: false`, and the page says so (see `UntranslatedNotice`)
+ * rather than going blank or silently pretending. That is what lets the team
+ * publish an article the day it is written instead of holding it until four
+ * translations are ready.
+ *
+ * The filename is the slug and is shared across languages, so `/learn/foo` and
+ * `/fr/learn/foo` are the same article and the language switcher can move
+ * between them without a lookup table.
  */
 
-export interface TeamMember {
+/** Everything a page needs to know about how it got the text it is showing. */
+interface Translatable {
+  /** False when this entry fell back to English because no translation exists. */
+  translated: boolean
+}
+
+function fileSlug(path: string): string {
+  return path.split('/').pop()!.replace(/\.md$/, '')
+}
+
+/** `/src/content/learn/fr/foo.md` → `fr` */
+function fileLocale(path: string): string {
+  return path.split('/').at(-2)!
+}
+
+/**
+ * Groups raw files by locale, then slug.
+ *
+ * A file in a folder we do not recognise as a locale is ignored rather than
+ * guessed at — a stray directory should not start publishing itself.
+ */
+function byLocale(files: Record<string, string>): Map<string, Map<string, string>> {
+  const out = new Map<string, Map<string, string>>()
+  for (const [path, source] of Object.entries(files)) {
+    const locale = fileLocale(path)
+    if (!out.has(locale)) out.set(locale, new Map())
+    out.get(locale)!.set(fileSlug(path), source)
+  }
+  return out
+}
+
+/* -------------------------------------------------------------------------- */
+/*  Team                                                                       */
+/* -------------------------------------------------------------------------- */
+
+export interface TeamMember extends Translatable {
   slug: string
   name: string
   role: string
@@ -20,17 +67,15 @@ export interface TeamMember {
   complete: boolean
 }
 
-function fileSlug(path: string): string {
-  return path.split('/').pop()!.replace(/\.md$/, '')
-}
+const teamFiles = byLocale(
+  import.meta.glob('/src/content/team/*/*.md', {
+    query: '?raw',
+    import: 'default',
+    eager: true,
+  }) as Record<string, string>,
+)
 
-const teamFiles = import.meta.glob('/src/content/team/*.md', {
-  query: '?raw',
-  import: 'default',
-  eager: true,
-}) as Record<string, string>
-
-function toTeamMember(path: string, source: string): TeamMember {
+function toTeamMember(slug: string, source: string, translated: boolean): TeamMember {
   const { data, body } = parseFrontmatter(source)
   const name = readString(data, 'name')
   const role = readString(data, 'role')
@@ -41,7 +86,7 @@ function toTeamMember(path: string, source: string): TeamMember {
   const orderRaw = Number(readString(data, 'order'))
 
   return {
-    slug: fileSlug(path),
+    slug,
     name,
     role,
     quote,
@@ -57,21 +102,29 @@ function toTeamMember(path: string, source: string): TeamMember {
      * hidden until he fills them in through /admin.
      */
     complete: Boolean(name && role && quote),
+    translated,
   }
 }
 
-const allTeam: TeamMember[] = Object.entries(teamFiles)
-  .map(([path, source]) => toTeamMember(path, source))
-  .sort((a, b) => a.order - b.order || a.name.localeCompare(b.name))
+function teamFor(locale: LocaleCode): TeamMember[] {
+  const base = teamFiles.get(DEFAULT_LOCALE) ?? new Map()
+  const translations = teamFiles.get(locale) ?? new Map()
+  return [...base.keys()]
+    .map((slug) => {
+      const source = translations.get(slug)
+      return toTeamMember(slug, source ?? base.get(slug)!, source !== undefined)
+    })
+    .sort((a, b) => a.order - b.order || a.name.localeCompare(b.name))
+}
 
 /** Entries ready for the public grid. */
-export function getTeam(): TeamMember[] {
-  return allTeam.filter((member) => member.complete)
+export function getTeam(locale: LocaleCode = DEFAULT_LOCALE): TeamMember[] {
+  return teamFor(locale).filter((member) => member.complete)
 }
 
 /** Every entry including unfinished ones — for counts and admin-facing views. */
-export function getAllTeamEntries(): TeamMember[] {
-  return allTeam
+export function getAllTeamEntries(locale: LocaleCode = DEFAULT_LOCALE): TeamMember[] {
+  return teamFor(locale)
 }
 
 /* -------------------------------------------------------------------------- */
@@ -93,7 +146,7 @@ export function getAllTeamEntries(): TeamMember[] {
  */
 export type Attribution = 'name' | 'anonymous' | 'withheld'
 
-export interface Story {
+export interface Story extends Translatable {
   slug: string
   /** The real name. Only ever shown when `attribution` is 'name'. */
   name: string
@@ -114,21 +167,38 @@ function toAttribution(value: string): Attribution {
   return value === 'name' || value === 'withheld' ? value : 'anonymous'
 }
 
-const storyFiles = import.meta.glob('/src/content/stories/*.md', {
-  query: '?raw',
-  import: 'default',
-  eager: true,
-}) as Record<string, string>
+const storyFiles = byLocale(
+  import.meta.glob('/src/content/stories/*/*.md', {
+    query: '?raw',
+    import: 'default',
+    eager: true,
+  }) as Record<string, string>,
+)
 
-function toStory(path: string, source: string): Story {
+/**
+ * Consent is a property of the person, not of a language.
+ *
+ * `name` and `attribution` are always read from the English entry even when a
+ * translation is being rendered, and the CMS marks both fields `i18n:
+ * duplicate` so they cannot be edited on a translation tab. Both halves matter:
+ * without this, a translated file edited by hand — or a stale copy left behind
+ * when somebody changed their mind — could publish under a real name a person
+ * has since withdrawn, or republish a story withheld everywhere else. A
+ * withdrawal has to take effect in every language at once or it is not a
+ * withdrawal.
+ */
+function toStory(slug: string, source: string, consent: string, translated: boolean): Story {
   const { data, body } = parseFrontmatter(source)
-  const name = readString(data, 'name')
+  const consentData = parseFrontmatter(consent).data
+
+  const name = readString(consentData, 'name')
+  const attribution = toAttribution(readString(consentData, 'attribution'))
+
   const anonymousAs = readString(data, 'anonymousAs') || 'A patient'
-  const attribution = toAttribution(readString(data, 'attribution'))
   const orderRaw = Number(readString(data, 'order'))
 
   return {
-    slug: fileSlug(path),
+    slug,
     name,
     anonymousAs,
     displayName: attribution === 'name' ? name : anonymousAs,
@@ -139,27 +209,36 @@ function toStory(path: string, source: string): Story {
     photo: readString(data, 'photo'),
     order: Number.isFinite(orderRaw) && orderRaw > 0 ? orderRaw : 999,
     body,
+    translated,
   }
 }
 
-const allStories: Story[] = Object.entries(storyFiles)
-  .map(([path, source]) => toStory(path, source))
-  .sort((a, b) => a.order - b.order || a.name.localeCompare(b.name))
-
-/** Stories cleared for publication, in reading order. */
-export function getStories(): Story[] {
-  return allStories.filter((story) => story.attribution !== 'withheld')
+function storiesFor(locale: LocaleCode): Story[] {
+  const base = storyFiles.get(DEFAULT_LOCALE) ?? new Map()
+  const translations = storyFiles.get(locale) ?? new Map()
+  return [...base.keys()]
+    .map((slug) => {
+      const english = base.get(slug)!
+      const source = translations.get(slug)
+      return toStory(slug, source ?? english, english, source !== undefined)
+    })
+    .sort((a, b) => a.order - b.order || a.name.localeCompare(b.name))
 }
 
-export function getStory(slug: string): Story | undefined {
-  return getStories().find((story) => story.slug === slug)
+/** Stories cleared for publication, in reading order. */
+export function getStories(locale: LocaleCode = DEFAULT_LOCALE): Story[] {
+  return storiesFor(locale).filter((story) => story.attribution !== 'withheld')
+}
+
+export function getStory(slug: string, locale: LocaleCode = DEFAULT_LOCALE): Story | undefined {
+  return getStories(locale).find((story) => story.slug === slug)
 }
 
 /* -------------------------------------------------------------------------- */
 /*  Learn                                                                      */
 /* -------------------------------------------------------------------------- */
 
-export interface Article {
+export interface Article extends Translatable {
   slug: string
   title: string
   summary: string
@@ -169,53 +248,46 @@ export interface Article {
   readingMinutes: number
 }
 
-const learnFiles = import.meta.glob('/src/content/learn/*.md', {
-  query: '?raw',
-  import: 'default',
-  eager: true,
-}) as Record<string, string>
+const learnFiles = byLocale(
+  import.meta.glob('/src/content/learn/*/*.md', {
+    query: '?raw',
+    import: 'default',
+    eager: true,
+  }) as Record<string, string>,
+)
 
-function toArticle(path: string, source: string): Article {
+function toArticle(slug: string, source: string, translated: boolean): Article {
   const { data, body } = parseFrontmatter(source)
   const orderRaw = Number(readString(data, 'order'))
   const words = body.split(/\s+/).filter(Boolean).length
 
   return {
-    slug: fileSlug(path),
+    slug,
     title: readString(data, 'title'),
     summary: readString(data, 'summary'),
     order: Number.isFinite(orderRaw) && orderRaw > 0 ? orderRaw : 999,
     body,
     readingMinutes: Math.max(1, Math.round(words / 200)),
+    translated,
   }
 }
 
-const allArticles: Article[] = Object.entries(learnFiles)
-  .map(([path, source]) => toArticle(path, source))
-  .filter((article) => article.title !== '')
-  .sort((a, b) => a.order - b.order || a.title.localeCompare(b.title))
-
-export function getArticles(): Article[] {
-  return allArticles
+function articlesFor(locale: LocaleCode): Article[] {
+  const base = learnFiles.get(DEFAULT_LOCALE) ?? new Map()
+  const translations = learnFiles.get(locale) ?? new Map()
+  return [...base.keys()]
+    .map((slug) => {
+      const source = translations.get(slug)
+      return toArticle(slug, source ?? base.get(slug)!, source !== undefined)
+    })
+    .filter((article) => article.title !== '')
+    .sort((a, b) => a.order - b.order || a.title.localeCompare(b.title))
 }
 
-export function getArticle(slug: string): Article | undefined {
-  return allArticles.find((article) => article.slug === slug)
+export function getArticles(locale: LocaleCode = DEFAULT_LOCALE): Article[] {
+  return articlesFor(locale)
 }
 
-/**
- * Academic sources cited at the foot of the Learn landing page, from the works
- * cited of the team's own narrative document.
- */
-export const LEARN_SOURCES = [
-  {
-    citation:
-      'Crago, A.-L., Alexandre, S., Abdesselam, K., Gravel Tropper, D., Hartmann, M., Smith, G., & Lary, T. (2022). Understanding Canadians’ knowledge, attitudes and practices related to antimicrobial resistance and antibiotic use: Results from public opinion research. Canada Communicable Disease Report, 48(11/12).',
-    href: 'https://doi.org/10.14745/ccdr.v48i1112a08',
-  },
-  {
-    citation:
-      'Mellinghoff, S. C., Grossi, A. A., Recanatini, C., Breull-Wierschem, L., Salm, F., Gadebusch-Bondio, M., & Jung, N. (2026). The human cost of resistance: ethical implications of coping with isolation for multidrug resistant organisms. Clinical Microbiology and Infection, 32(8), 1244–1249.',
-    href: 'https://doi.org/10.1016/j.cmi.2026.05.043',
-  },
-] as const
+export function getArticle(slug: string, locale: LocaleCode = DEFAULT_LOCALE): Article | undefined {
+  return articlesFor(locale).find((article) => article.slug === slug)
+}

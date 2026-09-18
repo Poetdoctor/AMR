@@ -5,7 +5,7 @@ import { TeamCard } from '@/components/TeamCard'
 import { ImageFrame } from '@/components/ImageFrame'
 import { UntranslatedNotice } from '@/components/UntranslatedNotice'
 import { getTeam } from '@/lib/content'
-import { useT } from '@/lib/i18n'
+import { useI18n, useT } from '@/lib/i18n'
 import { usePageTitle } from '@/lib/usePageTitle'
 
 /**
@@ -17,16 +17,17 @@ import { usePageTitle } from '@/lib/usePageTitle'
  */
 export default function Team() {
   const t = useT()
+  const { locale } = useI18n()
   usePageTitle(t.titles.team)
-  const members = getTeam()
+  const members = getTeam(locale.code)
 
   return (
     <>
-      <UntranslatedNotice />
+      <UntranslatedNotice when={members.some((m) => !m.translated)} />
       <PageHeader
-        eyebrow="Who we are"
-        title="The six people reading your story"
-        subhead="We're the Human Practices subteam of iGEM UBC. If you write to us, one of us answers. There's no inbox in between."
+        eyebrow={t.pages.team.eyebrow}
+        title={t.pages.team.title}
+        subhead={t.pages.team.subhead}
       />
 
       <Container width="wide" className="py-14 md:py-20">
@@ -55,12 +56,8 @@ export default function Team() {
       </Container>
 
       <Container width="wide" className="pb-16 md:pb-24">
-        <Callout title="iGEM, in one paragraph">
-          <p>
-            iGEM is an international competition where student teams spend a year building something
-            in synthetic biology. Every team has a Human Practices group whose job is to ask whether
-            the thing being built is actually wanted, and by whom. That's us.
-          </p>
+        <Callout title={t.pages.team.igemTitle}>
+          <p>{t.pages.team.igemBody}</p>
         </Callout>
 
         <figure className="mt-12">
@@ -72,9 +69,7 @@ export default function Team() {
             height={526}
             className="rounded-[var(--radius-card)] border border-sand-line"
           />
-          <figcaption className="mt-4 text-sm text-ink-faint">
-            The global iGEM community at the Grand Jamboree.
-          </figcaption>
+          <figcaption className="mt-4 text-sm text-ink-faint">{t.pages.team.jamboree}</figcaption>
         </figure>
       </Container>
     </>

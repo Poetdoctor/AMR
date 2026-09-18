@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react'
+import { createContext, useContext, useMemo, useRef, useState } from 'react'
 import type { ReactElement } from 'react'
 import { useFrame } from '@react-three/fiber'
 import { MeshTransmissionMaterial, Text } from '@react-three/drei'
@@ -6,6 +6,23 @@ import * as THREE from 'three'
 import type { SceneId } from '@/lib/beats'
 import { Figure, Ground, OtherFigure, PALETTE, SceneLight, WorldWord } from './atmosphere'
 import { easeOut, presence, stage, StationPhase, useScenePhase } from './phase'
+
+/**
+ * The words this beat surfaces, from `beats.ts`.
+ *
+ * The scenes used to spell their own fragments out inline, which meant every
+ * word existed twice — once in `beats.ts` for the flat path and the reading
+ * card, and once here for the 3D. Translating one and not the other is then a
+ * matter of time, and it took about ten minutes: the French card read
+ * "Pourquoi ceci ?" while the scene behind it still said "Why this?".
+ *
+ * `useWord(n)` falls back to an empty string rather than throwing, so a beat
+ * whose translation is short one fragment loses that fragment instead of the
+ * whole page.
+ */
+const SceneWords = createContext<string[]>([])
+export const useSceneWords = () => useContext(SceneWords)
+const useWord = (index: number) => useSceneWords()[index] ?? ''
 
 /**
  * Eleven scenes. One person.
@@ -164,13 +181,13 @@ function Fall() {
       </group>
 
       <WorldWord position={[2.4, 2.6, 2]} size={0.46} drift={1} colour={PALETTE.ember}>
-        Hope
+        {useWord(0)}
       </WorldWord>
       <WorldWord position={[3.3, 1.3, 2]} size={0.46} drift={0.8}>
-        Again?
+        {useWord(1)}
       </WorldWord>
       <WorldWord position={[2.6, 0.0, 2]} size={0.48} drift={0.6} colour={PALETTE.rust}>
-        Fear
+        {useWord(2)}
       </WorldWord>
     </group>
   )
@@ -221,16 +238,16 @@ function Rollercoaster() {
       </mesh>
       <Figure position={[0, -1.9, 5]} pose="standing" />
       <WorldWord position={[2.4, 2.6, 2]} size={0.46} flicker={0.8} colour={PALETTE.ember}>
-        Happiness
+        {useWord(0)}
       </WorldWord>
       <WorldWord position={[3.3, 1.3, 2]} size={0.46} flicker={0.6} colour={PALETTE.rust}>
-        Despair
+        {useWord(1)}
       </WorldWord>
       <WorldWord position={[2.6, 0.0, 2]} size={0.48} flicker={0.7}>
-        Encouraged
+        {useWord(2)}
       </WorldWord>
       <WorldWord position={[3.4, -1.3, 2]} size={0.44} flicker={0.5} colour={PALETTE.rust}>
-        Back in the dumps
+        {useWord(3)}
       </WorldWord>
     </group>
   )
@@ -326,13 +343,13 @@ function Weight() {
         <Figure pose={collapsed ? 'collapsing' : 'bearing'} scale={1.45} />
       </group>
       <WorldWord position={[2.4, 2.6, 2]} size={0.46} flicker={0.4}>
-        Another course
+        {useWord(0)}
       </WorldWord>
       <WorldWord position={[3.3, 1.3, 2]} size={0.46} flicker={0.5}>
-        And another
+        {useWord(1)}
       </WorldWord>
       <WorldWord position={[2.6, 0.0, 2]} size={0.48} colour={PALETTE.rust}>
-        Enough
+        {useWord(2)}
       </WorldWord>
     </group>
   )
@@ -357,11 +374,11 @@ function Weight() {
  * Four, not five — these are the beat's own words, and `beats.ts` is the only
  * place they are allowed to come from. "Results" was invented here.
  */
-const CORRIDOR_WORDS = [
-  { word: 'Diagnosis', x: 4.3, y: 4.3 },
-  { word: 'Prescription', x: 0.8, y: 1.6 },
-  { word: 'Test', x: 4.5, y: 0.2 },
-  { word: 'Procedure', x: 0.9, y: 3.5 },
+const CORRIDOR_LANES = [
+  { x: 4.3, y: 4.3 },
+  { x: 0.8, y: 1.6 },
+  { x: 4.5, y: 0.2 },
+  { x: 0.9, y: 3.5 },
 ]
 type TroikaText = THREE.Object3D & { fillOpacity: number; outlineOpacity: number }
 
@@ -369,8 +386,9 @@ const WORD_NEAR = -5
 const WORD_SPAN = 34
 
 function Corridor() {
+  const words = useSceneWords()
   const staff = useRef<THREE.Group>(null)
-  const words = useRef<THREE.Group>(null)
+  const wordGroup = useRef<THREE.Group>(null)
   const patient = useRef<THREE.Group>(null)
   const wordText = useRef<(TroikaText | null)[]>([])
   const phase = useScenePhase()
@@ -395,7 +413,7 @@ function Corridor() {
       if (person.direction > 0 && child.position.z > 18) child.position.z = -STATION_REACH
       if (person.direction < 0 && child.position.z < -STATION_REACH) child.position.z = 18
     })
-    words.current?.children.forEach((child, i) => {
+    wordGroup.current?.children.forEach((child, i) => {
       child.position.z += 11 * delta
       if (child.position.z > WORD_NEAR) child.position.z -= WORD_SPAN
       /*
@@ -478,9 +496,9 @@ function Corridor() {
         ))}
       </group>
 
-      <group ref={words}>
-        {CORRIDOR_WORDS.map(({ word, x, y }, i) => (
-          <group key={word} position={[x, y, WORD_NEAR - WORD_SPAN * (i / CORRIDOR_WORDS.length)]}>
+      <group ref={wordGroup}>
+        {CORRIDOR_LANES.map(({ x, y }, i) => (
+          <group key={i} position={[x, y, WORD_NEAR - WORD_SPAN * (i / CORRIDOR_LANES.length)]}>
             <Text
               ref={(node: TroikaText | null) => {
                 wordText.current[i] = node
@@ -498,7 +516,7 @@ function Corridor() {
               material-depthTest={false}
               material-depthWrite={false}
             >
-              {word}
+              {words[i] ?? ''}
             </Text>
           </group>
         ))}
@@ -637,13 +655,13 @@ function Machine() {
 
       <Figure position={[0, -3.2, 1.5]} scale={0.95} pose="unsteady" />
       <WorldWord position={[2.4, 2.6, 2]} size={0.46} flicker={0.5}>
-        Why this?
+        {useWord(0)}
       </WorldWord>
       <WorldWord position={[3.3, 1.3, 2]} size={0.46} flicker={0.4}>
-        Why now?
+        {useWord(1)}
       </WorldWord>
       <WorldWord position={[2.6, 0.0, 2]} size={0.48} colour={PALETTE.rust}>
-        Nobody said
+        {useWord(2)}
       </WorldWord>
     </group>
   )
@@ -755,10 +773,10 @@ function Glass() {
         the panes and read at a proper size.
       */}
       <WorldWord position={[2.4, 2.6, 2]} size={0.46} opacity={0.9} flicker={0.3}>
-        Am I dangerous?
+        {useWord(0)}
       </WorldWord>
       <WorldWord position={[3.3, 1.3, 2]} size={0.46} opacity={0.85} flicker={0.25}>
-        Am I contagious?
+        {useWord(1)}
       </WorldWord>
       {/*
         On the grid like every other fragment. At size 0.96 and three units
@@ -768,7 +786,7 @@ function Glass() {
       */}
       {/* the fourth slot, not the third: the third sits on the person */}
       <WorldWord position={[3.4, -1.3, 2]} size={0.46} colour={PALETTE.rust} flicker={0.2}>
-        Am I dirty?
+        {useWord(2)}
       </WorldWord>
     </group>
   )
@@ -877,13 +895,13 @@ function Ocean() {
 
       <Figure position={[0, -2.3, 0]} pose="standing" />
       <WorldWord position={[2.4, 2.6, 2]} size={0.46} opacity={0.85} flicker={0.3}>
-        Nobody else
+        {useWord(0)}
       </WorldWord>
       <WorldWord position={[3.3, 1.3, 2]} size={0.46} opacity={0.8} flicker={0.25}>
-        Anywhere
+        {useWord(1)}
       </WorldWord>
       <WorldWord position={[2.6, 0.0, 2]} size={0.48} opacity={0.85} colour={PALETTE.rust}>
-        Surely somebody
+        {useWord(2)}
       </WorldWord>
     </group>
   )
@@ -898,6 +916,7 @@ function Ocean() {
  * exists to show the difference in scale.
  */
 function Monster() {
+  const labels = useSceneWords()
   const phase = useScenePhase()
   const shell = useRef<THREE.Group>(null)
   const debris = useRef<THREE.InstancedMesh>(null)
@@ -922,14 +941,21 @@ function Monster() {
   const words = useMemo(
     () =>
       [
-        { word: 'SUPERBUG', p: [2.9, 3.3, 1.2] },
-        { word: 'UNTREATABLE', p: [0.8, 2.0, 0.4] },
-        { word: 'DOOMED', p: [3.1, 0.7, 1.6] },
-        { word: 'INFECTIOUS', p: [1.1, -0.6, 0.6] },
-        { word: 'SUPERBUG', p: [2.9, -2.0, 1.2] },
-        { word: 'UNTREATABLE', p: [0.5, -3.2, 0.4] },
-      ].map((w, i) => ({ ...w, p: w.p as [number, number, number], delay: i * 0.9 })),
-    [],
+        // Six slots, four words: the last two repeat, which is the point — the
+        // same handful of words, arriving from every direction at once.
+        { p: [2.9, 3.3, 1.2], word: 0 },
+        { p: [0.8, 2.0, 0.4], word: 1 },
+        { p: [3.1, 0.7, 1.6], word: 2 },
+        { p: [1.1, -0.6, 0.6], word: 3 },
+        { p: [2.9, -2.0, 1.2], word: 0 },
+        { p: [0.5, -3.2, 0.4], word: 1 },
+      ].map((w, i) => ({
+        ...w,
+        p: w.p as [number, number, number],
+        word: labels[w.word] ?? '',
+        delay: i * 0.9,
+      })),
+    [labels],
   )
 
   const fragments = useMemo(() => {
@@ -1233,16 +1259,16 @@ function World() {
       <Ground y={-3.4} size={80} opacity={0.8} />
 
       <WorldWord position={[2.4, 2.6, 2]} size={0.46} flicker={0.35} colour={PALETTE.ember}>
-        Work
+        {useWord(0)}
       </WorldWord>
       <WorldWord position={[3.3, 1.3, 2]} size={0.46} flicker={0.3}>
-        School
+        {useWord(1)}
       </WorldWord>
       <WorldWord position={[2.6, 0.0, 2]} size={0.48} flicker={0.4} colour={PALETTE.rust}>
-        Money
+        {useWord(2)}
       </WorldWord>
       <WorldWord position={[3.4, -1.3, 2]} size={0.44} flicker={0.25}>
-        Getting there
+        {useWord(3)}
       </WorldWord>
     </group>
   )
@@ -1256,6 +1282,7 @@ function World() {
  * orbit. The person is the centre. The infection is not.
  */
 function Whole() {
+  const wholeWords = useSceneWords()
   const phase = useScenePhase()
   const orbit = useRef<THREE.Group>(null)
   const swarm = useRef<THREE.InstancedMesh>(null)
@@ -1280,14 +1307,15 @@ function Whole() {
   const arriving = useMemo(
     () =>
       [
-        { word: 'Understanding', from: [-9, 4, -3] as [number, number, number] },
-        { word: 'Support', from: [8, 3, -5] as [number, number, number] },
-        { word: 'Communication', from: [-7, -4, 4] as [number, number, number] },
-        { word: 'Education', from: [9, -3, 2] as [number, number, number] },
-        { word: 'Connection', from: [0, 6, -6] as [number, number, number] },
-        { word: 'Care', from: [0, -6, 5] as [number, number, number] },
+        { from: [-9, 4, -3] as [number, number, number] },
+        { from: [8, 3, -5] as [number, number, number] },
+        { from: [-7, -4, 4] as [number, number, number] },
+        { from: [9, -3, 2] as [number, number, number] },
+        { from: [0, 6, -6] as [number, number, number] },
+        { from: [0, -6, 5] as [number, number, number] },
       ].map((w, i) => ({
         ...w,
+        word: wholeWords[i] ?? '',
         /*
          * They still converge from every direction — that is the beat — but
          * they land in a column beside the person rather than on a ring around
@@ -1297,7 +1325,7 @@ function Whole() {
         to: [2, 3.2 - i * 1.05, 1.8] as [number, number, number],
         delay: i * 0.7,
       })),
-    [],
+    [wholeWords],
   )
 
   const wordRefs = useRef<(THREE.Group | null)[]>([])
@@ -1524,10 +1552,13 @@ const SCENES: Record<SceneId, () => ReactElement> = {
 export function Station({
   scene,
   index,
+  words,
   active,
 }: {
   scene: SceneId
   index: number
+  /** This beat's fragments, straight from `beats.ts`. */
+  words: string[]
   active: boolean
 }) {
   const Shape = SCENES[scene]
@@ -1535,7 +1566,9 @@ export function Station({
   return (
     <group position={[0, 0, stationZ(index)]}>
       <StationPhase index={index}>
-        <Shape />
+        <SceneWords.Provider value={words}>
+          <Shape />
+        </SceneWords.Provider>
       </StationPhase>
     </group>
   )

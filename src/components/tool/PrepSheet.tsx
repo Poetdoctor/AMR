@@ -1,4 +1,5 @@
-import { QUESTION_GROUPS, type VisitPrep } from '@/lib/visitPrep'
+import { getQuestionGroups, type VisitPrep } from '@/lib/visitPrep'
+import { useI18n, useT } from '@/lib/i18n'
 
 /**
  * The worksheet as it will look on paper.
@@ -9,17 +10,21 @@ import { QUESTION_GROUPS, type VisitPrep } from '@/lib/visitPrep'
  * they are about to walk in holding.
  */
 export function PrepSheet({ prep }: { prep: VisitPrep }) {
+  const { locale } = useI18n()
+  const t = useT()
   const facts = [
-    ['Appointment with', prep.appointmentWith],
-    ['When', prep.appointmentWhen],
-    ['What I have been told I have', prep.diagnosis],
-    ['What I am taking', prep.medications],
+    [t.tool.sheetWith, prep.appointmentWith],
+    [t.tool.when, prep.appointmentWhen],
+    [t.tool.sheetDiagnosis, prep.diagnosis],
+    [t.tool.sheetMedications, prep.medications],
   ].filter(([, value]) => value.trim())
 
-  const groups = QUESTION_GROUPS.map((group) => ({
-    label: group.label,
-    questions: group.questions.filter((q) => prep.selectedQuestions.includes(q.id)),
-  })).filter((group) => group.questions.length > 0)
+  const groups = getQuestionGroups(locale.code)
+    .map((group) => ({
+      label: group.label,
+      questions: group.questions.filter((q) => prep.selectedQuestions.includes(q.id)),
+    }))
+    .filter((group) => group.questions.length > 0)
 
   const custom = prep.customQuestions.filter((q) => q.trim())
   const nothingYet =
@@ -32,12 +37,12 @@ export function PrepSheet({ prep }: { prep: VisitPrep }) {
 
   return (
     <div className="prep-sheet">
-      <h2 className="font-display text-2xl font-bold tracking-tight text-ink">Visit preparation</h2>
+      <h2 className="font-display text-2xl font-bold tracking-tight text-ink">
+        {t.tool.sheetTitle}
+      </h2>
 
       {nothingYet ? (
-        <p className="mt-4 text-[0.9375rem] leading-relaxed text-ink-faint">
-          Your sheet builds up here as you fill the form in. Nothing you type leaves this page.
-        </p>
+        <p className="mt-4 text-[0.9375rem] leading-relaxed text-ink-faint">{t.tool.sheetEmpty}</p>
       ) : null}
 
       {facts.length > 0 ? (
@@ -51,11 +56,11 @@ export function PrepSheet({ prep }: { prep: VisitPrep }) {
         </dl>
       ) : null}
 
-      <SheetProse title="What's been happening" body={prep.whatsBeenHappening} />
+      <SheetProse title={t.tool.sheetHappening} body={prep.whatsBeenHappening} />
 
       {groups.length > 0 || custom.length > 0 ? (
         <section className="mt-7">
-          <h3 className="eyebrow mb-3">Questions I want to ask</h3>
+          <h3 className="eyebrow mb-3">{t.tool.sheetQuestions}</h3>
           <div className="space-y-5">
             {groups.map((group) => (
               <div key={group.label}>
@@ -75,7 +80,7 @@ export function PrepSheet({ prep }: { prep: VisitPrep }) {
             ))}
             {custom.length > 0 ? (
               <div>
-                <p className="text-sm font-semibold text-ink">My own questions</p>
+                <p className="text-sm font-semibold text-ink">{t.tool.sheetOwnQuestions}</p>
                 <ul className="mt-2 list-none space-y-2">
                   {custom.map((question, index) => (
                     <li
@@ -96,12 +101,11 @@ export function PrepSheet({ prep }: { prep: VisitPrep }) {
         </section>
       ) : null}
 
-      <SheetProse title="How this is actually affecting me" body={prep.howItsAffectingMe} />
-      <SheetProse title="What I want to leave with" body={prep.wantToLeaveWith} />
+      <SheetProse title={t.tool.sheetAffecting} body={prep.howItsAffectingMe} />
+      <SheetProse title={t.tool.sheetLeaveWith} body={prep.wantToLeaveWith} />
 
       <p className="mt-8 border-t border-sand-line pt-4 text-xs leading-relaxed text-ink-faint">
-        Educational, not medical advice. This worksheet is for your own use and does not replace
-        consultation with a healthcare provider.
+        {t.tool.sheetDisclaimer}
       </p>
     </div>
   )

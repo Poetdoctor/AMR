@@ -1,4 +1,5 @@
-import { QUESTION_GROUPS } from '@/lib/visitPrep'
+import { getQuestionGroups } from '@/lib/visitPrep'
+import { useI18n } from '@/lib/i18n'
 
 export function QuestionPicker({
   selected,
@@ -7,9 +8,11 @@ export function QuestionPicker({
   selected: string[]
   onToggle: (id: string) => void
 }) {
+  const { locale } = useI18n()
+  const groups = getQuestionGroups(locale.code)
   return (
     <div className="space-y-8">
-      {QUESTION_GROUPS.map((group) => (
+      {groups.map((group) => (
         <fieldset key={group.id}>
           <legend className="font-display text-lg font-bold text-ink">{group.label}</legend>
           <p className="mt-1 mb-4 text-sm leading-relaxed text-ink-soft">{group.note}</p>

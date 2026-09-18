@@ -7,7 +7,8 @@ import { BeatPanel } from './BeatPanel'
 import { SCENE_ORDER, Station, stationZ, STATION_GAP } from './scenes3d'
 import { CameraStation } from './phase'
 import { PALETTE } from './atmosphere'
-import { BEATS } from '@/lib/beats'
+import { getBeats } from '@/lib/beats'
+import { useI18n } from '@/lib/i18n'
 
 /**
  * The narrative, as one continuous camera move through eleven lit scenes.
@@ -82,6 +83,8 @@ function useIsVisible(ref: React.RefObject<HTMLElement | null>): boolean {
 }
 
 export function RichNarrative({ onFallback }: { onFallback: () => void }) {
+  const { locale } = useI18n()
+  const beats = getBeats(locale.code)
   const wrapper = useRef<HTMLDivElement>(null)
   const progress = useRef(0)
   const visible = useIsVisible(wrapper)
@@ -141,6 +144,7 @@ export function RichNarrative({ onFallback }: { onFallback: () => void }) {
                 key={scene}
                 scene={scene}
                 index={index}
+                words={beats[index]?.words ?? []}
                 active={Math.abs(index - station) <= NEAR}
               />
             ))}
@@ -171,7 +175,7 @@ export function RichNarrative({ onFallback }: { onFallback: () => void }) {
         searchable, and readable by a screen reader. Never text in the scene.
       */}
       <div className="relative -mt-[100dvh]">
-        {BEATS.map((beat) => (
+        {beats.map((beat) => (
           <section
             key={beat.id}
             data-beat={beat.id}

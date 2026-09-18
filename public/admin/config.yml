@@ -26,6 +26,25 @@ local_backend: true
 media_folder: public/uploads
 public_folder: /uploads
 
+# Translations.
+#
+# `multiple_folders` writes each language beside the others —
+# src/content/learn/en/foo.md and src/content/learn/fr/foo.md — which is what
+# src/lib/content.ts globs. The filename, and therefore the URL slug, is shared
+# across languages so /learn/foo and /fr/learn/foo are the same article and the
+# language switcher can move between them without a lookup table.
+#
+# Locales here must match the `ready` ones in src/lib/locales.ts.
+#
+# Per field:
+#   i18n: true        translate it
+#   i18n: duplicate   copy the English value into every language, locked
+#   i18n: false       English only, not shown on translation tabs
+i18n:
+  structure: multiple_folders
+  locales: [en, fr]
+  default_locale: en
+
 collections:
   - name: learn
     label: Learn articles
@@ -37,21 +56,25 @@ collections:
     summary: '{{order}} — {{title}}'
     sortable_fields: [order, title]
     preview_path: 'learn/{{slug}}'
+    i18n: true
     fields:
-      - { name: title, label: Title, widget: string }
+      - { name: title, label: Title, widget: string, i18n: true }
       - name: summary
         label: Summary
         widget: text
+        i18n: true
         hint: One or two sentences. Shown on the Learn index and under the article title.
       - name: order
         label: Order
         widget: number
         value_type: int
         min: 1
-        hint: Position in the list. Lower numbers come first.
+        i18n: duplicate
+        hint: Position in the list. Lower numbers come first. Shared by every language.
       - name: body
         label: Article
         widget: markdown
+        i18n: true
         hint: >-
           Use "##" headings to break it up. A quote block renders as a large pull
           quote; if you add a second paragraph inside the same quote block it is
@@ -67,9 +90,12 @@ collections:
     summary: '{{name}} — {{attribution}}'
     sortable_fields: [order, name]
     preview_path: 'stories/{{slug}}'
+    i18n: true
     fields:
-      - { name: name, label: Name, widget: string }
+      # A person's name is not translated, and neither is their consent.
+      - { name: name, label: Name, widget: string, i18n: duplicate }
       - name: attribution
+        i18n: duplicate
         label: How to attribute this
         widget: select
         default: anonymous
@@ -85,6 +111,7 @@ collections:
         label: Anonymous label
         widget: string
         required: false
+        i18n: true
         default: A patient living with a resistant infection
         hint: >-
           Used instead of the name when publishing anonymously. Keep it general —
@@ -92,20 +119,27 @@ collections:
       - name: context
         label: Context line
         widget: string
+        i18n: true
         hint: Shown under the name. Hidden automatically when publishing anonymously.
       - name: signatureQuote
         label: Signature quote
         widget: text
-        hint: The one quote that leads the card on the Stories index. No quote marks needed.
+        i18n: true
+        hint: >-
+          The one quote that leads the card on the Stories index. No quote marks
+          needed. These are somebody's own words: a translation of one is a
+          translation, and the site says so and keeps the original reachable.
       - name: summary
         label: Summary
         widget: text
+        i18n: true
         hint: One or two sentences describing the account.
-      - { name: order, label: Order, widget: number, value_type: int, min: 1 }
-      - { name: photo, label: Photo, widget: image, required: false }
+      - { name: order, label: Order, widget: number, value_type: int, min: 1, i18n: duplicate }
+      - { name: photo, label: Photo, widget: image, required: false, i18n: duplicate }
       - name: body
         label: The account
         widget: markdown
+        i18n: true
         hint: >-
           Quote blocks render as large pull quotes. Anything not inside a quote
           block reads as the site's voice, not theirs.
@@ -120,9 +154,11 @@ collections:
     summary: '{{order}} — {{name}}'
     sortable_fields: [order, name]
     preview_path: team
+    i18n: true
     fields:
-      - { name: name, label: Name, widget: string }
+      - { name: name, label: Name, widget: string, i18n: duplicate }
       - name: role
+        i18n: true
         label: Year and programme
         widget: string
         required: false
@@ -131,6 +167,7 @@ collections:
         label: Quote
         widget: text
         required: false
+        i18n: true
         hint: >-
           One honest line about why this project matters to you. The card stays
           hidden until this is filled in, so nothing half-finished appears publicly.
@@ -138,7 +175,8 @@ collections:
         label: Photo
         widget: image
         required: false
+        i18n: duplicate
         hint: >-
           Landscape, ideally 3:2 (the existing set is 420×280). Optional — without
           one the card shows initials instead.
-      - { name: order, label: Order, widget: number, value_type: int, min: 1 }
+      - { name: order, label: Order, widget: number, value_type: int, min: 1, i18n: duplicate }

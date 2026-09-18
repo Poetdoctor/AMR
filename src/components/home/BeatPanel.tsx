@@ -1,4 +1,5 @@
-import type { Beat } from '@/lib/beats'
+import type { Beat, Quote } from '@/lib/beats'
+import { useT } from '@/lib/i18n'
 
 /**
  * One beat's words, shared by both paths.
@@ -8,6 +9,51 @@ import type { Beat } from '@/lib/beats'
  * quotes and never paraphrased — the connective writing is ours, those
  * sentences are not.
  */
+/**
+ * One quote.
+ *
+ * When `original` is present the text on screen is a translation of something
+ * somebody actually said, and the caption says so with the original one click
+ * away. On a project arguing that patients are not listened to properly,
+ * silently replacing their words with our rendering of them would be the wrong
+ * thing to do — and the original is marked `lang="en"` so a screen reader
+ * switches voice for it rather than reading English with French phonetics.
+ */
+function QuoteFigure({
+  quote,
+  className,
+  quoteText,
+  muted,
+}: {
+  quote: Quote
+  className: string
+  quoteText: string
+  muted: string
+}) {
+  const t = useT()
+  return (
+    <figure className={className}>
+      <blockquote>
+        <p className={`font-display leading-snug font-semibold ${quoteText}`}>“{quote.text}”</p>
+      </blockquote>
+      <figcaption className={`mt-2.5 text-sm ${muted}`}>
+        {quote.attribution}
+        {quote.original ? ` · ${t.narrative.translatedQuote}` : null}
+      </figcaption>
+      {quote.original ? (
+        <details className="mt-2">
+          <summary className={`cursor-pointer text-sm underline-offset-4 hover:underline ${muted}`}>
+            {t.narrative.showOriginal}
+          </summary>
+          <p lang="en" className={`mt-2 text-sm leading-relaxed italic ${muted}`}>
+            “{quote.original}”
+          </p>
+        </details>
+      ) : null}
+    </figure>
+  )
+}
+
 export function BeatPanel({
   beat,
   compact = false,
@@ -23,10 +69,11 @@ export function BeatPanel({
   const quoteText = onDark ? 'text-cream' : 'text-ink'
   const prose = onDark ? 'text-cream/75' : ''
   const accent = onDark ? 'text-[var(--color-rust-light)]' : 'text-rust'
+  const t = useT()
   return (
     <div>
       <p className={`eyebrow mb-3 ${onDark ? '!text-[var(--color-rust-light)]' : ''}`}>
-        Act {beat.act} · {beat.actLabel}
+        {t.narrative.act.replace('{n}', String(beat.act))} · {beat.actLabel}
       </p>
       <h2 className={`max-w-2xl ${heading} ${compact ? 'display-md' : 'display-lg'}`}>
         {beat.title}
@@ -49,19 +96,13 @@ export function BeatPanel({
       </ul>
 
       {(compact ? beat.quotes.slice(0, 1) : beat.quotes).map((quote) => (
-        <figure
+        <QuoteFigure
           key={quote.text.slice(0, 30)}
+          quote={quote}
           className="mt-7 max-w-2xl border-s-2 border-rust ps-6"
-        >
-          <blockquote>
-            <p
-              className={`font-display text-lg leading-snug font-semibold md:text-xl ${quoteText}`}
-            >
-              “{quote.text}”
-            </p>
-          </blockquote>
-          <figcaption className={`mt-2.5 text-sm ${muted}`}>{quote.attribution}</figcaption>
-        </figure>
+          quoteText={`text-lg md:text-xl ${quoteText}`}
+          muted={muted}
+        />
       ))}
 
       {!compact ? (
@@ -75,18 +116,17 @@ export function BeatPanel({
           <summary
             className={`cursor-pointer text-sm font-semibold underline-offset-4 hover:underline ${onDark ? 'text-[var(--color-rust-light)]' : 'text-rust-deep'}`}
           >
-            Read more
+            {t.narrative.readMore}
           </summary>
           <div className={`prose-amr mt-4 ${prose}`}>
             {beat.quotes.slice(1).map((quote) => (
-              <figure key={quote.text.slice(0, 30)} className="border-s-2 border-rust ps-4">
-                <blockquote>
-                  <p className={`font-display leading-snug font-semibold ${quoteText}`}>
-                    “{quote.text}”
-                  </p>
-                </blockquote>
-                <figcaption className={`mt-2 text-sm ${muted}`}>{quote.attribution}</figcaption>
-              </figure>
+              <QuoteFigure
+                key={quote.text.slice(0, 30)}
+                quote={quote}
+                className="border-s-2 border-rust ps-4"
+                quoteText={quoteText}
+                muted={muted}
+              />
             ))}
             {beat.body.map((paragraph) => (
               <p key={paragraph.slice(0, 40)}>{paragraph}</p>

@@ -5,6 +5,8 @@ import { FlatNarrative } from '@/components/home/FlatNarrative'
 import { NarrativeBoundary } from '@/components/home/NarrativeBoundary'
 import { UntranslatedNotice } from '@/components/UntranslatedNotice'
 import { useCapability, readFlatPreference, writeFlatPreference } from '@/lib/capability'
+import { isNarrativeTranslated } from '@/lib/beats'
+import { useI18n, useT } from '@/lib/i18n'
 import { usePageTitle } from '@/lib/usePageTitle'
 
 /**
@@ -29,6 +31,8 @@ const RichNarrative = lazy(() =>
 )
 
 export default function Home() {
+  const t = useT()
+  const { locale } = useI18n()
   usePageTitle()
   const capability = useCapability()
   const [preferFlat, setPreferFlat] = useState(true)
@@ -45,21 +49,16 @@ export default function Home() {
 
   return (
     <>
-      <UntranslatedNotice />
+      <UntranslatedNotice when={!isNarrativeTranslated(locale.code)} />
       <section className="border-b border-sand-line bg-cream-deep py-20 md:py-28">
         <Container width="wide">
-          <p className="eyebrow mb-6">iGEM UBC · Human Practices</p>
-          <h1 className="display-xl max-w-4xl text-ink">
-            Antimicrobial resistance is counted carefully. The people are not.
-          </h1>
-          <p className="lede mt-8 max-w-2xl">
-            Seven things patients and clinicians told us, in the order they tend to happen. It takes
-            about five minutes to read.
-          </p>
+          <p className="eyebrow mb-6">{t.home.eyebrow}</p>
+          <h1 className="display-xl max-w-4xl text-ink">{t.home.title}</h1>
+          <p className="lede mt-8 max-w-2xl">{t.home.lede}</p>
 
           <div className="mt-10 flex flex-wrap items-center gap-4">
             <a className="btn btn-primary" href="#beat-hook">
-              Start reading
+              {t.home.start}
             </a>
             {canChoose ? (
               <button
@@ -71,16 +70,13 @@ export default function Home() {
                 }}
                 className="text-sm font-semibold text-rust-deep underline-offset-4 hover:underline"
               >
-                {preferFlat ? 'Try the moving version' : 'Switch to the still version'}
+                {preferFlat ? t.home.tryMoving : t.home.tryStill}
               </button>
             ) : null}
           </div>
 
           {capability.reason === 'reduced-motion' ? (
-            <p className="mt-6 max-w-xl text-sm text-ink-faint">
-              Your device asks for reduced motion, so this is the still version. Nothing is missing
-              from it.
-            </p>
+            <p className="mt-6 max-w-xl text-sm text-ink-faint">{t.home.reducedMotion}</p>
           ) : null}
         </Container>
       </section>
@@ -99,35 +95,15 @@ export default function Home() {
 
       <section className="border-t border-sand-line py-16 md:py-24">
         <Container width="wide">
-          <h2 className="display-md text-ink">Where to go from here</h2>
+          <h2 className="display-md text-ink">{t.home.onward}</h2>
           <ul className="mt-8 grid list-none gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {[
-              {
-                to: '/learn',
-                label: 'Learn',
-                blurb: 'What resistance actually is, and why nobody explained it.',
-              },
-              {
-                to: '/stories',
-                label: 'Stories',
-                blurb: 'The full accounts these seven beats are drawn from.',
-              },
-              {
-                to: '/community',
-                label: 'Community',
-                blurb: 'Both patients told us no community exists. This is our attempt at one.',
-              },
-              {
-                to: '/tool',
-                label: 'Visit prep',
-                blurb: 'Write your questions before the appointment. Nothing leaves your browser.',
-              },
-              {
-                to: '/mission',
-                label: 'Mission',
-                blurb: 'What we are doing about it, and what we hope changes.',
-              },
-              { to: '/team', label: 'Team', blurb: 'The six people reading your story.' },
+              { to: '/learn', label: t.nav.learn, blurb: t.home.cards.learn },
+              { to: '/stories', label: t.nav.stories, blurb: t.home.cards.stories },
+              { to: '/community', label: t.nav.community, blurb: t.home.cards.community },
+              { to: '/tool', label: t.nav.tool, blurb: t.home.cards.tool },
+              { to: '/mission', label: t.nav.mission, blurb: t.home.cards.mission },
+              { to: '/team', label: t.nav.team, blurb: t.home.cards.team },
             ].map((item) => (
               <li key={item.to}>
                 <Link

@@ -6,9 +6,15 @@ import { QuestionPicker } from '@/components/tool/QuestionPicker'
 import { CustomQuestions } from '@/components/tool/CustomQuestions'
 import { PrepSheet } from '@/components/tool/PrepSheet'
 import { UntranslatedNotice } from '@/components/UntranslatedNotice'
-import { EMPTY_PREP, isEmpty, toPlainText, type VisitPrep } from '@/lib/visitPrep'
+import {
+  areQuestionsTranslated,
+  EMPTY_PREP,
+  isEmpty,
+  toPlainText,
+  type VisitPrep,
+} from '@/lib/visitPrep'
 import * as storage from '@/lib/visitPrepStorage'
-import { useT } from '@/lib/i18n'
+import { useI18n, useT } from '@/lib/i18n'
 import { usePageTitle } from '@/lib/usePageTitle'
 
 /**
@@ -24,6 +30,7 @@ import { usePageTitle } from '@/lib/usePageTitle'
  */
 export default function Tool() {
   const t = useT()
+  const { locale } = useI18n()
   usePageTitle(t.titles.tool)
 
   const [prep, setPrep] = useState<VisitPrep>(EMPTY_PREP)
@@ -73,68 +80,57 @@ export default function Tool() {
   function toggleSaving(enabled: boolean) {
     setSaving(enabled)
     storage.setSavingEnabled(enabled, prep)
-    announce(
-      enabled
-        ? 'Saving to this browser is on.'
-        : 'Saving is off, and anything previously saved has been erased.',
-    )
+    announce(enabled ? t.tool.statusSavingOn : t.tool.statusSavingOff)
   }
 
   function clearAll() {
     setPrep(EMPTY_PREP)
     storage.clearStored()
     setRestored(false)
-    announce('Worksheet cleared.')
+    announce(t.tool.statusCleared)
   }
 
   async function copy() {
     try {
-      await navigator.clipboard.writeText(toPlainText(prep))
-      announce('Copied to your clipboard.')
+      await navigator.clipboard.writeText(toPlainText(prep, t.tool, locale.code))
+      announce(t.tool.statusCopied)
     } catch {
-      announce('Your browser blocked the clipboard. Use Download or Print instead.')
+      announce(t.tool.statusCopyBlocked)
     }
   }
 
   function download() {
     // Built in memory and released immediately — the file never goes anywhere
     // but the folder the person chooses.
-    const blob = new Blob([toPlainText(prep)], { type: 'text/plain;charset=utf-8' })
+    const blob = new Blob([toPlainText(prep, t.tool, locale.code)], {
+      type: 'text/plain;charset=utf-8',
+    })
     const url = URL.createObjectURL(blob)
     const link = document.createElement('a')
     link.href = url
     link.download = 'visit-preparation.txt'
     link.click()
     URL.revokeObjectURL(url)
-    announce('Downloaded as visit-preparation.txt.')
+    announce(t.tool.statusDownloaded)
   }
 
   const empty = isEmpty(prep)
 
   return (
     <>
-      <UntranslatedNotice />
+      <UntranslatedNotice when={!areQuestionsTranslated(locale.code)} />
       <PageHeader
-        eyebrow="Visit prep"
-        title="Walk in with your questions already written"
-        subhead="Appointments move fast. This is somewhere to work out what you want to ask and what you want understood, before you are in the room."
+        eyebrow={t.tool.eyebrow}
+        title={t.tool.title}
+        subhead={t.tool.subhead}
         className="print-hide"
       />
 
       <Container width="wide" className="print-hide py-12 md:py-16">
         <div className="callout p-6 md:p-7" role="note">
-          <h2 className="font-display text-lg font-bold text-ink">
-            Nothing you type here leaves this page
-          </h2>
-          <p className="prose-amr mt-2 text-[0.9375rem]">
-            This worksheet runs entirely in your browser. There is no account, no server, and
-            nothing is recorded — we could not read what you write here even if we wanted to. It is
-            yours until you print it or close the tab.
-          </p>
-          <p className="prose-amr mt-2 text-[0.9375rem]">
-            If you are on a shared or public computer, leave saving switched off and print or
-            download the sheet before you go.
-          </p>
+          <h2 className="font-display text-lg font-bold text-ink">{t.tool.privacyTitle}</h2>
+          <p className="prose-amr mt-2 text-[0.9375rem]">{t.tool.privacyBody}</p>
+          <p className="prose-amr mt-2 text-[0.9375rem]">{t.tool.privacyShared}</p>
         </div>
       </Container>
 
@@ -148,48 +144,46 @@ export default function Tool() {
           <div className="tool-form print-hide space-y-12">
             {restored ? (
               <p className="rounded-xl border border-rust bg-rust-wash px-4 py-3 text-sm text-ink">
-                Restored from a saved copy in this browser.
+                {t.tool.restored}
               </p>
             ) : null}
 
             <section className="space-y-5">
-              <h2 className="display-md text-ink">The basics</h2>
-              <p className="prose-amr max-w-xl text-[0.9375rem]">
-                All optional — fill in only what is useful to have in front of you.
-              </p>
+              <h2 className="display-md text-ink">{t.tool.basics}</h2>
+              <p className="prose-amr max-w-xl text-[0.9375rem]">{t.tool.basicsNote}</p>
               <div className="grid gap-5 sm:grid-cols-2">
                 <TextField
-                  label="Appointment with"
+                  label={t.tool.withWho}
                   value={prep.appointmentWith}
                   onChange={(v) => update('appointmentWith', v)}
-                  placeholder="Name or clinic"
+                  placeholder={t.tool.withWhoHint}
                 />
                 <TextField
-                  label="When"
+                  label={t.tool.when}
                   value={prep.appointmentWhen}
                   onChange={(v) => update('appointmentWhen', v)}
-                  placeholder="Date and time"
+                  placeholder={t.tool.whenHint}
                 />
               </div>
               <TextField
-                label="What you have been told you have"
+                label={t.tool.diagnosis}
                 value={prep.diagnosis}
                 onChange={(v) => update('diagnosis', v)}
-                placeholder="In whatever words you were given"
+                placeholder={t.tool.diagnosisHint}
               />
               <TextField
-                label="What you are taking"
+                label={t.tool.medications}
                 value={prep.medications}
                 onChange={(v) => update('medications', v)}
-                placeholder="Medications, doses if you know them"
+                placeholder={t.tool.medicationsHint}
               />
             </section>
 
             <section className="space-y-5">
-              <h2 className="display-md text-ink">What's been happening</h2>
+              <h2 className="display-md text-ink">{t.tool.happening}</h2>
               <TextAreaField
-                label="Since the last appointment"
-                hint="Changes, new symptoms, anything that worried you. Bullet points are fine — this is for you, not for marking."
+                label={t.tool.sinceLast}
+                hint={t.tool.sinceLastHint}
                 value={prep.whatsBeenHappening}
                 onChange={(v) => update('whatsBeenHappening', v)}
                 placeholder="…"
@@ -197,11 +191,8 @@ export default function Tool() {
             </section>
 
             <section className="space-y-5">
-              <h2 className="display-md text-ink">Questions to ask</h2>
-              <p className="prose-amr max-w-xl text-[0.9375rem]">
-                Tick the ones you want on your sheet. These come from what patients told us they
-                wished they had asked, and what clinicians told us they wished they were asked.
-              </p>
+              <h2 className="display-md text-ink">{t.tool.questions}</h2>
+              <p className="prose-amr max-w-xl text-[0.9375rem]">{t.tool.questionsNote}</p>
               <QuestionPicker selected={prep.selectedQuestions} onToggle={toggleQuestion} />
               <CustomQuestions
                 questions={prep.customQuestions}
@@ -210,17 +201,17 @@ export default function Tool() {
             </section>
 
             <section className="space-y-5">
-              <h2 className="display-md text-ink">The part that isn't clinical</h2>
+              <h2 className="display-md text-ink">{t.tool.notClinical}</h2>
               <TextAreaField
-                label="How this is actually affecting you"
-                hint="Sleep, work, money, family, mood, the things you have stopped doing. One patient told us the hardest part was being asked only how the wound looked."
+                label={t.tool.affecting}
+                hint={t.tool.affectingHint}
                 value={prep.howItsAffectingMe}
                 onChange={(v) => update('howItsAffectingMe', v)}
                 placeholder="…"
               />
               <TextAreaField
-                label="What you want to leave with"
-                hint="A decision, an explanation you can repeat to your family, a referral, a date for the next test."
+                label={t.tool.leaveWith}
+                hint={t.tool.leaveWithHint}
                 value={prep.wantToLeaveWith}
                 onChange={(v) => update('wantToLeaveWith', v)}
                 rows={3}
@@ -232,8 +223,8 @@ export default function Tool() {
           <aside className="tool-preview lg:sticky lg:top-24 lg:self-start">
             <div className="card overflow-hidden">
               <div className="print-hide border-b border-sand-line bg-cream-deep px-6 py-4">
-                <h2 className="font-display text-base font-bold text-ink">Your sheet</h2>
-                <p className="mt-0.5 text-sm text-ink-faint">This is what prints.</p>
+                <h2 className="font-display text-base font-bold text-ink">{t.tool.sheet}</h2>
+                <p className="mt-0.5 text-sm text-ink-faint">{t.tool.sheetNote}</p>
               </div>
 
               <div className="max-h-[26rem] overflow-y-auto px-6 py-6 lg:max-h-[32rem]">
@@ -248,7 +239,7 @@ export default function Tool() {
                     disabled={empty}
                     className="btn btn-primary disabled:opacity-50"
                   >
-                    Print
+                    {t.tool.print}
                   </button>
                   <button
                     type="button"
@@ -256,7 +247,7 @@ export default function Tool() {
                     disabled={empty}
                     className="btn btn-ghost disabled:opacity-50"
                   >
-                    Download
+                    {t.tool.download}
                   </button>
                   <button
                     type="button"
@@ -264,7 +255,7 @@ export default function Tool() {
                     disabled={empty}
                     className="btn btn-ghost disabled:opacity-50"
                   >
-                    Copy
+                    {t.tool.copy}
                   </button>
                 </div>
 
@@ -278,10 +269,9 @@ export default function Tool() {
                     className="mt-1 h-4 w-4 shrink-0 accent-[var(--color-rust)]"
                   />
                   <span className="text-sm leading-relaxed text-ink-soft">
-                    <span className="font-semibold text-ink">Keep this on this device</span>
+                    <span className="font-semibold text-ink">{t.tool.keepTitle}</span>
                     <br />
-                    Saves your answers in this browser only, so they are still here if you come
-                    back. Turning it off erases them. Leave it off on a shared computer.
+                    {t.tool.keepBody}
                   </span>
                 </label>
 
@@ -291,7 +281,7 @@ export default function Tool() {
                   disabled={empty}
                   className="mt-4 text-sm font-semibold text-rust-deep underline-offset-4 hover:underline disabled:no-underline disabled:opacity-50"
                 >
-                  Clear the whole worksheet
+                  {t.tool.clear}
                 </button>
 
                 <p

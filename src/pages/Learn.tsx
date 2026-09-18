@@ -2,22 +2,24 @@ import { Link } from '@/components/LocaleLink'
 import { Container } from '@/components/Container'
 import { PageHeader } from '@/components/PageHeader'
 import { UntranslatedNotice } from '@/components/UntranslatedNotice'
-import { getArticles, LEARN_SOURCES } from '@/lib/content'
-import { useT } from '@/lib/i18n'
+import { getArticles } from '@/lib/content'
+import { LEARN_SOURCES } from '@/lib/learnSources'
+import { useI18n, useT } from '@/lib/i18n'
 import { usePageTitle } from '@/lib/usePageTitle'
 
 export default function Learn() {
   const t = useT()
+  const { locale } = useI18n()
   usePageTitle(t.titles.learn)
-  const articles = getArticles()
+  const articles = getArticles(locale.code)
 
   return (
     <>
-      <UntranslatedNotice />
+      <UntranslatedNotice when={articles.some((a) => !a.translated)} />
       <PageHeader
-        eyebrow="Learn"
-        title="What nobody had time to explain"
-        subhead="Plain-language articles on the science, the precautions, and what clinicians across BC told us they are seeing. Written for the person who has just been handed a diagnosis, not for the journal."
+        eyebrow={t.nav.learn}
+        title={t.pages.learn.title}
+        subhead={t.pages.learn.subhead}
       />
 
       <Container width="wide" className="py-16 md:py-24">
@@ -52,11 +54,8 @@ export default function Learn() {
 
       <Container width="wide" className="pb-20 md:pb-28">
         <hr className="rule mb-10" />
-        <h2 className="display-md text-ink">Sources</h2>
-        <p className="prose-amr mt-4 max-w-2xl">
-          These articles draw on interviews the team conducted with clinicians and researchers in
-          British Columbia, and on the following published work.
-        </p>
+        <h2 className="display-md text-ink">{t.pages.learn.sources}</h2>
+        <p className="prose-amr mt-4 max-w-2xl">{t.pages.learn.sourcesNote}</p>
         <ul className="mt-6 max-w-3xl list-none space-y-5">
           {LEARN_SOURCES.map((source) => (
             <li key={source.href} className="text-sm leading-relaxed text-ink-soft">
