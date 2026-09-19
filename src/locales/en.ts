@@ -139,6 +139,8 @@ export const en = {
       title: 'What we’re doing, and why',
       subhead:
         'Three stages, in order. The literature search is finished; we’re at the start of the second one, which is where you come in.',
+      /** Screen-reader prefix on each stage heading. `{n}` is the number. */
+      stage: 'Stage {n} — ',
       s1Title: 'The problem',
       s1a: 'Antimicrobial resistance is usually counted: prescriptions written, resistant samples, days in hospital, dollars. British Columbia has some of the best of that data anywhere: nineteen years of it, fifty-one million prescriptions, a stewardship programme that cut antibiotic use in small children by more than half. It is genuinely good work, and it describes an organism rather than a person.',
       s1b: 'We spent this spring reading everything we could find on the other side of it, and three things stood out. Most of what exists comes from hospital samples, which systematically misses the people least likely to end up in a hospital record. The studies that do ask patients directly are small, scattered across different countries and different infections, and almost none of them are from BC. And the same barriers keep surfacing in all of them anyway: shame, isolation, silence, cost, and the plain fact that nobody explained the diagnosis.',

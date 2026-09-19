@@ -3,10 +3,10 @@
   "private": true,
   "version": "0.1.0",
   "type": "module",
-  "description": "iGEM UBC Human Practices — psychosocial impact of antimicrobial resistance",
+  "description": "iGEM UBC Human Practices \u2014 psychosocial impact of antimicrobial resistance",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build && node scripts/check-bundle.mjs",
+    "build": "tsc -b && vite build && node scripts/prerender.mjs && node scripts/check-bundle.mjs",
     "preview": "vite preview",
     "typecheck": "tsc -b --noEmit",
     "format": "prettier --write .",
@@ -17,7 +17,10 @@
     "verify:live": "node scripts/verify-live.mjs",
     "check:bundle": "node scripts/check-bundle.mjs",
     "test:locales": "node scripts/test-locales.mjs",
-    "build:fonts": "node scripts/build-narrative-fonts.mjs"
+    "build:fonts": "node scripts/build-narrative-fonts.mjs",
+    "prerender": "node scripts/prerender.mjs",
+    "test:prerender": "node scripts/test-prerender.mjs",
+    "verify:deploy": "node scripts/verify-deploy.mjs"
   },
   "dependencies": {
     "@fontsource-variable/fraunces": "^5.3.0",

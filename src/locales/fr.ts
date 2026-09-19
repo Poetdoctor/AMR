@@ -135,6 +135,7 @@ const fr: Dict = {
       title: 'Ce que nous faisons, et pourquoi',
       subhead:
         'Trois étapes, dans l’ordre. La revue de littérature est terminée ; nous sommes au début de la deuxième, et c’est là que vous entrez en jeu.',
+      stage: 'Étape {n} — ',
       s1Title: 'Le problème',
       s1a: 'On compte généralement la résistance aux antimicrobiens : ordonnances rédigées, échantillons résistants, jours d’hospitalisation, dollars. La Colombie-Britannique possède certaines des meilleures données qui soient : dix-neuf années, cinquante et un millions d’ordonnances, un programme de bon usage qui a réduit de plus de moitié la consommation d’antibiotiques chez les jeunes enfants. C’est un travail réellement solide, et il décrit une bactérie plutôt qu’une personne.',
       s1b: 'Nous avons passé ce printemps à lire tout ce que nous pouvions trouver sur l’autre versant de la question, et trois choses ressortent. L’essentiel de ce qui existe provient d’échantillons hospitaliers, ce qui laisse systématiquement de côté les personnes les moins susceptibles de figurer dans un dossier hospitalier. Les études qui interrogent directement les patients sont petites, dispersées entre plusieurs pays et plusieurs infections, et presque aucune ne vient de la Colombie-Britannique. Et les mêmes obstacles y reviennent malgré tout : la honte, l’isolement, le silence, le coût, et le simple fait que personne n’a expliqué le diagnostic.',

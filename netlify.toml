@@ -14,9 +14,15 @@
   status = 200
 
 # Client-side routing: every other path serves the app shell.
+#
+# app.html, not index.html. Every route with a page of its own is prerendered
+# to its own path and served as a static file before this rule is reached;
+# index.html is now the prerendered *home page*, so sending unmatched paths
+# there would hand a 404 a canonical URL claiming to be the homepage.
+# scripts/prerender.mjs writes app.html as the pristine shell.
 [[redirects]]
   from = "/*"
-  to = "/index.html"
+  to = "/app.html"
   status = 200
 
 [[headers]]
@@ -32,6 +38,11 @@
 # self-identification is visible for the hours it is up, not cached for months.
 # This is a header rather than a robots.txt Disallow on purpose: disallowing
 # stops crawlers reaching the page at all, so they never see the noindex.
+# Every language, not just English. `/:lang/community` matches a single path
+# segment, so it covers /fr/community without also catching /community/share.
+# scripts/test-headers.mjs fails the build if a ready locale is not covered —
+# this is a hard constraint and it is one line away from silently regressing
+# every time a language is added.
 [[headers]]
   for = "/community"
   [headers.values]
@@ -39,6 +50,16 @@
 
 [[headers]]
   for = "/community/*"
+  [headers.values]
+    X-Robots-Tag = "noindex, nofollow"
+
+[[headers]]
+  for = "/:lang/community"
+  [headers.values]
+    X-Robots-Tag = "noindex, nofollow"
+
+[[headers]]
+  for = "/:lang/community/*"
   [headers.values]
     X-Robots-Tag = "noindex, nofollow"
 

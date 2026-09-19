@@ -19,6 +19,7 @@ function Stage({
   /** Optional full-column content (card grids and the like) below the copy. */
   aside?: ReactNode
 }) {
+  const t = useT()
   return (
     <section className="grid gap-6 border-t border-sand-line py-12 md:grid-cols-[7rem_1fr] md:gap-10 md:py-16">
       <div className="md:pt-2">
@@ -28,7 +29,7 @@ function Stage({
       </div>
       <div>
         <h2 className="display-lg text-ink">
-          <span className="sr-only">{`Stage ${number} — `}</span>
+          <span className="sr-only">{t.pages.mission.stage.replace('{n}', number)}</span>
           {title}
         </h2>
         <div className="prose-amr mt-6 max-w-2xl">{children}</div>

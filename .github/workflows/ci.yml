@@ -20,6 +20,10 @@ jobs:
       - run: npm run test:content
       - run: npm run test:locales
       - run: npm run build
+        env:
+          CHROME_PATH: /usr/bin/google-chrome
+      - name: Prerendered output — canonical, hreflang, noindex, sitemap
+        run: npm run test:prerender
       - name: Layout and accessibility smoke test
         run: npm run smoke
         env:

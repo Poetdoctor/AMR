@@ -7,6 +7,12 @@ import { canonicalPath, localePath, READY_LOCALES, type LocaleCode } from '@/lib
 /**
  * Language switcher.
  *
+ * There is deliberately no `<noscript>` fallback in here: React renders
+ * `<noscript>` with no children on the client, because a browser with
+ * scripting on parses its content as text rather than markup. The no-script
+ * language links are injected by scripts/prerender.mjs instead, which is the
+ * only place they can actually reach the document.
+ *
  * A native `<select>` on purpose: it is one tab stop, it is operable by
  * keyboard and screen reader without any of our own code, and on a phone it
  * opens the platform's own picker rather than a menu we would have to make

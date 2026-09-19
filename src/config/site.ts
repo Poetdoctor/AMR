@@ -7,6 +7,16 @@ export const site = {
   org: 'iGEM UBC Human Practices',
 
   /**
+   * Where this site is served from, with no trailing slash.
+   *
+   * Used to build the absolute URLs that `rel="canonical"` and `hreflang`
+   * require — relative ones are ignored. The prerender step prefers Netlify's
+   * own `URL` at build time so deploy previews describe themselves rather than
+   * claiming to be production.
+   */
+  origin: 'https://beyondthediagnosis.netlify.app',
+
+  /**
    * Where the Mission page's "Share your experience" button points.
    *
    * This is a call to take part in the team's ongoing IHP research — surveys,
