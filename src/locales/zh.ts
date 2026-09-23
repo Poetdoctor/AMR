@@ -172,6 +172,7 @@ const zh: Dict = {
   narrative: {
     act: '第 {n} 幕',
     readMore: '继续阅读',
+    readLess: '收起',
     translatedQuote: '译自英文',
     showOriginal: '查看原话',
   },

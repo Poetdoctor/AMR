@@ -177,6 +177,7 @@ const fa: Dict = {
   narrative: {
     act: 'پردهٔ {n}',
     readMore: 'ادامهٔ مطلب',
+    readLess: 'بستن',
     translatedQuote: 'ترجمه از انگلیسی',
     showOriginal: 'دیدن کلمات اصلی',
   },

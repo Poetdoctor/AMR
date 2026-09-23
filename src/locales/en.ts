@@ -174,6 +174,7 @@ export const en = {
     /** "Act 2 · Nobody understands…" — some languages order this differently. */
     act: 'Act {n}',
     readMore: 'Read more',
+    readLess: 'Read less',
     /**
      * Shown under a quote that has been translated.
      *

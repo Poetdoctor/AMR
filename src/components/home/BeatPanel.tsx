@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import type { Beat, Quote } from '@/lib/beats'
 import { useT } from '@/lib/i18n'
 
@@ -70,6 +71,7 @@ export function BeatPanel({
   const prose = onDark ? 'text-cream/75' : ''
   const accent = onDark ? 'text-[var(--color-rust-light)]' : 'text-rust'
   const t = useT()
+  const [expanded, setExpanded] = useState(false)
   return (
     <div>
       <p className={`eyebrow mb-3 ${onDark ? '!text-[var(--color-rust-light)]' : ''}`}>
@@ -112,11 +114,14 @@ export function BeatPanel({
           ))}
         </div>
       ) : (
-        <details className="mt-5 max-w-2xl">
+        <details
+          className="mt-5 max-w-2xl"
+          onToggle={(event) => setExpanded(event.currentTarget.open)}
+        >
           <summary
             className={`cursor-pointer text-sm font-semibold underline-offset-4 hover:underline ${onDark ? 'text-[var(--color-rust-light)]' : 'text-rust-deep'}`}
           >
-            {t.narrative.readMore}
+            {expanded ? t.narrative.readLess : t.narrative.readMore}
           </summary>
           <div className={`prose-amr mt-4 ${prose}`}>
             {beat.quotes.slice(1).map((quote) => (

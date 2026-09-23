@@ -177,6 +177,7 @@ const pa: Dict = {
   narrative: {
     act: 'ਅੰਕ {n}',
     readMore: 'ਹੋਰ ਪੜ੍ਹੋ',
+    readLess: 'ਘੱਟ ਵੇਖੋ',
     translatedQuote: 'ਅੰਗਰੇਜ਼ੀ ਤੋਂ ਅਨੁਵਾਦ',
     showOriginal: 'ਅਸਲ ਸ਼ਬਦ ਵੇਖੋ',
   },
