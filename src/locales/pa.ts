@@ -50,7 +50,8 @@ const pa: Dict = {
 
   footer: {
     read: 'ਪੜ੍ਹੋ',
-    use: 'ਵਰਤੋ',
+    resources: 'ਸਰੋਤ',
+    connect: 'ਜੁੜੋ',
     about: 'ਸਾਡੇ ਬਾਰੇ',
     narrative: 'ਇਹ ਕਹਾਣੀ',
     toolLong: 'ਮੁਲਾਕਾਤ ਦੀ ਤਿਆਰੀ',

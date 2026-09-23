@@ -37,7 +37,8 @@ export const en = {
 
   footer: {
     read: 'Read',
-    use: 'Use',
+    resources: 'Resources',
+    connect: 'Connect',
     about: 'About',
     narrative: 'The narrative',
     toolLong: 'Prepare for a visit',

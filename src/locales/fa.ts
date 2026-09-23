@@ -50,7 +50,8 @@ const fa: Dict = {
 
   footer: {
     read: 'خواندن',
-    use: 'استفاده',
+    resources: 'منابع',
+    connect: 'ارتباط',
     about: 'دربارهٔ ما',
     narrative: 'روایت',
     toolLong: 'آماده شدن برای ویزیت',
