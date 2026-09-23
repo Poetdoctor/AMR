@@ -294,7 +294,14 @@ function Glass() {
         strokeWidth={1.5}
         opacity={0.45}
       />
-      <rect x={232} y={96} width={5} height={208} className="fill-current text-rust" opacity={0.22} />
+      <rect
+        x={232}
+        y={96}
+        width={5}
+        height={208}
+        className="fill-current text-rust"
+        opacity={0.22}
+      />
       <Figure x={124} y={230} />
       {[
         { x: 296, y: 150, o: 0.4 },
