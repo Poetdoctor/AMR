@@ -43,6 +43,12 @@ export default function Article() {
             on the site someone might land on directly from a search result and
             start reading as though it were clinical guidance. */}
         <Disclaimer className="mt-14 max-w-2xl" />
+        <Link
+          to="/learn"
+          className="mt-10 inline-block rounded-full border border-sand-line bg-paper px-5 py-2 text-sm font-semibold text-ink transition-colors hover:border-ink-faint"
+        >
+          <span aria-hidden="true">← </span>All articles
+        </Link>
       </Container>
 
       {others.length > 0 ? (

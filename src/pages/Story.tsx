@@ -39,6 +39,12 @@ export default function Story() {
 
       <Container width="wide" className="py-14 md:py-20">
         <Markdown className="max-w-2xl">{story.body}</Markdown>
+        <Link
+          to="/stories"
+          className="mt-10 inline-block rounded-full border border-sand-line bg-paper px-5 py-2 text-sm font-semibold text-ink transition-colors hover:border-ink-faint"
+        >
+          <span aria-hidden="true">← </span>All stories
+        </Link>
       </Container>
 
       {others.length > 0 ? (
