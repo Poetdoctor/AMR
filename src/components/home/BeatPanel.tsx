@@ -85,12 +85,10 @@ export function BeatPanel({
       <ul
         className={`flex list-none flex-wrap items-baseline gap-x-4 gap-y-1 ${compact ? 'mt-3' : 'mt-6'}`}
       >
-        {beat.words.map((word, index) => (
+        {beat.words.map((word) => (
           <li
             key={word}
-            className={`font-display leading-none font-semibold tracking-tight ${
-              index === 0 ? accent : muted
-            } ${compact ? 'text-[clamp(1rem,2.2vw,1.4rem)]' : 'text-[clamp(1.25rem,3.4vw,2.1rem)]'}`}
+            className={`font-display leading-none font-semibold tracking-tight ${accent} ${compact ? 'text-[clamp(1rem,2.2vw,1.4rem)]' : 'text-[clamp(1.25rem,3.4vw,2.1rem)]'}`}
           >
             {word}
           </li>
