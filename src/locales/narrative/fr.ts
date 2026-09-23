@@ -46,7 +46,7 @@ const fr: NarrativeCopy = {
       quotes: [
         {
           text: 'La première chose qu’on ressent, c’est un serrement au cœur : j’ai déjà vécu ça, et oh non, ça recommence.',
-          attribution: 'Norma Washburn, patiente atteinte d’une infection résistante',
+          attribution: 'Norma Washburn',
         },
         {
           text: 'Mon pansement a tenu des mois, mais j’avais peur que ça recommence.',
@@ -89,7 +89,7 @@ const fr: NarrativeCopy = {
       quotes: [
         {
           text: 'Je voudrais que les autres comprennent ce que je ressens et s’arrêtent assez longtemps pour me laisser le dire, au lieu de passer directement au… traitement',
-          attribution: 'Sunny Loo, patient atteint de vascularite',
+          attribution: 'Sunny Loo',
         },
         {
           text: 'J’aimerais que mon médecin me demande comment je me sens… mais si je le demandais, on m’enverrait directement en psychothérapie.',

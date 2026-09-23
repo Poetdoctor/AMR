@@ -40,7 +40,7 @@ const zh: NarrativeCopy = {
       quotes: [
         {
           text: '最先感觉到的是心往下沉：这个我以前得过，糟了，又来了。',
-          attribution: '诺玛·沃什本，耐药感染患者',
+          attribution: '诺玛·沃什本',
         },
         {
           text: '我的敷料换了好几个月，但我一直怕它再发作。',
@@ -83,7 +83,7 @@ const zh: NarrativeCopy = {
       quotes: [
         {
           text: '我希望别人能理解我的感受，能停下来听我说完，而不是直接进入……治疗',
-          attribution: '桑尼·卢，血管炎患者',
+          attribution: '桑尼·卢',
         },
         {
           text: '我希望我的医生能问问我感觉怎么样……但如果我真问了，他们会直接把我转去心理咨询。',
