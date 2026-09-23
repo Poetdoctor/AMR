@@ -114,19 +114,18 @@ export function PostCard({
           <Link
             to={`/community/story/${post.id}`}
             className="hover:text-ink"
-            aria-label={`${post.commentCount} comments on this story`}
+            aria-label={`${post.commentCount} ${post.commentCount === 1 ? 'comment' : 'comments'} on this story`}
           >
-            <span aria-hidden="true">💬</span>{' '}
-            <span className="tabular-nums">{post.commentCount}</span>
+            <span className="tabular-nums">{post.commentCount}</span>{' '}
+            {post.commentCount === 1 ? 'comment' : 'comments'}
           </Link>
           <button
             type="button"
-            aria-pressed={post.bookmarked}
-            aria-label={post.bookmarked ? 'Remove bookmark' : 'Bookmark this story'}
+            aria-label={post.bookmarked ? 'Saved — remove from saved' : 'Save this story'}
             onClick={() => onBookmark(!post.bookmarked)}
-            className={post.bookmarked ? 'text-rust-deep' : 'hover:text-ink'}
+            className={post.bookmarked ? 'font-medium text-rust-deep' : 'hover:text-ink'}
           >
-            <span aria-hidden="true">{post.bookmarked ? '★' : '☆'}</span>
+            {post.bookmarked ? 'Saved' : 'Save'}
           </button>
         </span>
       </footer>
