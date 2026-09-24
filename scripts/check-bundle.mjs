@@ -1,5 +1,7 @@
 /**
- * Fails the build if a credential that must never ship reaches the bundle.
+ * Fails the build on two things that must never reach the shipped site: a
+ * credential, and a still-narrative illustration that is too heavy for the
+ * devices that path exists to serve.
  *
  * Vite inlines every VITE_-prefixed variable into the shipped JavaScript. That
  * is correct for the Supabase publishable key and wrong for everything else: a
@@ -65,3 +67,50 @@ if (found.length) {
   process.exit(1)
 }
 console.log(`✓ no credentials in the bundle (${files.length} files checked)`)
+
+/*
+ * The still-narrative artwork budget.
+ *
+ * `public/stills/` is served to the readers with the least to spend on it:
+ * low-end devices that could not run the WebGL path, and anyone who asked for
+ * reduced motion. It is also what scripts/prerender.mjs captures, so it is what
+ * a crawler and a no-JavaScript reader get.
+ *
+ * The ceiling is set here, before the artwork is commissioned, because a budget
+ * agreed after eleven illustrations exist is not a budget — it is a negotiation
+ * nobody wins. A flat-colour WebP at 896px should land near 60 KB; 120 KB is
+ * room to be wrong, and it still catches the 2 MB PNG that somebody exports by
+ * accident at four in the morning.
+ */
+const PER_IMAGE_KB = 120
+const TOTAL_KB = 900
+
+let stills = []
+try {
+  stills = walk(path.join(dist, 'stills'))
+} catch {
+  // No artwork yet — the SVG fallback in SceneStill.tsx is carrying the path.
+}
+
+if (stills.length) {
+  const sizes = stills.map((f) => ({
+    name: path.relative(dist, f),
+    kb: Math.round(statSync(f).size / 1024),
+  }))
+  const over = sizes.filter((s) => s.kb > PER_IMAGE_KB)
+  const total = sizes.reduce((sum, s) => sum + s.kb, 0)
+
+  const problems = over.map((s) => `${s.name} is ${s.kb} KB (limit ${PER_IMAGE_KB} KB)`)
+  if (total > TOTAL_KB)
+    problems.push(`${stills.length} images total ${total} KB (limit ${TOTAL_KB} KB)`)
+
+  if (problems.length) {
+    console.error(
+      `\n✗ still-narrative artwork over budget:\n- ${problems.join('\n- ')}\n\n` +
+        'This is the path served to low-end devices and to reduced-motion readers.\n' +
+        'Re-export as WebP at 896px, or raise the ceiling here deliberately.',
+    )
+    process.exit(1)
+  }
+  console.log(`✓ still artwork within budget (${stills.length} image(s), ${total} KB)`)
+}

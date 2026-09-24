@@ -13,6 +13,10 @@ import type { SceneId } from '@/lib/beats'
  * The proportions are the brief's: mostly human experience, some system, very
  * little biology. Beat eight is the only one with an organism in it, and it is
  * the smallest thing on the canvas.
+ *
+ * These drawings are being replaced with commissioned artwork, one beat at a
+ * time — see ARTWORK below. The SVG stays as the fallback for every beat that
+ * has no image yet, so the page is never half-finished while that lands.
  */
 
 function seeded(seed: number): () => number {
@@ -543,23 +547,104 @@ const SCENES: Record<SceneId, () => ReactElement> = {
   breath: Breath,
 }
 
+/**
+ * Commissioned artwork, where it exists yet.
+ *
+ * Add a beat here and it takes over from the drawing below; leave it out and
+ * the SVG keeps rendering. That is the whole mechanism — no flag, no second
+ * component, and nothing to remember to delete at the end.
+ *
+ * `alt` is required by the type on purpose. An SVG here is decorative and
+ * hidden from screen readers because the beat's words carry all of it; a
+ * photograph or an illustration is a different object, and `npm run smoke`
+ * fails the build on an image without alt text. Making the field mandatory
+ * means that decision is made when the artwork is added rather than
+ * discovered by the person it was supposed to be for.
+ *
+ * Weight matters more here than anywhere else on the site: this is the path
+ * served to low-end devices, to readers who asked for reduced motion, and to
+ * scripts/prerender.mjs, so it is also what a crawler and a no-JavaScript
+ * reader get. WebP at 896px (2x the 448px card). scripts/check-bundle.mjs
+ * fails the build over 120 KB for one image or 900 KB for the set — see
+ * docs/still-artwork-brief.md for the rest of the specification.
+ */
+const ARTWORK: Partial<Record<SceneId, { src: string; alt: string }>> = {
+  fall: {
+    src: '/stills/fall.webp',
+    alt: 'A narrow pale path running to a distant point between two dark fields, tilted slightly off level, with one small figure standing on it.',
+  },
+  rollercoaster: {
+    src: '/stills/rollercoaster.webp',
+    alt: 'A long smooth wave of dark ground rolling across the frame, with one small figure standing still on its crest.',
+  },
+  weight: {
+    src: '/stills/weight.webp',
+    alt: 'A tall column built from many stacked horizontal bars, with one small figure standing beneath it.',
+  },
+  corridor: {
+    src: '/stills/corridor.webp',
+    alt: 'A long corridor narrowing to a distant point, with several figures walking through it and one figure, marked in orange, standing still.',
+  },
+  machine: {
+    src: '/stills/machine.webp',
+    alt: 'A large dark mass hanging across the top of the frame with thin lines descending from it, and one very small figure far below.',
+  },
+  glass: {
+    src: '/stills/glass.webp',
+    alt: 'Three tall translucent panes standing in a row, with a single orange figure alone on one side and three dark figures together on the other.',
+  },
+  ocean: {
+    src: '/stills/ocean.webp',
+    alt: 'A dark expanse of water with one small lit island holding a single figure, and scattered points of light further out, a few joined by faint lines.',
+  },
+  monster: {
+    src: '/stills/monster.webp',
+    alt: 'One small figure at the lower left casting an enormous shadow that sweeps across the whole frame, with a tiny orange dot at its feet.',
+  },
+  world: {
+    src: '/stills/world.webp',
+    alt: 'A long horizontal band crossed by small orange marks, with simple geometric shapes scattered around it and one figure walking along it.',
+  },
+  whole: {
+    src: '/stills/whole.webp',
+    alt: 'Concentric rings drawn in browns, closing in on a single small orange figure at the centre.',
+  },
+  breath: {
+    src: '/stills/breath.webp',
+    alt: 'A dark structure of many rooms receding into the distance, each with a warmly lit doorway and a figure standing in it.',
+  },
+}
+
 export function SceneStill({ scene, active }: { scene: SceneId; active: boolean }) {
   const Shape = SCENES[scene]
+  const art = ARTWORK[scene]
   return (
     <div
-      className={`relative aspect-square w-full max-w-md justify-self-center rounded-[var(--radius-card)] border border-sand-line bg-cream-deep transition-opacity duration-700 ${
+      className={`relative aspect-square w-full max-w-md justify-self-center overflow-hidden rounded-[var(--radius-card)] border border-sand-line bg-cream-deep transition-opacity duration-700 ${
         active ? 'opacity-100' : 'opacity-0'
       }`}
     >
-      <svg
-        viewBox={`0 0 ${VIEW} ${VIEW}`}
-        className="h-full w-full text-ink-faint"
-        role="img"
-        aria-hidden="true"
-        focusable="false"
-      >
-        <Shape />
-      </svg>
+      {art ? (
+        <img
+          src={art.src}
+          alt={art.alt}
+          width={896}
+          height={896}
+          loading="lazy"
+          decoding="async"
+          className="h-full w-full object-cover"
+        />
+      ) : (
+        <svg
+          viewBox={`0 0 ${VIEW} ${VIEW}`}
+          className="h-full w-full text-ink-faint"
+          role="img"
+          aria-hidden="true"
+          focusable="false"
+        >
+          <Shape />
+        </svg>
+      )}
     </div>
   )
 }
