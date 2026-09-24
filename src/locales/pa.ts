@@ -50,7 +50,8 @@ const pa: Dict = {
 
   footer: {
     read: 'ਪੜ੍ਹੋ',
-    use: 'ਵਰਤੋ',
+    resources: 'ਸਰੋਤ',
+    connect: 'ਜੁੜੋ',
     about: 'ਸਾਡੇ ਬਾਰੇ',
     narrative: 'ਇਹ ਕਹਾਣੀ',
     toolLong: 'ਮੁਲਾਕਾਤ ਦੀ ਤਿਆਰੀ',
@@ -177,6 +178,7 @@ const pa: Dict = {
   narrative: {
     act: 'ਅੰਕ {n}',
     readMore: 'ਹੋਰ ਪੜ੍ਹੋ',
+    readLess: 'ਘੱਟ ਵੇਖੋ',
     translatedQuote: 'ਅੰਗਰੇਜ਼ੀ ਤੋਂ ਅਨੁਵਾਦ',
     showOriginal: 'ਅਸਲ ਸ਼ਬਦ ਵੇਖੋ',
   },

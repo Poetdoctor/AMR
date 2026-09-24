@@ -315,7 +315,6 @@ export default function ShareExperience() {
                 </strong>
               </p>
               <p className="text-sm text-ink-soft">
-                <span aria-hidden="true">🛡 </span>
                 Visible to:{' '}
                 {visibility === 'members' ? 'members of this community' : 'anyone on the internet'}
               </p>

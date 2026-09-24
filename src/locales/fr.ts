@@ -40,7 +40,8 @@ const fr: Dict = {
 
   footer: {
     read: 'Lire',
-    use: 'Utiliser',
+    resources: 'Ressources',
+    connect: 'Échanger',
     about: 'À propos',
     narrative: 'Le récit',
     toolLong: 'Préparer un rendez-vous',
@@ -168,6 +169,7 @@ const fr: Dict = {
   narrative: {
     act: 'Acte {n}',
     readMore: 'Lire la suite',
+    readLess: 'Réduire',
     translatedQuote: 'Traduit de l’anglais',
     showOriginal: 'Voir les mots d’origine',
   },

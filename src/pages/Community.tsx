@@ -165,8 +165,7 @@ export default function Community() {
 
           <div className="mt-7 flex flex-wrap items-center gap-4">
             <span className="text-sm text-cream/80">
-              <span aria-hidden="true">👥</span> <span className="tabular-nums">{members}</span>{' '}
-              {members === 1 ? 'member' : 'members'}
+              <span className="tabular-nums">{members}</span> {members === 1 ? 'member' : 'members'}
             </span>
             <button
               type="button"
@@ -270,12 +269,7 @@ export default function Community() {
           <aside className="space-y-5 lg:sticky lg:top-24 lg:self-start">
             {community?.guidelines ? (
               <section className="card p-5">
-                <h2 className="font-display text-base font-bold text-ink">
-                  <span aria-hidden="true" className="me-1.5">
-                    🛡
-                  </span>
-                  Community guidelines
-                </h2>
+                <h2 className="font-display text-base font-bold text-ink">Community guidelines</h2>
                 <p className="mt-2.5 text-sm leading-relaxed text-ink-soft">
                   {community.guidelines}
                 </p>

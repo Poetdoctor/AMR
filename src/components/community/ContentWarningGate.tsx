@@ -21,12 +21,7 @@ export function ContentWarningGate({
 
   return (
     <div className="rounded-xl bg-sand px-6 py-8 text-center">
-      <p className="text-sm font-medium text-ink-soft">
-        <span aria-hidden="true" className="me-1.5">
-          ⚠
-        </span>
-        Content warning: {warning}
-      </p>
+      <p className="text-sm font-medium text-ink-soft">Content warning: {warning}</p>
       <button
         type="button"
         onClick={() => setRevealed(true)}

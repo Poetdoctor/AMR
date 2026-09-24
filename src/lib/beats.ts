@@ -114,7 +114,7 @@ export const BEATS: Beat[] = [
     quotes: [
       {
         text: "A sinking feeling is what you feel first: I've had this before and oh no, it's happening again.",
-        attribution: 'Norma Washburn, AMR patient',
+        attribution: 'Norma Washburn',
       },
       {
         text: 'My dressing lasted for months, but I was scared it would happen again.',
@@ -166,7 +166,7 @@ export const BEATS: Beat[] = [
     quotes: [
       {
         text: 'I want others to understand how I feel and stop long enough to allow me to share how I feel instead of going straight into…the treatment',
-        attribution: 'Sunny Loo, vasculitis patient',
+        attribution: 'Sunny Loo',
       },
       {
         text: 'I would appreciate my physician asking about how I feel… but they would send me straight to counseling if I did ask.',

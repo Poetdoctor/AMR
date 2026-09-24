@@ -48,7 +48,8 @@ const zh: Dict = {
 
   footer: {
     read: '阅读',
-    use: '使用',
+    resources: '资源',
+    connect: '交流',
     about: '关于',
     narrative: '这段叙事',
     toolLong: '为就诊做准备',
@@ -172,6 +173,7 @@ const zh: Dict = {
   narrative: {
     act: '第 {n} 幕',
     readMore: '继续阅读',
+    readLess: '收起',
     translatedQuote: '译自英文',
     showOriginal: '查看原话',
   },

@@ -17,11 +17,12 @@ const COLUMNS = [
     ],
   },
   {
-    heading: 'use',
-    links: [
-      { to: '/tool', footer: 'toolLong' },
-      { to: '/community', nav: 'community' },
-    ],
+    heading: 'resources',
+    links: [{ to: '/tool', footer: 'toolLong' }],
+  },
+  {
+    heading: 'connect',
+    links: [{ to: '/community', nav: 'community' }],
   },
   {
     heading: 'about',
@@ -46,7 +47,7 @@ export function SiteFooter() {
         <div className="py-14 md:py-16">
           <Disclaimer className="mb-12" />
 
-          <div className="grid gap-10 md:grid-cols-[1.4fr_repeat(3,1fr)]">
+          <div className="grid gap-10 md:grid-cols-[1.4fr_repeat(4,1fr)]">
             <div>
               <p className="font-display text-xl font-bold tracking-tight text-ink">
                 {t.site.name}

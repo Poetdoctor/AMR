@@ -685,26 +685,24 @@ function Machine() {
 /* ─── 6 ─────────────────────────────────────────────────────────────────────
  * Isolation. The strongest scene, and the only one with real glass in it.
  *
- * The room does not change. Panes form between the person and everyone else,
- * one after another. The family are still there, still lit, still close enough
+ * The room does not change. A pane rises between the person and everyone else,
+ * and stays. The family are still there, still lit, still close enough
  * to see — and the thoughts settle onto the glass as marks that will not come
  * off.
  */
 function Glass() {
-  const panes = useRef<THREE.Group>(null)
+  const pane = useRef<THREE.Mesh>(null)
   const phase = useScenePhase()
 
   useFrame(() => {
-    if (!panes.current) return
+    if (!pane.current) return
     /*
-     * One pane at a time, staged across the reader's approach. Nobody notices
-     * the moment it happens — which is exactly what the interviews describe.
+     * One pane, rising slowly across the reader's approach. Nobody notices the
+     * moment it happens — which is exactly what the interviews describe.
      */
-    panes.current.children.forEach((child, i) => {
-      const eased = easeOut(stage(phase.current, 0.12 + i * 0.18, 0.48 + i * 0.18))
-      child.scale.y = Math.max(0.001, eased)
-      child.visible = eased > 0.01
-    })
+    const eased = easeOut(stage(phase.current, 0.12, 0.66))
+    pane.current.scale.y = Math.max(0.001, eased)
+    pane.current.visible = eased > 0.01
   })
 
   const visitors: [number, number, number][] = [
@@ -743,29 +741,25 @@ function Glass() {
           </mesh>
         ))}
 
-        {/* the panes */}
-        <group ref={panes}>
-          {[3.4, 4.3, 5.2].map((x) => (
-            <mesh key={x} position={[x, 0.4, 0]} rotation={[0, Math.PI / 2, 0]}>
-              <planeGeometry args={[13, 7]} />
-              <MeshTransmissionMaterial
-                samples={4}
-                resolution={128}
-                transmission={0.97}
-                roughness={0.14}
-                thickness={0.5}
-                ior={1.3}
-                chromaticAberration={0.06}
-                anisotropy={0.2}
-                distortion={0.15}
-                distortionScale={0.3}
-                temporalDistortion={0.05}
-                color={PALETTE.glass}
-                side={THREE.DoubleSide}
-              />
-            </mesh>
-          ))}
-        </group>
+        {/* the pane */}
+        <mesh ref={pane} position={[4.3, 0.4, 0]} rotation={[0, Math.PI / 2, 0]}>
+          <planeGeometry args={[13, 7]} />
+          <MeshTransmissionMaterial
+            samples={4}
+            resolution={128}
+            transmission={0.97}
+            roughness={0.14}
+            thickness={0.5}
+            ior={1.3}
+            chromaticAberration={0.06}
+            anisotropy={0.2}
+            distortion={0.15}
+            distortionScale={0.3}
+            temporalDistortion={0.05}
+            color={PALETTE.glass}
+            side={THREE.DoubleSide}
+          />
+        </mesh>
 
         <Figure position={[-2, -2, 0]} pose="retreating" turn={0.5} />
         {visitors.map((p, i) => (

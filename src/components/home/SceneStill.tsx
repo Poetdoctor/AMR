@@ -294,17 +294,14 @@ function Glass() {
         strokeWidth={1.5}
         opacity={0.45}
       />
-      {[214, 232, 250].map((x, i) => (
-        <rect
-          key={x}
-          x={x}
-          y={96}
-          width={5}
-          height={208}
-          className="fill-current text-rust"
-          opacity={0.22 - i * 0.05}
-        />
-      ))}
+      <rect
+        x={232}
+        y={96}
+        width={5}
+        height={208}
+        className="fill-current text-rust"
+        opacity={0.22}
+      />
       <Figure x={124} y={230} />
       {[
         { x: 296, y: 150, o: 0.4 },
