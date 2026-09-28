@@ -306,7 +306,7 @@ export const BEATS: Beat[] = [
       },
     ],
     body: [
-      'Every light out there was somebody. Another room, another night, another person told the same thing and left to carry it on their own.',
+      'Every light out there is somebody. None of them knew the others were there. Of everything in this story, that is the part that can still be changed.',
     ],
   },
 ]

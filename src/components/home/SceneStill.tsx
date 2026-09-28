@@ -611,7 +611,7 @@ const ARTWORK: Partial<Record<SceneId, { src: string; alt: string }>> = {
   },
   breath: {
     src: '/stills/breath.webp',
-    alt: 'A dark structure of many rooms receding into the distance, each with a warmly lit doorway and a figure standing in it.',
+    alt: 'Many small warm lights spread across a dark ground, with thin lines running between them joining light to light, and figures standing beside the nearest ones.',
   },
 }
 

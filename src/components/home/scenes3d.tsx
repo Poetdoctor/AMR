@@ -409,7 +409,19 @@ function Corridor() {
     return Array.from({ length: 26 }, () => ({
       x: (random() - 0.5) * 9,
       z: -random() * 40,
-      speed: 9 + random() * 12,
+      /*
+       * A walk, not a sprint.
+       *
+       * The wall is 9.6 units tall and reads as a corridor about three metres
+       * high, so one unit is roughly 0.31 m. This was 9–21 units/s — 2.8–6.5
+       * m/s, which is running, and at the fast end it is sprinting. A ward
+       * where everybody is fleeing is a different beat from the one written
+       * here: these people are busy and short of time, not in an emergency,
+       * and nobody in this scene is doing anything wrong. 3–6.5 units/s is
+       * 0.9–2.0 m/s, an ordinary walking pace with enough spread that they do
+       * not move as one body.
+       */
+      speed: 3 + random() * 3.5,
       scale: 1 + random() * 0.22,
       // +1 walks toward the reader, -1 away. A figure must face the way it is
       // going; rotating them π while moving them forward is a moonwalk.

@@ -208,7 +208,7 @@ const fr: NarrativeCopy = {
         },
       ],
       body: [
-        'Chaque lumière là-bas était quelqu’un. Une autre chambre, un autre soir, une autre personne à qui on a dit la même chose et qu’on a laissée le porter seule.',
+        'Chaque lumière là-bas est quelqu’un. Aucune ne savait que les autres étaient là. De toute cette histoire, c’est la partie qui peut encore changer.',
       ],
     },
   },
