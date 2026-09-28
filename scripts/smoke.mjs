@@ -8,15 +8,14 @@
  * `prefers-reduced-motion: reduce`.
  *
  * Usage:  npm run build && npm run smoke
- * Needs a local Chrome; set CHROME_PATH to override the default macOS location.
+ * Finds a Chrome by itself (see scripts/chrome.mjs); set CHROME_PATH to pick one.
  */
 import { spawn } from 'node:child_process'
 import puppeteer from 'puppeteer-core'
+import { resolveChrome } from './chrome.mjs'
 
 const PORT = Number(process.env.SMOKE_PORT ?? 4319)
 const BASE = `http://localhost:${PORT}`
-const CHROME =
-  process.env.CHROME_PATH ?? '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'
 
 const ROUTES = [
   '/',
@@ -91,7 +90,10 @@ process.on('exit', () => server.kill())
 
 try {
   await waitForServer(BASE)
-  const browser = await puppeteer.launch({ executablePath: CHROME, headless: true })
+  const browser = await puppeteer.launch({
+    executablePath: await resolveChrome(),
+    headless: true,
+  })
 
   for (const viewport of VIEWPORTS) {
     const page = await browser.newPage()

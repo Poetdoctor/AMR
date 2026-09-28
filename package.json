@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.1.0",
   "type": "module",
-  "description": "iGEM UBC Human Practices \u2014 psychosocial impact of antimicrobial resistance",
+  "description": "iGEM UBC Human Practices — psychosocial impact of antimicrobial resistance",
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build && node scripts/prerender.mjs && node scripts/check-bundle.mjs",
@@ -42,6 +42,7 @@
     "three": "^0.185.1"
   },
   "devDependencies": {
+    "@puppeteer/browsers": "^3.2.3",
     "@tailwindcss/vite": "^4.3.3",
     "@types/node": "^26.2.0",
     "@types/react": "^19.2.18",

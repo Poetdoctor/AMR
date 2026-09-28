@@ -33,13 +33,12 @@ import { mkdirSync, readdirSync, readFileSync, writeFileSync, existsSync } from 
 import { fileURLToPath } from 'node:url'
 import path from 'node:path'
 import puppeteer from 'puppeteer-core'
+import { resolveChrome } from './chrome.mjs'
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const dist = path.join(root, 'dist')
 const PORT = 4319
 const BASE = `http://localhost:${PORT}`
-const CHROME =
-  process.env.CHROME_PATH ?? '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'
 
 if (!existsSync(path.join(dist, 'index.html'))) {
   console.error('✗ dist/index.html is missing — run `vite build` first')
@@ -168,7 +167,10 @@ const problems = []
 
 try {
   await waitForServer()
-  const browser = await puppeteer.launch({ executablePath: CHROME, headless: true })
+  const browser = await puppeteer.launch({
+    executablePath: await resolveChrome(),
+    headless: true,
+  })
   const page = await browser.newPage()
   await page.setViewport({ width: 1280, height: 900 })
   // See the header comment: this is what makes Home prerender as text.
