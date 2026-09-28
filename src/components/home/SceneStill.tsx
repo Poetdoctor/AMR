@@ -591,7 +591,7 @@ const ARTWORK: Partial<Record<SceneId, { src: string; alt: string }>> = {
   },
   glass: {
     src: '/stills/glass.webp',
-    alt: 'Three tall translucent panes standing in a row, with a single orange figure alone on one side and three dark figures together on the other.',
+    alt: 'A single tall translucent pane standing upright, with one orange figure alone on one side and three dark figures together on the other.',
   },
   ocean: {
     src: '/stills/ocean.webp',
