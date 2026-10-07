@@ -180,3 +180,31 @@ collections:
           Landscape, ideally 3:2 (the existing set is 420×280). Optional — without
           one the card shows initials instead.
       - { name: order, label: Order, widget: number, value_type: int, min: 1, i18n: duplicate }
+
+  # The rules and terms people agree to before posting in Community. One
+  # document, English only, like the rest of that section. Changing anything of
+  # substance here changes what people have agreed to: update the date, and have
+  # it reviewed before it goes live.
+  - name: community
+    label: Community
+    i18n: false
+    files:
+      - name: guidelines
+        label: Community guidelines and terms of use
+        file: src/content/community/guidelines.md
+        preview_path: community/guidelines
+        fields:
+          - { name: title, label: Title, widget: string }
+          - name: updated
+            label: Last updated
+            widget: datetime
+            format: YYYY-MM-DD
+            date_format: YYYY-MM-DD
+            time_format: false
+            hint: Change this whenever the terms change. It is shown at the top of the page.
+          - name: body
+            label: Guidelines and terms
+            widget: markdown
+            hint: >-
+              Use "##" for the two main parts and "###" for each term. Write
+              plainly — these are read by people deciding whether to post.

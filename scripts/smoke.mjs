@@ -32,6 +32,7 @@ const ROUTES = [
   '/tool',
   '/community',
   '/community/share',
+  '/community/guidelines',
   '/community/story/does-not-exist',
   '/no-such-page',
 ]

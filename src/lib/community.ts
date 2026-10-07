@@ -312,7 +312,6 @@ export interface NewPost {
   body: string
   tags: string[]
   contentWarning: string | null
-  visibility: 'public' | 'members'
   allowComments: boolean
 }
 
@@ -329,7 +328,11 @@ export async function createPost(input: NewPost, profileId: string): Promise<str
       body: input.body.trim(),
       tags: input.tags,
       content_warning: input.contentWarning,
-      visibility: input.visibility,
+      // Every new story is public. "Members only" was dropped after review:
+      // joining is one click, so it promised a privacy the site cannot give,
+      // and the page now says plainly that everything posted is public.
+      // Older members-only stories keep the visibility their authors chose.
+      visibility: 'public',
       allow_comments: input.allowComments,
     })
     .select('id')
@@ -425,28 +428,54 @@ export async function deleteComment(id: string): Promise<void> {
   if (error) throw new Error(error.message)
 }
 
-export type ReportReason = 'identifying' | 'abusive' | 'distressing' | 'spam' | 'other'
+export type ReportReason =
+  'identifying' | 'abusive' | 'hate' | 'misinformation' | 'spam' | 'distressing' | 'mine' | 'other'
 
-export const REPORT_REASONS: { id: ReportReason; label: string }[] = [
-  { id: 'identifying', label: 'It identifies someone' },
-  { id: 'abusive', label: 'It is abusive' },
-  { id: 'distressing', label: 'I am worried about the person who wrote it' },
-  { id: 'spam', label: 'Spam' },
-  { id: 'other', label: 'Something else' },
-]
+/**
+ * What a report can say. Must match the check constraint in
+ * supabase/migrations/0005_reports.sql.
+ *
+ * `note` is whether the reason asks for a few words: required for "something
+ * else", which tells a moderator nothing on its own, and offered for "this is
+ * mine", where a hint about where it was posted from helps.
+ */
+export const REPORT_REASONS: { id: ReportReason; label: string; note?: 'required' | 'optional' }[] =
+  [
+    { id: 'identifying', label: 'It shares personal or contact information' },
+    { id: 'abusive', label: 'Harassment, bullying or disrespect' },
+    { id: 'hate', label: 'Hate speech or discrimination' },
+    { id: 'misinformation', label: 'False or harmful medical advice' },
+    { id: 'spam', label: 'Spam, a scam or advertising' },
+    { id: 'distressing', label: 'I am worried about the person who wrote it' },
+    { id: 'mine', label: 'This is mine and I want it removed', note: 'optional' },
+    { id: 'other', label: 'Something else', note: 'required' },
+  ]
 
+export const REPORT_NOTE_MAX = 500
+
+/**
+ * Files a report as the current visitor.
+ *
+ * A report needs the same anonymous session as posting does. Without one it
+ * could not be counted per person, and one visitor reporting twice was enough
+ * to hide a story that the rule says takes two.
+ */
 export async function report(
   target: { postId?: string; commentId?: string },
   reason: ReportReason,
-  reporterId: string | null,
+  detail = '',
 ): Promise<void> {
+  const me = await ensureProfile()
+  if (!me) throw new Error('Could not start a session.')
+  const note = detail.trim().slice(0, REPORT_NOTE_MAX)
   const { error } = await db()
     .from('reports')
     .insert({
       post_id: target.postId ?? null,
       comment_id: target.commentId ?? null,
-      reporter_id: reporterId,
+      reporter_id: me.id,
       reason,
+      detail: note || null,
     })
   // A duplicate means this person already reported it. Nothing to say.
   if (error && error.code !== '23505') throw new Error(error.message)

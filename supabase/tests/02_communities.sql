@@ -173,7 +173,7 @@ update public.posts
        screened_at = now()
  where id = '22222222-2222-2222-2222-222222222222';
 insert into public.reports (post_id, reporter_id, reason)
-values ('22222222-2222-2222-2222-222222222222','aaaaaaaa-0000-0000-0000-000000000001','other');
+values ('22222222-2222-2222-2222-222222222222','aaaaaaaa-0000-0000-0000-000000000001','misinformation');
 select pg_temp.must_equal((select status from public.posts where id='22222222-2222-2222-2222-222222222222'),
   'published'::public.comment_status, 'one report does NOT hide a clean story');
 
@@ -186,6 +186,63 @@ insert into public.reports (post_id, reporter_id, reason)
 values ('22222222-2222-2222-2222-222222222222','bbbbbbbb-0000-0000-0000-000000000002','abusive');
 select pg_temp.must_equal((select status from public.posts where id='22222222-2222-2222-2222-222222222222'),
   'removed'::public.comment_status, 'two different people do hide it');
+
+\echo 'reporting'
+-- A story nobody has reported yet, to test the reporting rules against.
+set role authenticated;
+set request.jwt.claim.sub = 'aaaaaaaa-0000-0000-0000-000000000001';
+insert into public.posts (id, community_id, author_id, body, visibility)
+select '44444444-4444-4444-4444-444444444444', id, auth.uid(),
+       'A story written and then regretted, by somebody who has since lost the browser.', 'public'
+  from public.communities where slug = 'amr';
+reset role; reset request.jwt.claim.sub;
+
+set role anon;
+select pg_temp.must_fail(
+  $$insert into public.reports (post_id, reason)
+    values ('44444444-4444-4444-4444-444444444444','spam')$$,
+  'a report needs a session — logged-out reports could not be counted per person');
+reset role;
+
+set role authenticated;
+set request.jwt.claim.sub = 'bbbbbbbb-0000-0000-0000-000000000002';
+select pg_temp.must_fail(
+  $$insert into public.reports (post_id, reporter_id, reason)
+    values ('44444444-4444-4444-4444-444444444444','aaaaaaaa-0000-0000-0000-000000000001','spam')$$,
+  'cannot report under somebody else''s name');
+select pg_temp.must_fail(
+  $$insert into public.reports (post_id, reporter_id, reason)
+    values ('44444444-4444-4444-4444-444444444444','bbbbbbbb-0000-0000-0000-000000000002','other')$$,
+  '"something else" has to say what');
+select pg_temp.must_fail(
+  $$insert into public.reports (post_id, reporter_id, reason)
+    values ('44444444-4444-4444-4444-444444444444','bbbbbbbb-0000-0000-0000-000000000002','gossip')$$,
+  'only the listed reasons are accepted');
+insert into public.reports (post_id, reporter_id, reason, detail)
+values ('44444444-4444-4444-4444-444444444444','bbbbbbbb-0000-0000-0000-000000000002','other',
+        'Mentions a ward and a date close enough to place someone.');
+reset role; reset request.jwt.claim.sub;
+select pg_temp.must_equal((select status from public.posts where id='44444444-4444-4444-4444-444444444444'),
+  'published'::public.comment_status, 'one ordinary report still does not hide a clean story');
+
+-- Old rows from before reports needed a session carry no reporter. They must
+-- not add up to a takedown on their own.
+insert into public.reports (post_id, reason) values
+  ('44444444-4444-4444-4444-444444444444','spam'),
+  ('44444444-4444-4444-4444-444444444444','spam');
+select pg_temp.must_equal((select status from public.posts where id='44444444-4444-4444-4444-444444444444'),
+  'published'::public.comment_status, 'anonymous rows are not counted as extra people');
+
+set role authenticated;
+set request.jwt.claim.sub = 'aaaaaaaa-0000-0000-0000-000000000001';
+insert into public.reports (post_id, reporter_id, reason)
+values ('44444444-4444-4444-4444-444444444444','aaaaaaaa-0000-0000-0000-000000000001','mine');
+reset role; reset request.jwt.claim.sub;
+select pg_temp.must_equal((select status from public.posts where id='44444444-4444-4444-4444-444444444444'),
+  'removed'::public.comment_status, '"this is mine, remove it" hides at once');
+select pg_temp.must_equal(
+  (select reports from private.sweep_queue where id = '44444444-4444-4444-4444-444444444444') like '%mine%',
+  true, 'the moderation queue shows why it was reported');
 
 \echo 'kill switch'
 update public.community_settings set auto_publish = false;

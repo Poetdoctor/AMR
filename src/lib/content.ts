@@ -291,3 +291,31 @@ export function getArticles(locale: LocaleCode = DEFAULT_LOCALE): Article[] {
 export function getArticle(slug: string, locale: LocaleCode = DEFAULT_LOCALE): Article | undefined {
   return articlesFor(locale).find((article) => article.slug === slug)
 }
+
+/* -------------------------------------------------------------------------- */
+/*  Community guidelines and terms                                             */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * One document, English only, like the rest of Community. Kept as content
+ * rather than copy in a component so the website administration and the
+ * supervisor reviewing it can edit it through Decap without a code change.
+ */
+const guidelinesSource = Object.values(
+  import.meta.glob('/src/content/community/guidelines.md', {
+    query: '?raw',
+    import: 'default',
+    eager: true,
+  }) as Record<string, string>,
+)[0]
+
+export interface CommunityGuidelines {
+  title: string
+  updated: string
+  body: string
+}
+
+export function getCommunityGuidelines(): CommunityGuidelines {
+  const { data, body } = parseFrontmatter(guidelinesSource ?? '')
+  return { title: readString(data, 'title'), updated: readString(data, 'updated'), body }
+}

@@ -13,6 +13,7 @@ import Story from '@/pages/Story'
 import Tool from '@/pages/Tool'
 import Community from '@/pages/Community'
 import CommunityStory from '@/pages/CommunityStory'
+import CommunityGuidelines from '@/pages/CommunityGuidelines'
 import ShareExperience from '@/pages/ShareExperience'
 import Team from '@/pages/Team'
 import Mission from '@/pages/Mission'
@@ -45,6 +46,7 @@ function section() {
       <Route path="tool" element={<Tool />} />
       <Route path="community" element={<Community />} />
       <Route path="community/share" element={<ShareExperience />} />
+      <Route path="community/guidelines" element={<CommunityGuidelines />} />
       <Route path="community/story/:id" element={<CommunityStory />} />
       <Route path="team" element={<Team />} />
       <Route path="mission" element={<Mission />} />

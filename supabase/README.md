@@ -28,8 +28,10 @@ need to copy the secret key anywhere: Supabase injects it into deployed Edge
 Functions automatically. If it has ever been pasted into a chat, an email or a
 document, rotate it.
 
-**2. Run the migration.** Supabase Studio → SQL Editor → paste
-`migrations/0001_community.sql` → Run.
+**2. Run the migrations,** every file in `migrations/` in number order.
+Supabase Studio → SQL Editor → paste each one → Run. An existing project only
+needs the ones it has not had yet: `0005_reports.sql` (report reasons, reports
+counted per person, "this is mine" hiding at once) is the most recent.
 
 **3. Set the function secrets** (Project Settings → Edge Functions → Secrets):
 
@@ -79,6 +81,10 @@ not enough to delete the project or rotate keys.
 
 Studio → Table Editor → schema `private` → `sweep_queue`. Sorted worst-first:
 reported comments, then anything the screening pass marked urgent, then oldest.
+
+The `reports` column lists why each item was reported, with any note the
+reporter wrote. A report of **mine** means the author asked for it to be
+removed: it is already hidden, so remove it unless something looks wrong.
 
 For each comment: read it, edit `body` if it needs redacting, set `status` to
 `removed` if it should go, then **set `swept_at` to now and `swept_by` to your

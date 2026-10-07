@@ -50,6 +50,7 @@ const ROUTES = [
   '/tool',
   '/community',
   '/community/share',
+  '/community/guidelines',
   '/team',
   '/mission',
 ]

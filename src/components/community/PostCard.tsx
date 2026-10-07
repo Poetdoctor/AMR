@@ -1,7 +1,7 @@
 import { Link } from '@/components/LocaleLink'
 import { Avatar } from './Avatar'
 import { ContentWarningGate } from './ContentWarningGate'
-import { ReportMenu } from './ReportMenu'
+import { ReportControl } from './ReportControl'
 import {
   POST_TYPES,
   REACTIONS,
@@ -28,7 +28,7 @@ export function PostCard({
   linkToStory?: boolean
   onReact: (kind: ReactionKind, on: boolean) => Promise<void>
   onBookmark: (on: boolean) => Promise<void>
-  onReport: (reason: ReportReason) => Promise<void>
+  onReport: (reason: ReportReason, detail: string) => Promise<void>
   onDelete?: () => Promise<void>
 }) {
   const heading = post.title?.trim() || 'Untitled'
@@ -46,18 +46,12 @@ export function PostCard({
             <span className="text-ink-faint">{communityLabel}</span>
           </p>
         </div>
-        <div className="flex shrink-0 items-center gap-2">
-          <span
-            className={`rounded-full px-2.5 py-1 text-xs font-medium ${
-              post.visibility === 'public'
-                ? 'bg-rust-wash text-rust-deep'
-                : 'bg-forest-soft text-forest-deep'
-            }`}
-          >
-            {post.visibility === 'public' ? 'Public story' : 'Members only'}
+        {/* Every new story is public; only older ones can still be members-only. */}
+        {post.visibility === 'members' ? (
+          <span className="shrink-0 rounded-full bg-forest-soft px-2.5 py-1 text-xs font-medium text-forest-deep">
+            Members only
           </span>
-          <ReportMenu isMine={post.isMine} onReport={onReport} onDelete={onDelete} />
-        </div>
+        ) : null}
       </header>
 
       <h3 className="mt-5 font-display text-xl leading-snug font-bold tracking-tight text-ink">
@@ -72,7 +66,7 @@ export function PostCard({
 
       <div className="mt-3">
         <ContentWarningGate warning={post.content_warning}>
-          <p className="text-[0.9375rem] leading-relaxed whitespace-pre-line text-ink-soft">
+          <p className="text-[1.0625rem] leading-relaxed whitespace-pre-line text-ink-soft">
             {post.body}
           </p>
         </ContentWarningGate>
@@ -113,7 +107,7 @@ export function PostCard({
         <span className="ms-auto flex items-center gap-4 text-sm text-ink-faint">
           <Link
             to={`/community/story/${post.id}`}
-            className="hover:text-ink"
+            className="underline underline-offset-4 hover:text-ink"
             aria-label={`${post.commentCount} ${post.commentCount === 1 ? 'comment' : 'comments'} on this story`}
           >
             <span className="tabular-nums">{post.commentCount}</span>{' '}
@@ -129,6 +123,22 @@ export function PostCard({
           </button>
         </span>
       </footer>
+
+      <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-3 border-t border-sand-line pt-4">
+        {post.isMine && onDelete ? (
+          <button
+            type="button"
+            onClick={async () => {
+              if (window.confirm('Delete your story? It is deleted for good, not just hidden.'))
+                await onDelete()
+            }}
+            className="text-sm font-semibold text-rust-deep underline underline-offset-4"
+          >
+            Delete my story
+          </button>
+        ) : null}
+        <ReportControl what="story" onReport={onReport} />
+      </div>
     </article>
   )
 }

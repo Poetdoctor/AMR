@@ -4,6 +4,8 @@ import { Container } from '@/components/Container'
 import { PageHeader } from '@/components/PageHeader'
 import { PostCard } from '@/components/community/PostCard'
 import { CrisisLine } from '@/components/community/CrisisLine'
+import { PublicNotice } from '@/components/community/PublicNotice'
+import { site } from '@/config/site'
 import { Disclaimer } from '@/components/Disclaimer'
 import { UntranslatedNotice } from '@/components/UntranslatedNotice'
 import {
@@ -145,15 +147,15 @@ export default function Community() {
     <>
       {/*
         Deliberately unconditional. Most of this page's words come from
-        `community_settings` in the database — the intro, the guidelines, the
-        glossary — which the team writes in English through Supabase Studio,
-        and so does every post. There is nothing here to key a `when` off, and
+        the `communities` row in the database — the intro and the glossary —
+        which the team writes in English through Supabase Studio, and so does
+        every post; the guidelines and terms are English-only too. There is nothing here to key a `when` off, and
         a reader in French should be told that before they start reading.
       */}
       <UntranslatedNotice />
       <header className="bg-forest py-14 text-cream md:py-16">
         <Container width="wide">
-          <p className="text-xs font-semibold tracking-[0.16em] text-cream/70 uppercase">
+          <p className="text-xs font-semibold tracking-[0.16em] text-cream/85 uppercase">
             Flagship community
           </p>
           <h1 className="display-lg mt-3 max-w-3xl text-cream">
@@ -171,13 +173,13 @@ export default function Community() {
               type="button"
               onClick={handleJoin}
               disabled={busy}
-              className="rounded-full bg-cream px-5 py-2 text-sm font-semibold text-forest-deep transition-colors hover:bg-cream-deep disabled:opacity-60"
+              className="rounded-full bg-cream px-5 py-2 text-sm font-semibold text-forest-deep transition-colors hover:bg-cream-deep focus-visible:outline-cream disabled:opacity-60"
             >
               {joined ? 'Leave community' : 'Join community'}
             </button>
             <Link
               to="/community/share"
-              className="rounded-full border border-cream/40 px-5 py-2 text-sm font-semibold text-cream transition-colors hover:bg-cream/10"
+              className="rounded-full border border-cream/40 px-5 py-2 text-sm font-semibold text-cream transition-colors hover:bg-cream/10 focus-visible:outline-cream"
             >
               Share an experience
             </Link>
@@ -188,6 +190,8 @@ export default function Community() {
       <Container width="wide" className="py-12 md:py-16">
         <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,20rem)] lg:gap-12">
           <div className="space-y-8">
+            <PublicNotice />
+
             {community?.intro_body ? (
               <section className="card p-6 md:p-7">
                 <h2 className="display-md text-ink">{community.intro_title}</h2>
@@ -248,10 +252,7 @@ export default function Community() {
                         await load()
                       })
                     }
-                    onReport={async (reason) => {
-                      await report({ postId: post.id }, reason, profile?.id ?? null)
-                      await load()
-                    }}
+                    onReport={(reason, detail) => report({ postId: post.id }, reason, detail)}
                     onDelete={
                       post.isMine
                         ? async () => {
@@ -267,14 +268,36 @@ export default function Community() {
           </div>
 
           <aside className="space-y-5 lg:sticky lg:top-24 lg:self-start">
-            {community?.guidelines ? (
-              <section className="card p-5">
-                <h2 className="font-display text-base font-bold text-ink">Community guidelines</h2>
-                <p className="mt-2.5 text-sm leading-relaxed text-ink-soft">
-                  {community.guidelines}
-                </p>
-              </section>
-            ) : null}
+            {/*
+              The rules live in the repo now (src/content/community/), not in
+              the database's `guidelines` column, so there is one copy of them
+              and the full terms can sit behind this summary.
+            */}
+            <section className="card p-5">
+              <h2 className="font-display text-base font-bold text-ink">Community guidelines</h2>
+              <ul className="mt-3 list-disc space-y-1.5 ps-5 text-sm leading-relaxed text-ink-soft">
+                <li>Share your own experience, not medical advice.</li>
+                <li>Be respectful. No disrespect, harassment or hate.</li>
+                <li>Leave out personal and contact information, yours and anyone else’s.</li>
+                <li>Everything posted here is public.</li>
+              </ul>
+              <p className="mt-3 text-sm leading-relaxed text-ink-soft">
+                Moderated by the website administration. For questions, or to ask for something to
+                be removed, email{' '}
+                <a
+                  href={`mailto:${site.contactEmail}`}
+                  className="block font-semibold text-rust-deep underline underline-offset-4"
+                >
+                  {site.contactEmail}
+                </a>
+              </p>
+              <Link
+                to="/community/guidelines"
+                className="mt-3 inline-block text-sm font-semibold text-rust-deep underline underline-offset-4"
+              >
+                Read the full guidelines and terms
+              </Link>
+            </section>
 
             {community && community.glossary.length > 0 ? (
               <section className="card p-5">

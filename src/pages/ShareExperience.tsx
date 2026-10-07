@@ -3,7 +3,9 @@ import { useNavigate } from 'react-router-dom'
 import { Link } from '@/components/LocaleLink'
 import { Container } from '@/components/Container'
 import { Avatar } from '@/components/community/Avatar'
+import { ConsentCheck } from '@/components/community/ConsentCheck'
 import { CrisisLine } from '@/components/community/CrisisLine'
+import { PublicNotice } from '@/components/community/PublicNotice'
 import { UntranslatedNotice } from '@/components/UntranslatedNotice'
 import {
   CONTENT_WARNINGS,
@@ -18,7 +20,7 @@ import {
   type PostType,
   type Profile,
 } from '@/lib/community'
-import { useT } from '@/lib/i18n'
+import { useI18n, useT } from '@/lib/i18n'
 import { usePageTitle } from '@/lib/usePageTitle'
 
 const MIN = 20
@@ -27,6 +29,7 @@ const MAX_TAGS = 6
 
 export default function ShareExperience() {
   const t = useT()
+  const { path } = useI18n()
   usePageTitle(t.titles.share)
   const navigate = useNavigate()
 
@@ -39,8 +42,8 @@ export default function ShareExperience() {
   const [body, setBody] = useState('')
   const [tags, setTags] = useState<string[]>([])
   const [contentWarning, setContentWarning] = useState('')
-  const [visibility, setVisibility] = useState<'public' | 'members'>('members')
   const [allowComments, setAllowComments] = useState(true)
+  const [consented, setConsented] = useState(false)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
 
@@ -72,7 +75,8 @@ export default function ShareExperience() {
   }, [])
 
   const remaining = MAX - body.length
-  const canPost = body.trim().length >= MIN && remaining >= 0 && Boolean(community) && !busy
+  const canPost =
+    body.trim().length >= MIN && remaining >= 0 && Boolean(community) && consented && !busy
 
   function toggleTag(tag: string) {
     setTags((current) =>
@@ -99,12 +103,12 @@ export default function ShareExperience() {
           body,
           tags,
           contentWarning: contentWarning || null,
-          visibility,
           allowComments,
         },
         me.id,
       )
-      navigate(`/community/story/${id}`)
+      // Through `path`, or a French reader lands on the English story page.
+      navigate(path(`/community/story/${id}`))
     } catch (caught) {
       setError(
         caught instanceof Error ? caught.message : 'Could not publish that. Please try again.',
@@ -140,7 +144,7 @@ export default function ShareExperience() {
   }
 
   const field =
-    'w-full rounded-xl border border-sand-line bg-paper px-4 py-3 text-[0.9375rem] text-ink'
+    'w-full rounded-xl border border-ink-faint bg-paper px-4 py-3 text-[1.0625rem] text-ink'
 
   return (
     <>
@@ -151,6 +155,8 @@ export default function ShareExperience() {
           Your lived experience — in your own words. This is personal experience, not universal
           medical advice.
         </p>
+
+        <PublicNotice className="mt-8 max-w-3xl" />
 
         <div className="card mt-8 space-y-6 p-6 md:p-8">
           <div className="grid gap-5 sm:grid-cols-2">
@@ -258,7 +264,7 @@ export default function ShareExperience() {
           ) : null}
 
           <div className="grid gap-5 sm:grid-cols-2">
-            <div>
+            <div className="sm:col-span-2 sm:max-w-sm">
               <label htmlFor="cw" className="block text-sm font-semibold text-ink">
                 Content warning <span className="font-normal text-ink-faint">— optional</span>
               </label>
@@ -274,20 +280,6 @@ export default function ShareExperience() {
                     {warning}
                   </option>
                 ))}
-              </select>
-            </div>
-            <div>
-              <label htmlFor="visibility" className="block text-sm font-semibold text-ink">
-                Visibility
-              </label>
-              <select
-                id="visibility"
-                value={visibility}
-                onChange={(event) => setVisibility(event.target.value as 'public' | 'members')}
-                className={`${field} mt-2`}
-              >
-                <option value="members">Community members only</option>
-                <option value="public">Anyone on the internet</option>
               </select>
             </div>
           </div>
@@ -314,10 +306,7 @@ export default function ShareExperience() {
                   {profile?.display_name ?? 'a name made up for you'}
                 </strong>
               </p>
-              <p className="text-sm text-ink-soft">
-                Visible to:{' '}
-                {visibility === 'members' ? 'members of this community' : 'anyone on the internet'}
-              </p>
+              <p className="text-sm text-ink-soft">Visible to: anyone on the internet</p>
             </div>
           </div>
           <p className="mt-4 text-sm leading-relaxed text-ink-soft">
@@ -326,6 +315,9 @@ export default function ShareExperience() {
             you: your full name, your town, your hospital or ward, your workplace, a phone number or
             email, or an exact appointment date.
           </p>
+          <div className="mt-5 border-t border-sand-line pt-5">
+            <ConsentCheck checked={consented} onChange={setConsented} />
+          </div>
         </section>
 
         {error ? (

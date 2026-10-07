@@ -1,10 +1,13 @@
 import { useCallback, useEffect, useState } from 'react'
-import { useParams } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 import { Link } from '@/components/LocaleLink'
 import { Container } from '@/components/Container'
 import { PostCard } from '@/components/community/PostCard'
 import { Avatar } from '@/components/community/Avatar'
+import { ConsentCheck } from '@/components/community/ConsentCheck'
 import { CrisisLine } from '@/components/community/CrisisLine'
+import { PublicNotice } from '@/components/community/PublicNotice'
+import { ReportControl } from '@/components/community/ReportControl'
 import { Disclaimer } from '@/components/Disclaimer'
 import { UntranslatedNotice } from '@/components/UntranslatedNotice'
 import {
@@ -24,18 +27,21 @@ import {
   type Profile,
   type StoryComment,
 } from '@/lib/community'
-import { useT } from '@/lib/i18n'
+import { useI18n, useT } from '@/lib/i18n'
 import { usePageTitle } from '@/lib/usePageTitle'
 import NotFound from './NotFound'
 
 export default function CommunityStory() {
   const t = useT()
+  const { path } = useI18n()
+  const navigate = useNavigate()
   const { id } = useParams()
   const [post, setPost] = useState<Post | null>(null)
   const [comments, setComments] = useState<StoryComment[]>([])
   const [profile, setProfile] = useState<Profile | null>(null)
   const [label, setLabel] = useState('')
   const [draft, setDraft] = useState('')
+  const [consented, setConsented] = useState(false)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [missing, setMissing] = useState(false)
@@ -125,7 +131,7 @@ export default function CommunityStory() {
       <Container width="wide" className="py-10 md:py-14">
         <Link
           to="/community"
-          className="text-sm font-semibold text-rust-deep underline-offset-4 hover:underline"
+          className="text-sm font-semibold text-rust-deep underline underline-offset-4"
         >
           <span aria-hidden="true">← </span>All of Community
         </Link>
@@ -148,15 +154,12 @@ export default function CommunityStory() {
                   await load()
                 })
               }
-              onReport={async (reason) => {
-                await report({ postId: post.id }, reason, profile?.id ?? null)
-                await load()
-              }}
+              onReport={(reason, detail) => report({ postId: post.id }, reason, detail)}
               onDelete={
                 post.isMine
                   ? async () => {
                       await deletePost(post.id)
-                      window.location.assign('/community')
+                      navigate(path('/community'))
                     }
                   : undefined
               }
@@ -184,33 +187,30 @@ export default function CommunityStory() {
                     <Avatar name={comment.author} size="sm" />
                     <div className="min-w-0 flex-1 rounded-xl border border-sand-line bg-paper px-4 py-3">
                       <p className="text-sm font-semibold text-ink">{comment.author}</p>
-                      <p className="mt-1 text-[0.9375rem] leading-relaxed whitespace-pre-line text-ink-soft">
+                      <p className="mt-1 text-[1.0625rem] leading-relaxed whitespace-pre-line text-ink-soft">
                         {comment.body}
                       </p>
-                      <div className="mt-2 flex gap-4 text-xs">
+                      <div className="mt-2.5 flex flex-wrap items-center gap-x-5 gap-y-3">
                         {comment.isMine ? (
                           <button
                             type="button"
                             onClick={async () => {
-                              if (!window.confirm('Delete your comment?')) return
+                              if (!window.confirm('Delete your comment? It is deleted for good.'))
+                                return
                               await deleteComment(comment.id)
                               await load()
                             }}
-                            className="font-semibold text-rust-deep hover:underline"
+                            className="text-sm font-semibold text-rust-deep underline underline-offset-4"
                           >
-                            Delete
+                            Delete my comment
                           </button>
                         ) : null}
-                        <button
-                          type="button"
-                          onClick={async () => {
-                            await report({ commentId: comment.id }, 'other', profile?.id ?? null)
-                            await load()
-                          }}
-                          className="text-ink-faint hover:text-ink-soft hover:underline"
-                        >
-                          Report
-                        </button>
+                        <ReportControl
+                          what="comment"
+                          onReport={(reason, detail) =>
+                            report({ commentId: comment.id }, reason, detail)
+                          }
+                        />
                       </div>
                     </div>
                   </li>
@@ -218,10 +218,22 @@ export default function CommunityStory() {
               </ul>
 
               {post.allow_comments ? (
-                <div className="mt-6">
+                <div className="mt-8">
+                  <PublicNotice className="mb-5" />
                   <label htmlFor="new-comment" className="block text-sm font-semibold text-ink">
                     Add a comment
                   </label>
+                  <p className="mt-1 text-sm text-ink-soft">
+                    {profile ? (
+                      <>
+                        You will appear as{' '}
+                        <strong className="font-semibold text-ink">{profile.display_name}</strong>,
+                        a name made up for you. Nobody, including us, can see who you are.
+                      </>
+                    ) : (
+                      'You will appear under a name made up for you, never your own. Nobody, including us, can see who you are.'
+                    )}
+                  </p>
                   <textarea
                     id="new-comment"
                     rows={3}
@@ -229,19 +241,23 @@ export default function CommunityStory() {
                     autoComplete="off"
                     onChange={(event) => setDraft(event.target.value)}
                     placeholder="Something you want this person to hear."
-                    className="mt-2 w-full resize-y rounded-xl border border-sand-line bg-paper px-4 py-3 text-[0.9375rem] leading-relaxed text-ink placeholder:text-ink-faint/70"
+                    className="mt-2 w-full resize-y rounded-xl border border-ink-faint bg-paper px-4 py-3 text-[1.0625rem] leading-relaxed text-ink placeholder:text-ink-faint"
                   />
+                  <div className="mt-4">
+                    <ConsentCheck checked={consented} onChange={setConsented} />
+                  </div>
                   <button
                     type="button"
-                    disabled={draft.trim().length < 2}
+                    disabled={draft.trim().length < 2 || !consented}
                     onClick={() =>
                       withProfile(async (me) => {
                         await addComment(post.id, draft, me.id)
                         setDraft('')
+                        setConsented(false)
                         await load()
                       })
                     }
-                    className="btn btn-primary mt-3 disabled:opacity-50"
+                    className="btn btn-primary mt-4 disabled:opacity-50"
                   >
                     Post comment
                   </button>
