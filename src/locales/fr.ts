@@ -20,7 +20,7 @@ const fr: Dict = {
     short: 'AMR',
     tagline: 'le côté humain',
     blurb:
-      'Un projet Human Practices d’iGEM UBC sur les répercussions psychosociales de la résistance aux antimicrobiens.',
+      'Un projet Human Practices d’iGEM UBC sur les répercussions psychosociales de la résistance aux antimicrobiens. Écrit pour les patients, leurs proches et toute personne qui veut comprendre.',
     credit: 'iGEM UBC — Human Practices',
     noTrackers:
       'Aucune analyse d’audience. Aucun traceur. Rien de ce que vous écrivez ici n’est enregistré.',
@@ -66,19 +66,52 @@ const fr: Dict = {
   home: {
     eyebrow: 'iGEM UBC · Human Practices',
     title: 'On compte soigneusement la résistance aux antimicrobiens. Pas les personnes.',
-    lede: 'Sept choses que des patients et des cliniciens nous ont dites, dans l’ordre où elles arrivent généralement. Il faut environ cinq minutes pour les lire.',
+    audience:
+      'Pour les personnes qui vivent avec une infection résistante aux médicaments, pour les proches qui les accompagnent, et pour toute personne qui veut comprendre ce que c’est.',
+    lede: 'Onze courtes scènes tirées de ce que des patients et des cliniciens nous ont dit, dans l’ordre où les choses arrivent généralement. Il faut environ cinq minutes pour les lire.',
+    heroCaption:
+      'Une personne atteinte d’une infection résistante aux médicaments, et la vitre qui se dresse entre elle et tous les autres. Voici son histoire.',
+    before: {
+      title: 'Avant de commencer',
+      whyTitle: 'Pourquoi lire ceci',
+      whyBody:
+        'On présente généralement la résistance aux antimicrobiens comme un problème de bactéries. Voici ce qu’elle représente pour la personne qui en est atteinte, à partir d’entretiens avec deux patients et les cliniciens qui les soignent. Si cela vous arrive, à vous ou à un proche, vous en reconnaîtrez peut-être une partie.',
+      whatTitle: 'Ce qui va se passer',
+      whatBody:
+        'Vous faites défiler onze courtes scènes en quatre parties, à votre rythme. Chacune comporte une image, quelques mots et ce que des gens nous ont dit. Vous pouvez vous arrêter à tout moment. À la fin, vous trouverez de l’aide concrète : des questions à apporter à un rendez-vous, des explications simples et des ressources de soutien.',
+      riskTitle: 'Est-ce que je cours un risque ?',
+      riskBody:
+        'Non. Cette lecture ne vous demande rien : aucune inscription, rien à remplir, et rien de ce que vous faites ici n’est suivi ni enregistré. Certaines scènes décrivent la maladie, l’isolement et l’épuisement. Si cela vous touche de près, vous pouvez vous arrêter, et des ressources de soutien sont indiquées à la fin.',
+    },
     start: 'Commencer la lecture',
     tryMoving: 'Essayer la version animée',
     tryStill: 'Passer à la version fixe',
+    stillExplainer:
+      'Vous lisez la version fixe : les mêmes phrases que dans la version animée, avec une image à côté de chaque scène au lieu d’une caméra qui les traverse.',
+    movingExplainer:
+      'Vous lisez la version animée : la vue traverse chaque scène à mesure que vous faites défiler. La version fixe contient exactement les mêmes phrases, sans le mouvement.',
     reducedMotion:
-      'Votre appareil demande une réduction des animations : voici donc la version fixe. Il n’y manque rien.',
-    onward: 'Où aller à partir d’ici',
+      'Votre appareil demande une réduction des animations : voici donc la version fixe, avec les mêmes phrases que la version animée, une image à côté de chaque scène et rien qui bouge.',
+    end: {
+      eyebrow: 'Fin',
+      title: 'C’est toute l’histoire. Voici ce que vous pouvez en faire.',
+      lede: 'Tout ce qu’elle contient vient de véritables entretiens avec des patients et les cliniciens qui les soignent. Si une partie vous a semblé familière, commencez par l’aide concrète ci-dessous.',
+      practical: 'Aide concrète',
+      toolTitle: 'Préparer votre prochain rendez-vous',
+      learnTitle: 'Comprendre ce qu’est la résistance',
+      talkTitle: 'Si vous avez besoin de parler à quelqu’un maintenant',
+      crisis:
+        '9-8-8 : Ligne d’aide en cas de crise de suicide — appelez ou textez le {tel}, à toute heure, partout au Canada.',
+      health:
+        '{name} : composez le {tel} pour parler à une infirmière ou à un infirmier autorisé de ce qui vous inquiète, à toute heure, partout en Colombie-Britannique. Un service d’interprétation est offert dans plus de 130 langues.',
+      more: 'Pour continuer',
+    },
     cards: {
       learn: 'Ce qu’est réellement la résistance, et pourquoi personne ne l’a expliqué.',
-      stories: 'Les récits complets dont ces sept temps sont tirés.',
+      stories: 'Les récits complets dont cette histoire est tirée.',
       community:
         'Les deux patients nous ont dit qu’aucune communauté n’existait. Voici notre tentative.',
-      tool: 'Écrivez vos questions avant le rendez-vous. Rien ne quitte votre navigateur.',
+      tool: 'Écrivez vos questions avant le rendez-vous, puis imprimez-les. Rien ne quitte votre navigateur.',
       mission: 'Ce que nous faisons à ce sujet, et ce que nous espérons changer.',
       team: 'Les six personnes qui lisent votre histoire.',
     },
@@ -106,7 +139,7 @@ const fr: Dict = {
         'Norma comme Sunny avaient trouvé leur propre façon de traverser cela — une église et une amie qui prie, un groupe d’amis en ligne — et on n’avait rien proposé ni à l’une ni à l’autre. Tous deux ont soulevé la même absence, séparément : il n’existe aucune communauté de patients touchés par la RAM où se retrouver, et tous deux ont dit qu’ils y tiendraient.',
       calloutTitle: 'C’est pour cette dernière raison que la section Communauté existe',
       calloutBody:
-        'Si vous avez vécu une partie de tout cela, vous n’êtes pas la première personne — on ne vous a simplement jamais mise dans la même pièce que les autres. Publiez sous le nom que vous voulez. Une personne lit tout avant publication.',
+        'Si vous avez vécu une partie de tout cela, vous n’êtes pas la première personne — on ne vous a simplement jamais mise dans la même pièce que les autres. Vous publiez sous un nom inventé pour vous, jamais le vôtre. Les publications apparaissent tout de suite, sont publiques et sont relues chaque jour.',
       calloutAction: 'Aller à la Communauté',
     },
     team: {

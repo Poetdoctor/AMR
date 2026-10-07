@@ -1,5 +1,5 @@
 import { Suspense, useMemo, useRef } from 'react'
-import { useFrame } from '@react-three/fiber'
+import { useFrame, useThree } from '@react-three/fiber'
 import { Text } from '@react-three/drei'
 import * as THREE from 'three'
 import { PersonModel, type PersonPose } from './PersonModel'
@@ -30,6 +30,57 @@ export const useNarrativeFont = () => useI18n().locale.narrativeFont ?? undefine
  * and words left where they were would end up underneath it.
  */
 export const useMirror = () => (useI18n().locale.dir === 'rtl' ? -1 : 1)
+
+/**
+ * How much larger the floating words are than the size the scenes were first
+ * composed at. Reviewers asked for the text on the pictures to be bigger, and
+ * one number here is what every scene's words scale by.
+ */
+export const WORD_SCALE = 1.5
+
+/** Roughly how far a scene's words sit from the camera when the reader is there. */
+const WORD_DISTANCE = 15
+/** Half the camera's vertical field of view (52°), in radians. */
+const HALF_FOV = (26 * Math.PI) / 180
+
+/** Width of a string in ems, near enough: CJK glyphs are square, Latin ones narrow. */
+function emWidth(text: string, tracking: number): number {
+  let width = 0
+  for (const char of text) width += (char.codePointAt(0)! >= 0x2e80 ? 1 : 0.56) + tracking
+  return Math.max(width, 1)
+}
+
+/**
+ * Where a word can go on this screen, and how big it can be.
+ *
+ * The scenes were composed for a landscape frame, with the words in a column
+ * right of centre, clear of the reading card on the left. On a portrait phone
+ * the frame is a third as wide, so that column started off the right edge and
+ * "Encouraged" read as "Encourage". Larger words would only have made it worse.
+ *
+ * So on a narrow frame the column moves to the middle and up, above the card
+ * that covers the lower half of a phone, and each word is capped at whatever
+ * fits the visible width. Long fragments in other languages wrap rather than
+ * run off the edge.
+ */
+export function useWordFit() {
+  const aspect = useThree((state) => state.size.width / Math.max(1, state.size.height))
+  return useMemo(() => {
+    const portrait = aspect < 0.9
+    const usable = 2 * WORD_DISTANCE * Math.tan(HALF_FOV) * aspect * 0.86
+    return {
+      portrait,
+      x: (x: number) => (portrait ? x * 0.12 : x),
+      y: (y: number) => (portrait ? 1.8 + y * 0.8 : y),
+      /** `base` is the size the scene was composed at; `text` is what must fit. */
+      size: (base: number, text: string, tracking = 0) =>
+        portrait
+          ? Math.min(base * WORD_SCALE, usable / emWidth(text, tracking))
+          : base * WORD_SCALE,
+      maxWidth: portrait ? usable : undefined,
+    }
+  }, [aspect])
+}
 
 /** drei forwards the troika instance; these two uniforms are driven per frame. */
 type TroikaText = THREE.Object3D & { fillOpacity: number; outlineOpacity: number }
@@ -239,6 +290,10 @@ export function WorldWord({
   const phase = useScenePhase()
   const font = useNarrativeFont()
   const mirror = useMirror()
+  const fit = useWordFit()
+  const x = fit.x(position[0]) * mirror
+  const y = fit.y(position[1])
+  const fontSize = fit.size(size, children)
 
   /*
    * Deliberately only a small float now.
@@ -258,7 +313,7 @@ export function WorldWord({
     if (!group.current) return
     const t = state.clock.elapsedTime
     const amount = drift || flicker ? 0.075 : 0
-    if (amount) group.current.position.y = position[1] + Math.sin(t * 0.5 + seed.current) * amount
+    if (amount) group.current.position.y = y + Math.sin(t * 0.5 + seed.current) * amount
 
     // A word belongs to its own beat, and only its own beat.
     const shown =
@@ -272,7 +327,7 @@ export function WorldWord({
   })
 
   return (
-    <group ref={group} position={[position[0] * mirror, position[1], position[2]]}>
+    <group ref={group} position={[x, y, position[2]]}>
       <Text
         ref={(node: TroikaText | null) => {
           text.current = node
@@ -286,7 +341,9 @@ export function WorldWord({
         renderOrder={20}
         material-depthTest={false}
         font={font}
-        fontSize={size}
+        fontSize={fontSize}
+        maxWidth={fit.maxWidth}
+        textAlign="center"
         color={colour}
         anchorX={anchorX}
         anchorY="middle"
@@ -296,7 +353,7 @@ export function WorldWord({
          * word you can almost read. These float over lights, glass and empty
          * dark within the same scene, so they cannot rely on any one ground.
          */
-        outlineWidth={size * 0.045}
+        outlineWidth={fontSize * 0.045}
         outlineColor="#0d0b09"
         outlineOpacity={0}
         fillOpacity={0}

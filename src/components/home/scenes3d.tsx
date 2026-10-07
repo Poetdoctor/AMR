@@ -12,6 +12,8 @@ import {
   SceneLight,
   useMirror,
   useNarrativeFont,
+  useWordFit,
+  WORD_SCALE,
   WorldWord,
 } from './atmosphere'
 import { easeOut, presence, stage, StationPhase, useScenePhase } from './phase'
@@ -399,6 +401,7 @@ function Corridor() {
   const staff = useRef<THREE.Group>(null)
   const font = useNarrativeFont()
   const mirror = useMirror()
+  const fit = useWordFit()
   const wordGroup = useRef<THREE.Group>(null)
   const patient = useRef<THREE.Group>(null)
   const wordText = useRef<(TroikaText | null)[]>([])
@@ -437,7 +440,8 @@ function Corridor() {
       if (person.direction < 0 && child.position.z < -STATION_REACH) child.position.z = 18
     })
     wordGroup.current?.children.forEach((child, i) => {
-      child.position.z += 11 * delta
+      // 7 units/s, down from 11: the words rushing at the reader read as a zoom.
+      child.position.z += 7 * delta
       if (child.position.z > WORD_NEAR) child.position.z -= WORD_SPAN
       /*
        * Lit only in a band partway down the corridor.
@@ -523,19 +527,27 @@ function Corridor() {
         {CORRIDOR_LANES.map(({ x, y }, i) => (
           <group
             key={i}
-            position={[x * mirror, y, WORD_NEAR - WORD_SPAN * (i / CORRIDOR_LANES.length)]}
+            position={[
+              fit.x(x) * mirror,
+              fit.y(y),
+              WORD_NEAR - WORD_SPAN * (i / CORRIDOR_LANES.length),
+            ]}
           >
             <Text
               ref={(node: TroikaText | null) => {
                 wordText.current[i] = node
               }}
               font={font}
-              fontSize={1}
+              // Nearest these get is about 22 units, half as far again as the
+              // other scenes' words, so they can be that much larger and fit.
+              fontSize={Math.min(fit.size(1, words[i] ?? '') * 1.45, WORD_SCALE)}
+              maxWidth={fit.maxWidth && fit.maxWidth * 1.45}
+              textAlign="center"
               color={PALETTE.bone}
               anchorX="center"
               anchorY="middle"
               renderOrder={20}
-              outlineWidth={0.045}
+              outlineWidth={0.045 * WORD_SCALE}
               outlineColor="#0d0b09"
               fillOpacity={0}
               outlineOpacity={0}
@@ -941,6 +953,7 @@ function Monster() {
   const phase = useScenePhase()
   const font = useNarrativeFont()
   const mirror = useMirror()
+  const fit = useWordFit()
   const shell = useRef<THREE.Group>(null)
   const debris = useRef<THREE.InstancedMesh>(null)
   const organism = useRef<THREE.Mesh>(null)
@@ -1003,9 +1016,11 @@ function Monster() {
     })
   }, [])
 
-  useFrame((state) => {
+  useFrame((state, delta) => {
     const t = state.clock.elapsedTime
-    if (shell.current) shell.current.rotation.y += 0.0016
+    // Per second rather than per frame, so a 120 Hz screen does not spin it at
+    // double speed — and at 0.6 of the old 60 fps rate.
+    if (shell.current) shell.current.rotation.y += delta * 0.058
     if (debris.current) {
       const matrix = new THREE.Matrix4()
       fragments.forEach((f, i) => {
@@ -1036,8 +1051,8 @@ function Monster() {
       const loosen = easeOut(stage(phase.current, 0.3 + w.delay * 0.04, 0.9 + w.delay * 0.04))
       if (node) {
         node.position.set(
-          w.p[0] * mirror * (1 + loosen * 0.16),
-          w.p[1] * (1 + loosen * 0.16),
+          fit.x(w.p[0]) * mirror * (1 + loosen * 0.16),
+          fit.y(w.p[1] * (1 + loosen * 0.16)),
           w.p[2],
         )
       }
@@ -1084,7 +1099,7 @@ function Monster() {
       {words.map((w, i) => (
         <group
           key={i}
-          position={[w.p[0] * mirror, w.p[1], w.p[2]]}
+          position={[fit.x(w.p[0]) * mirror, fit.y(w.p[1]), w.p[2]]}
           ref={(node) => {
             wordGroups.current[i] = node
           }}
@@ -1094,7 +1109,9 @@ function Monster() {
               monsterText.current[i] = node
             }}
             font={font}
-            fontSize={0.72}
+            fontSize={fit.size(0.72, w.word, font ? 0 : 0.06)}
+            maxWidth={fit.maxWidth}
+            textAlign="center"
             color={PALETTE.bone}
             anchorX="center"
             anchorY="middle"
@@ -1197,7 +1214,7 @@ function World() {
   }, [places])
 
   useFrame((_, delta) => {
-    if (group.current) group.current.rotation.y += delta * 0.038
+    if (group.current) group.current.rotation.y += delta * 0.025
     // The route draws itself as the reader travels it.
     if (route.current) {
       const drawn = easeOut(stage(phase.current, 0.1, 0.9))
@@ -1319,6 +1336,7 @@ function Whole() {
   const phase = useScenePhase()
   const font = useNarrativeFont()
   const mirror = useMirror()
+  const fit = useWordFit()
   const orbit = useRef<THREE.Group>(null)
   const swarm = useRef<THREE.InstancedMesh>(null)
   const COUNT = 1400
@@ -1357,10 +1375,10 @@ function Whole() {
          * them. The ring put two of the six behind the reading card and a third
          * off the right edge, so half of what arrives could not be read.
          */
-        to: [2 * mirror, 3.2 - i * 1.05, 1.8] as [number, number, number],
+        to: [fit.x(2) * mirror, fit.y(3.2 - i * 1.05), 1.8] as [number, number, number],
         delay: i * 0.7,
       })),
-    [wholeWords],
+    [wholeWords, fit, mirror],
   )
 
   const wordRefs = useRef<(THREE.Group | null)[]>([])
@@ -1368,7 +1386,7 @@ function Whole() {
 
   useFrame((state, delta) => {
     const t = state.clock.elapsedTime
-    if (orbit.current) orbit.current.rotation.y += delta * 0.075
+    if (orbit.current) orbit.current.rotation.y += delta * 0.045
     if (swarm.current) {
       const matrix = new THREE.Matrix4()
       const colour = new THREE.Color()
@@ -1419,12 +1437,14 @@ function Whole() {
               wholeText.current[i] = node
             }}
             font={font}
-            fontSize={0.42}
+            fontSize={fit.size(0.42, w.word)}
+            maxWidth={fit.maxWidth}
+            textAlign="center"
             color={PALETTE.bone}
             anchorX="center"
             anchorY="middle"
             renderOrder={20}
-            outlineWidth={0.02}
+            outlineWidth={0.02 * WORD_SCALE}
             outlineColor="#0d0b09"
             outlineOpacity={0.8}
             fillOpacity={0}

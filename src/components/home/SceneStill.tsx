@@ -615,6 +615,11 @@ const ARTWORK: Partial<Record<SceneId, { src: string; alt: string }>> = {
   },
 }
 
+/** The illustration for a scene, for anywhere else on the page that shows one. */
+export function sceneArtwork(scene: SceneId): { src: string; alt: string } | undefined {
+  return ARTWORK[scene]
+}
+
 export function SceneStill({ scene, active }: { scene: SceneId; active: boolean }) {
   const Shape = SCENES[scene]
   const art = ARTWORK[scene]

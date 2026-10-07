@@ -18,7 +18,7 @@ export const en = {
     short: 'AMR',
     tagline: 'the human side',
     blurb:
-      'A Human Practices project by iGEM UBC, on the psychosocial impact of antimicrobial resistance.',
+      'A Human Practices project by iGEM UBC, on the psychosocial impact of antimicrobial resistance. Written for patients, their families, and anyone who wants to understand it.',
     credit: 'iGEM UBC Human Practices',
     noTrackers: 'No analytics. No trackers. Nothing you type here is recorded.',
   },
@@ -71,18 +71,53 @@ export const en = {
   home: {
     eyebrow: 'iGEM UBC · Human Practices',
     title: 'Antimicrobial resistance is counted carefully. The people are not.',
-    lede: 'Seven things patients and clinicians told us, in the order they tend to happen. It takes about five minutes to read.',
+    /** Who this is for. The reviewers asked for it to be said plainly, first. */
+    audience:
+      'For people living with a drug-resistant infection, the family and friends beside them, and anyone who wants to understand what it is like.',
+    lede: 'Eleven short scenes from what patients and clinicians told us, in the order things tend to happen. It takes about five minutes to read.',
+    heroCaption:
+      'A person with a drug-resistant infection, and the pane that goes up between them and everyone else. This is their story.',
+    before: {
+      title: 'Before you start',
+      whyTitle: 'Why read this',
+      whyBody:
+        'Antimicrobial resistance is usually explained as a problem with bacteria. This is what it is like for the person who has it, drawn from interviews with two patients and the clinicians who treat them. If it is happening to you or someone close to you, you may recognise some of it.',
+      whatTitle: 'What will happen',
+      whatBody:
+        'You scroll through eleven short scenes in four parts, at your own pace. Each has a picture, a few words, and what people told us. You can stop at any point. At the end you will find practical help: questions to take to an appointment, plain explanations, and where to find support.',
+      riskTitle: 'Is there any risk to me?',
+      riskBody:
+        'No. Reading this asks nothing of you: there is no sign-up, nothing to fill in, and nothing you do here is tracked or recorded. Some scenes describe illness, isolation and exhaustion. If that is close to home, it is fine to stop, and support is listed at the end.',
+    },
     start: 'Start reading',
     tryMoving: 'Try the moving version',
     tryStill: 'Switch to the still version',
+    /** Always shown under the buttons, so nobody has to guess which version they have. */
+    stillExplainer:
+      'You are reading the still version: the same sentences as the moving version, with one picture beside each scene instead of a camera travelling through them.',
+    movingExplainer:
+      'You are reading the moving version: the view travels through each scene as you scroll. The still version has exactly the same sentences, without the movement.',
     reducedMotion:
-      'Your device asks for reduced motion, so this is the still version. Nothing is missing from it.',
-    onward: 'Where to go from here',
+      'Your device asks for reduced motion, so this is the still version: the same sentences as the moving version, with one picture beside each scene and nothing that moves.',
+    end: {
+      eyebrow: 'The end',
+      title: 'That is the whole story. Here is what you can do with it.',
+      lede: 'Everything in it came from real interviews with patients and the clinicians who treat them. If any of it sounded familiar, start with the practical help below.',
+      practical: 'Practical help',
+      toolTitle: 'Prepare for your next appointment',
+      learnTitle: 'Understand what resistance is',
+      talkTitle: 'If you need to talk to someone now',
+      /** `{name}` and `{tel}` come from src/config/site.ts. */
+      crisis: '{name}: call or text {tel}, any hour of any day, anywhere in Canada.',
+      health:
+        '{name}: call {tel} to speak to a registered nurse about a health worry, any hour of any day, anywhere in British Columbia. Translation is available in over 130 languages.',
+      more: 'Keep going',
+    },
     cards: {
       learn: 'What resistance actually is, and why nobody explained it.',
-      stories: 'The full accounts these seven beats are drawn from.',
+      stories: 'The full accounts this story is drawn from.',
       community: 'Both patients told us no community exists. This is our attempt at one.',
-      tool: 'Write your questions before the appointment. Nothing leaves your browser.',
+      tool: 'Write your questions down before the appointment, then print them. Nothing leaves your browser.',
       mission: 'What we are doing about it, and what we hope changes.',
       team: 'The six people reading your story.',
     },
@@ -110,7 +145,7 @@ export const en = {
         'Both Norma and Sunny had found their own way through it — a church and a friend who prays, a group of friends online — and neither had been offered one. And both raised the same absence, separately: there is no community of AMR patients to connect with, and both said they would value one.',
       calloutTitle: 'That last part is why the Community section exists',
       calloutBody:
-        'If you have lived through any of this, you are not the first — you have just never been put in a room with the others. Post under any name you like. A person reads everything before it appears.',
+        'If you have lived through any of this, you are not the first — you have just never been put in a room with the others. You post under a name made up for you, never your own. Posts appear straight away, are public, and are reviewed every day.',
       calloutAction: 'Go to Community',
     },
     team: {

@@ -43,7 +43,7 @@ function QuoteFigure({
       </figcaption>
       {quote.original ? (
         <details className="mt-2">
-          <summary className={`cursor-pointer text-sm underline-offset-4 hover:underline ${muted}`}>
+          <summary className={`cursor-pointer text-sm underline underline-offset-4 ${muted}`}>
             {t.narrative.showOriginal}
           </summary>
           <p lang="en" className={`mt-2 text-sm leading-relaxed italic ${muted}`}>
@@ -88,7 +88,7 @@ export function BeatPanel({
         {beat.words.map((word) => (
           <li
             key={word}
-            className={`font-display leading-none font-semibold tracking-tight ${accent} ${compact ? 'text-[clamp(1rem,2.2vw,1.4rem)]' : 'text-[clamp(1.25rem,3.4vw,2.1rem)]'}`}
+            className={`font-display leading-none font-semibold tracking-tight ${accent} ${compact ? 'text-[clamp(1.5rem,3.3vw,2.1rem)]' : 'text-[clamp(1.25rem,3.4vw,2.1rem)]'}`}
           >
             {word}
           </li>
@@ -117,7 +117,7 @@ export function BeatPanel({
           onToggle={(event) => setExpanded(event.currentTarget.open)}
         >
           <summary
-            className={`cursor-pointer text-sm font-semibold underline-offset-4 hover:underline ${onDark ? 'text-[var(--color-rust-light)]' : 'text-rust-deep'}`}
+            className={`cursor-pointer text-sm font-semibold underline underline-offset-4 ${onDark ? 'text-[var(--color-rust-light)]' : 'text-rust-deep'}`}
           >
             {expanded ? t.narrative.readLess : t.narrative.readMore}
           </summary>

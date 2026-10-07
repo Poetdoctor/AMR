@@ -27,12 +27,24 @@ import { useI18n } from '@/lib/i18n'
 /** How many stations either side of the camera stay mounted. */
 const NEAR = 1
 
+/*
+ * How quickly the camera catches up with the scroll position: the fraction it
+ * still has left to travel after one second.
+ *
+ * This was 0.0018 — caught up in well under half a second, so a flick of the
+ * wheel threw the whole frame forward. Reviewers found the travel too fast to
+ * take in. At 0.05 it settles over about a second: the reader still drives it,
+ * but it moves like somebody walking rather than being yanked.
+ */
+const CATCH_UP = 0.05
+
 function CameraRig({
-  progressRef,
+  targetRef,
   stationRef,
   onStation,
 }: {
-  progressRef: React.RefObject<number>
+  /** The station the scroll position asks for, fractional. */
+  targetRef: React.RefObject<number>
   stationRef: { current: number }
   onStation: (index: number) => void
 }) {
@@ -41,16 +53,16 @@ function CameraRig({
   const reported = useRef(-1)
 
   useFrame((state, delta) => {
-    const progress = progressRef.current ?? 0
-    const target = progress * stationZ(SCENE_ORDER.length - 1)
-    const alpha = 1 - Math.pow(0.0018, delta)
+    const target = stationZ(targetRef.current ?? 0)
+    const alpha = 1 - Math.pow(CATCH_UP, delta)
     current.current = THREE.MathUtils.lerp(current.current, target, alpha)
 
     // A slow drift so the frame is never perfectly still — a locked-off camera
-    // reads as a rendering, and a breathing one reads as a place.
+    // reads as a rendering, and a breathing one reads as a place. Half the
+    // speed it was: at the old rate the sway read as panning.
     const t = state.clock.elapsedTime
-    camera.position.set(Math.sin(t * 0.14) * 0.45, Math.sin(t * 0.11) * 0.3, current.current + 17)
-    camera.lookAt(Math.sin(t * 0.09) * 0.2, 0, current.current - 6)
+    camera.position.set(Math.sin(t * 0.07) * 0.45, Math.sin(t * 0.055) * 0.3, current.current + 17)
+    camera.lookAt(Math.sin(t * 0.045) * 0.2, 0, current.current - 6)
 
     // Fractional station position: what every scene animates against.
     stationRef.current = -current.current / STATION_GAP
@@ -86,25 +98,55 @@ export function RichNarrative({ onFallback }: { onFallback: () => void }) {
   const { locale } = useI18n()
   const beats = getBeats(locale.code)
   const wrapper = useRef<HTMLDivElement>(null)
-  const progress = useRef(0)
+  const overlay = useRef<HTMLDivElement>(null)
+  const target = useRef(0)
   const visible = useIsVisible(wrapper)
   const [station, setStation] = useState(0)
   const cameraStation = useRef(0)
 
+  /*
+   * Scroll position to station.
+   *
+   * Each beat's card rests at the bottom of its own section, so "the camera is
+   * at station i" should mean "card i is at rest". Those rest points are
+   * measured rather than assumed, which lets the sections be any height: the
+   * first is one screen, so its card is there the moment the narrative starts,
+   * and the rest are taller so that each beat takes longer to scroll through
+   * and the camera covers less ground per turn of the wheel.
+   */
   useEffect(() => {
+    let rests: number[] = []
+    function measure() {
+      const sections = overlay.current?.children
+      if (!sections) return
+      rests = Array.from(sections, (section) => {
+        const element = section as HTMLElement
+        return element.offsetTop + element.offsetHeight - window.innerHeight
+      })
+    }
     function onScroll() {
       const element = wrapper.current
-      if (!element) return
-      const rect = element.getBoundingClientRect()
-      const scrollable = element.offsetHeight - window.innerHeight
-      progress.current = scrollable > 0 ? Math.min(1, Math.max(0, -rect.top / scrollable)) : 0
+      if (!element || rests.length === 0) return
+      const scrolled = -element.getBoundingClientRect().top
+      const last = rests.length - 1
+      let station = 0
+      if (scrolled >= rests[last]) station = last
+      else if (scrolled > rests[0]) {
+        const i = rests.findIndex((rest) => rest > scrolled) - 1
+        station = i + (scrolled - rests[i]) / (rests[i + 1] - rests[i])
+      }
+      target.current = station
     }
-    onScroll()
+    function onResize() {
+      measure()
+      onScroll()
+    }
+    onResize()
     window.addEventListener('scroll', onScroll, { passive: true })
-    window.addEventListener('resize', onScroll)
+    window.addEventListener('resize', onResize)
     return () => {
       window.removeEventListener('scroll', onScroll)
-      window.removeEventListener('resize', onScroll)
+      window.removeEventListener('resize', onResize)
     }
   }, [])
 
@@ -137,7 +179,7 @@ export function RichNarrative({ onFallback }: { onFallback: () => void }) {
             })
           }}
         >
-          <CameraRig progressRef={progress} stationRef={cameraStation} onStation={setStation} />
+          <CameraRig targetRef={target} stationRef={cameraStation} onStation={setStation} />
           <CameraStation.Provider value={cameraStation}>
             {SCENE_ORDER.map((scene, index) => (
               <Station
@@ -174,8 +216,8 @@ export function RichNarrative({ onFallback }: { onFallback: () => void }) {
         The words, as ordinary DOM above the canvas — selectable, translatable,
         searchable, and readable by a screen reader. Never text in the scene.
       */}
-      <div className="relative -mt-[100dvh]">
-        {beats.map((beat) => (
+      <div ref={overlay} className="relative -mt-[100dvh]">
+        {beats.map((beat, index) => (
           <section
             key={beat.id}
             data-beat={beat.id}
@@ -185,8 +227,11 @@ export function RichNarrative({ onFallback }: { onFallback: () => void }) {
              * describing. Previously the card was centred and full-height, so a
              * reader parked on a beat saw almost none of the scene — it only
              * appeared in the gaps, which is backwards.
+             *
+             * One and a half screens per beat after the first: the extra half
+             * is where the camera travels with no card in the way.
              */
-            className="flex min-h-dvh items-end pb-[8vh]"
+            className={`flex items-end pb-[8vh] ${index === 0 ? 'min-h-dvh' : 'min-h-[150dvh]'}`}
           >
             <Container width="wide">
               <div className="max-w-[27rem] rounded-2xl border border-cream/12 bg-[#0d0b09]/72 p-6 text-cream shadow-[0_20px_60px_-24px_rgba(0,0,0,0.95)] backdrop-blur-lg">

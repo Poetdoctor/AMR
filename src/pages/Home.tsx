@@ -1,8 +1,9 @@
 import { lazy, Suspense, useCallback, useEffect, useState } from 'react'
-import { Link } from '@/components/LocaleLink'
 import { Container } from '@/components/Container'
 import { FlatNarrative } from '@/components/home/FlatNarrative'
 import { NarrativeBoundary } from '@/components/home/NarrativeBoundary'
+import { NarrativeEnd } from '@/components/home/NarrativeEnd'
+import { sceneArtwork } from '@/components/home/SceneStill'
 import { UntranslatedNotice } from '@/components/UntranslatedNotice'
 import { useCapability, readFlatPreference, writeFlatPreference } from '@/lib/capability'
 import { isNarrativeTranslated } from '@/lib/beats'
@@ -12,7 +13,7 @@ import { usePageTitle } from '@/lib/usePageTitle'
 /**
  * Home: the narrative.
  *
- * Two paths through the same seven beats. The flat one is the default and
+ * Two paths through the same eleven beats. The flat one is the default and
  * always works; the 3D scroll sequence is layered on only for visitors whose
  * device and preferences can carry it (see lib/capability.ts). Both render the
  * same words from lib/beats.ts, so the quieter version can never lose content.
@@ -54,14 +55,73 @@ export default function Home() {
   // rest of the visit rather than flickering between the two.
   const dropToFlat = useCallback(() => setCrashed(true), [])
 
+  const glass = sceneArtwork('glass')
+  const explainer = rich
+    ? t.home.movingExplainer
+    : capability.reason === 'reduced-motion'
+      ? t.home.reducedMotion
+      : t.home.stillExplainer
+
   return (
     <>
       <UntranslatedNotice when={!isNarrativeTranslated(locale.code)} />
-      <section className="border-b border-sand-line bg-cream-deep py-20 md:py-28">
+      <section className="border-b border-sand-line bg-cream-deep py-16 md:py-24">
         <Container width="wide">
-          <p className="eyebrow mb-6">{t.home.eyebrow}</p>
-          <h1 className="display-xl max-w-4xl text-ink">{t.home.title}</h1>
-          <p className="lede mt-8 max-w-2xl">{t.home.lede}</p>
+          {/*
+            On a phone: heading, who it is for, the picture, then the rest — so
+            the picture of what this is about is on the first screen. On a wide
+            screen the heading spans the top and the picture takes its own
+            column beside the words.
+          */}
+          <div className="grid gap-8 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)] lg:grid-rows-[auto_auto_1fr] lg:gap-x-16">
+            <div className="lg:col-span-2">
+              <p className="eyebrow mb-6">{t.home.eyebrow}</p>
+              <h1 className="display-xl max-w-4xl text-ink">{t.home.title}</h1>
+            </div>
+
+            <p className="max-w-2xl font-display text-xl leading-snug font-semibold text-ink md:text-2xl lg:col-start-1 lg:row-start-2">
+              {t.home.audience}
+            </p>
+
+            {glass ? (
+              <figure className="w-full max-w-sm justify-self-center lg:col-start-2 lg:row-span-2 lg:row-start-2 lg:max-w-md">
+                <img
+                  src={glass.src}
+                  alt={glass.alt}
+                  width={896}
+                  height={896}
+                  fetchPriority="high"
+                  decoding="async"
+                  className="aspect-square w-full rounded-[var(--radius-card)] border border-sand-line bg-cream object-cover"
+                />
+                <figcaption className="mt-3 text-sm leading-relaxed text-ink-soft">
+                  {t.home.heroCaption}
+                </figcaption>
+              </figure>
+            ) : null}
+
+            <p className="lede max-w-2xl lg:col-start-1 lg:row-start-3 lg:self-start">
+              {t.home.lede}
+            </p>
+          </div>
+
+          <section aria-labelledby="before-you-start" className="mt-14">
+            <h2 id="before-you-start" className="display-md text-ink">
+              {t.home.before.title}
+            </h2>
+            <ul className="mt-6 grid list-none gap-5 md:grid-cols-3">
+              {[
+                { title: t.home.before.whyTitle, body: t.home.before.whyBody },
+                { title: t.home.before.whatTitle, body: t.home.before.whatBody },
+                { title: t.home.before.riskTitle, body: t.home.before.riskBody },
+              ].map((item) => (
+                <li key={item.title} className="card p-6">
+                  <h3 className="font-display text-xl font-bold text-ink">{item.title}</h3>
+                  <p className="mt-2.5 leading-relaxed text-ink-soft">{item.body}</p>
+                </li>
+              ))}
+            </ul>
+          </section>
 
           <div className="mt-10 flex flex-wrap items-center gap-4">
             <a className="btn btn-primary" href="#beat-hook">
@@ -75,16 +135,14 @@ export default function Home() {
                   setPreferFlat(next)
                   writeFlatPreference(next)
                 }}
-                className="text-sm font-semibold text-rust-deep underline-offset-4 hover:underline"
+                className="font-semibold text-rust-deep underline underline-offset-4"
               >
                 {preferFlat ? t.home.tryMoving : t.home.tryStill}
               </button>
             ) : null}
           </div>
 
-          {capability.reason === 'reduced-motion' ? (
-            <p className="mt-6 max-w-xl text-sm text-ink-faint">{t.home.reducedMotion}</p>
-          ) : null}
+          <p className="mt-5 max-w-2xl text-sm leading-relaxed text-ink-soft">{explainer}</p>
         </Container>
       </section>
 
@@ -100,33 +158,7 @@ export default function Home() {
         )}
       </div>
 
-      <section className="border-t border-sand-line py-16 md:py-24">
-        <Container width="wide">
-          <h2 className="display-md text-ink">{t.home.onward}</h2>
-          <ul className="mt-8 grid list-none gap-5 sm:grid-cols-2 lg:grid-cols-3">
-            {[
-              { to: '/learn', label: t.nav.learn, blurb: t.home.cards.learn },
-              { to: '/stories', label: t.nav.stories, blurb: t.home.cards.stories },
-              { to: '/community', label: t.nav.community, blurb: t.home.cards.community },
-              { to: '/tool', label: t.nav.tool, blurb: t.home.cards.tool },
-              { to: '/mission', label: t.nav.mission, blurb: t.home.cards.mission },
-              { to: '/team', label: t.nav.team, blurb: t.home.cards.team },
-            ].map((item) => (
-              <li key={item.to}>
-                <Link
-                  to={item.to}
-                  className="card flex h-full flex-col p-6 transition-shadow hover:shadow-[var(--shadow-card-lift)]"
-                >
-                  <span className="font-display text-lg font-bold text-ink">{item.label}</span>
-                  <span className="mt-2 text-[0.9375rem] leading-relaxed text-ink-soft">
-                    {item.blurb}
-                  </span>
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </Container>
-      </section>
+      <NarrativeEnd fromDark={rich} />
     </>
   )
 }

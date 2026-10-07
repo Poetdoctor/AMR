@@ -47,4 +47,26 @@ export const site = {
     url: 'https://988.ca',
     verified: '2026-08-31',
   },
+
+  /**
+   * BC's health line, offered at the end of the narrative alongside the crisis
+   * line — for the reader whose worry is the infection rather than the feeling.
+   *
+   * Verified 2026-10-07 on healthlinkbc.ca: dial 8-1-1 for registered nurses
+   * 24/7, pharmacists overnight, with translation in over 130 languages.
+   * Re-check this alongside the crisis line every year.
+   */
+  healthLine: {
+    name: 'HealthLink BC',
+    tel: '811',
+    display: '8-1-1',
+    url: 'https://www.healthlinkbc.ca',
+    verified: '2026-10-07',
+  },
+
+  /**
+   * Where the Community's guidelines, the report confirmation and the removal
+   * instructions send people who want to reach the website administration.
+   */
+  contactEmail: 'humanpractices@ubcigem.com',
 } as const
