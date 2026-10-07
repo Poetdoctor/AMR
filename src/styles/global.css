@@ -34,7 +34,20 @@
    Contrast: all text pairings below are >= 4.5:1 against their intended
    surface. `--color-rust` is a FILL/border colour (cream on rust = 5.0:1);
    `--color-rust-deep` is the TEXT accent (6.9:1 on cream, 6.1:1 on sand).
-   Do not set rust-as-text on a sand surface — it lands at 4.4:1.
+   Do not set rust-as-text on a sand surface — it lands at 4.4:1. The same goes
+   for `--color-ink-faint` on sand or rust-wash (4.5:1, just under): use
+   ink-soft there.
+
+   Form controls take their border from ink-faint (5.4:1 on paper), not
+   sand-line (1.4:1): a text field's edge is the only thing that says it is a
+   field, and WCAG asks 3:1 of it. Links are underlined, not only coloured —
+   rust-deep and ink-soft are close in lightness, and to a reader with red-green
+   colour blindness rust-deep turns olive and the difference disappears.
+
+   Type scale: raised one step across the board after review (body 16 → 18px,
+   small text 14 → 16px, the smallest 12 → 14px). Tailwind's size tokens are
+   overridden below rather than every class being edited, so new components get
+   the larger scale by default. Print restores the old one — see @media print.
 --------------------------------------------------------------------------- */
 @theme {
   --color-cream: #faf5ea;
@@ -85,6 +98,19 @@
     'Inter Variable', 'Noto Sans SC', 'Noto Sans Gurmukhi', 'Vazirmatn Variable', -apple-system,
     BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
 
+  --text-xs: 0.875rem;
+  --text-xs--line-height: 1.5;
+  --text-sm: 1rem;
+  --text-sm--line-height: 1.5;
+  --text-base: 1.125rem;
+  --text-base--line-height: 1.6;
+  --text-lg: 1.25rem;
+  --text-lg--line-height: 1.55;
+  --text-xl: 1.375rem;
+  --text-xl--line-height: 1.45;
+  --text-2xl: 1.625rem;
+  --text-2xl--line-height: 1.35;
+
   --radius-card: 1.25rem;
   --radius-callout: 1.5rem;
 
@@ -102,6 +128,8 @@
     background-color: var(--color-cream);
     color: var(--color-ink);
     font-family: var(--font-sans);
+    font-size: var(--text-base);
+    line-height: var(--text-base--line-height);
     font-synthesis-weight: none;
     text-rendering: optimizeLegibility;
     -webkit-font-smoothing: antialiased;
@@ -180,7 +208,7 @@
 
   .eyebrow {
     font-family: var(--font-sans);
-    font-size: 0.75rem;
+    font-size: 0.875rem;
     font-weight: 600;
     letter-spacing: 0.16em;
     text-transform: uppercase;
@@ -188,14 +216,14 @@
   }
 
   .lede {
-    font-size: clamp(1.125rem, 1.8vw, 1.375rem);
+    font-size: clamp(1.25rem, 1.9vw, 1.5rem);
     line-height: 1.6;
     color: var(--color-ink-soft);
   }
 
   /* Long-form prose ------------------------------------------------------ */
   .prose-amr {
-    font-size: 1.0625rem;
+    font-size: 1.1875rem;
     line-height: 1.75;
     color: var(--color-ink-soft);
   }
@@ -276,7 +304,7 @@
   }
   .markdown blockquote p:not(:first-child) {
     font-family: var(--font-sans);
-    font-size: 0.875rem;
+    font-size: 1rem;
     font-weight: 500;
     line-height: 1.5;
     letter-spacing: 0;
@@ -314,7 +342,7 @@
     gap: 0.5rem;
     border-radius: 9999px;
     font-weight: 600;
-    font-size: 0.9375rem;
+    font-size: 1.0625rem;
     padding: 0.75rem 1.5rem;
     transition:
       background-color 160ms ease,
@@ -365,6 +393,27 @@
   body {
     background: #fff !important;
     color: #000 !important;
+  }
+
+  /* The screen type scale was raised for reading; the printed visit-prep sheet
+     was already laid out for paper, so it keeps the scale it was designed at. */
+  :root {
+    --text-xs: 0.75rem;
+    --text-xs--line-height: calc(1 / 0.75);
+    --text-sm: 0.875rem;
+    --text-sm--line-height: calc(1.25 / 0.875);
+    --text-base: 1rem;
+    --text-base--line-height: 1.5;
+    --text-lg: 1.125rem;
+    --text-lg--line-height: calc(1.75 / 1.125);
+    --text-xl: 1.25rem;
+    --text-xl--line-height: calc(1.75 / 1.25);
+    --text-2xl: 1.5rem;
+    --text-2xl--line-height: calc(2 / 1.5);
+  }
+
+  .prep-sheet .eyebrow {
+    font-size: 0.75rem;
   }
 
   /* Anything a page decides should not go on paper. Marking it explicitly beats

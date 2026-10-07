@@ -25,7 +25,7 @@ export function TeamCard({ member }: { member: TeamMember }) {
           {member.name}
         </h3>
         <p className="mt-1 text-sm font-medium text-rust-deep">{member.role}</p>
-        <blockquote className="mt-4 text-[0.9375rem] leading-relaxed text-ink-soft">
+        <blockquote className="mt-4 text-[1.0625rem] leading-relaxed text-ink-soft">
           <p>“{member.quote}”</p>
         </blockquote>
       </div>

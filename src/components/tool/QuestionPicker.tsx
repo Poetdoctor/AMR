@@ -34,7 +34,7 @@ export function QuestionPicker({
                       onChange={() => onToggle(question.id)}
                       className="mt-0.5 h-4 w-4 shrink-0 accent-[var(--color-rust)]"
                     />
-                    <span className="text-[0.9375rem] leading-relaxed text-ink">
+                    <span className="text-[1.0625rem] leading-relaxed text-ink">
                       {question.text}
                     </span>
                   </label>

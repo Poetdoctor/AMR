@@ -40,7 +40,7 @@ export function CustomQuestions({
               add()
             }
           }}
-          className="min-w-0 flex-1 rounded-xl border border-sand-line bg-paper px-4 py-3 text-[0.9375rem] text-ink placeholder:text-ink-faint/70"
+          className="min-w-0 flex-1 rounded-xl border border-ink-faint bg-paper px-4 py-3 text-[1.0625rem] text-ink placeholder:text-ink-faint"
         />
         <button
           type="button"
@@ -59,7 +59,7 @@ export function CustomQuestions({
               key={`${question}-${index}`}
               className="flex items-start justify-between gap-3 rounded-xl border border-rust bg-rust-wash p-3.5"
             >
-              <span className="text-[0.9375rem] leading-relaxed text-ink">{question}</span>
+              <span className="text-[1.0625rem] leading-relaxed text-ink">{question}</span>
               <button
                 type="button"
                 onClick={() => onChange(questions.filter((_, i) => i !== index))}

@@ -19,7 +19,11 @@ const NAV = [
 function linkClass({ isActive }: { isActive: boolean }) {
   return [
     'rounded-full px-3.5 py-2 text-sm font-medium transition-colors',
-    isActive ? 'bg-rust-wash text-rust-deep' : 'text-ink-soft hover:bg-sand hover:text-ink',
+    // Underlined as well as tinted: the tint alone is 1.1:1 against the
+    // inactive links, which is no difference at all to some colour-blind readers.
+    isActive
+      ? 'bg-rust-wash text-rust-deep underline decoration-2 underline-offset-[6px]'
+      : 'text-ink-soft hover:bg-sand hover:text-ink',
   ].join(' ')
 }
 
@@ -31,7 +35,7 @@ export function SiteHeader() {
   useEffect(() => setOpen(false), [location.pathname])
 
   return (
-    <header className="print-hide sticky top-0 z-40 border-b border-sand-line bg-cream/90 backdrop-blur-sm">
+    <header className="print-hide sticky top-0 z-40 border-b border-sand-line bg-cream">
       <Container width="wide">
         <div className="flex h-16 items-center justify-between gap-4 md:h-20">
           <Link to="/" className="group flex items-baseline gap-2.5">

@@ -55,7 +55,7 @@ export function ImageFrame({
           aria-hidden="true"
           className="flex h-full w-full items-center justify-center bg-[repeating-linear-gradient(135deg,var(--color-sand)_0_14px,var(--color-cream-deep)_14px_28px)]"
         >
-          <span className="rounded-full bg-cream/85 px-3.5 py-1.5 text-[0.6875rem] font-semibold tracking-[0.12em] text-ink-faint uppercase">
+          <span className="rounded-full bg-cream/85 px-3.5 py-1.5 text-xs font-semibold tracking-[0.12em] text-ink-faint uppercase">
             {placeholderLabel}
           </span>
         </div>

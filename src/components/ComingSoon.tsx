@@ -27,7 +27,7 @@ export function ComingSoon({
           <p className="prose-amr">This section is being built. When it opens, it will hold:</p>
           <ul className="mt-5 space-y-3">
             {summary.map((item) => (
-              <li key={item} className="flex gap-3 text-[0.9375rem] leading-relaxed text-ink-soft">
+              <li key={item} className="flex gap-3 text-[1.0625rem] leading-relaxed text-ink-soft">
                 <span
                   aria-hidden="true"
                   className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-rust"

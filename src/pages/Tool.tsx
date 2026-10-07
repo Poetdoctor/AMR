@@ -129,8 +129,8 @@ export default function Tool() {
       <Container width="wide" className="print-hide py-12 md:py-16">
         <div className="callout p-6 md:p-7" role="note">
           <h2 className="font-display text-lg font-bold text-ink">{t.tool.privacyTitle}</h2>
-          <p className="prose-amr mt-2 text-[0.9375rem]">{t.tool.privacyBody}</p>
-          <p className="prose-amr mt-2 text-[0.9375rem]">{t.tool.privacyShared}</p>
+          <p className="prose-amr mt-2 text-[1.0625rem]">{t.tool.privacyBody}</p>
+          <p className="prose-amr mt-2 text-[1.0625rem]">{t.tool.privacyShared}</p>
         </div>
       </Container>
 
@@ -150,7 +150,7 @@ export default function Tool() {
 
             <section className="space-y-5">
               <h2 className="display-md text-ink">{t.tool.basics}</h2>
-              <p className="prose-amr max-w-xl text-[0.9375rem]">{t.tool.basicsNote}</p>
+              <p className="prose-amr max-w-xl text-[1.0625rem]">{t.tool.basicsNote}</p>
               <div className="grid gap-5 sm:grid-cols-2">
                 <TextField
                   label={t.tool.withWho}
@@ -192,7 +192,7 @@ export default function Tool() {
 
             <section className="space-y-5">
               <h2 className="display-md text-ink">{t.tool.questions}</h2>
-              <p className="prose-amr max-w-xl text-[0.9375rem]">{t.tool.questionsNote}</p>
+              <p className="prose-amr max-w-xl text-[1.0625rem]">{t.tool.questionsNote}</p>
               <QuestionPicker selected={prep.selectedQuestions} onToggle={toggleQuestion} />
               <CustomQuestions
                 questions={prep.customQuestions}
@@ -279,7 +279,7 @@ export default function Tool() {
                   type="button"
                   onClick={clearAll}
                   disabled={empty}
-                  className="mt-4 text-sm font-semibold text-rust-deep underline-offset-4 hover:underline disabled:no-underline disabled:opacity-50"
+                  className="mt-4 text-sm font-semibold text-rust-deep underline underline-offset-4 disabled:no-underline disabled:opacity-50"
                 >
                   {t.tool.clear}
                 </button>

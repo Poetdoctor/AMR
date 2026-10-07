@@ -48,7 +48,7 @@ export function LanguageSwitcher({ className = '' }: { className?: string }) {
         id={id}
         value={locale.code}
         onChange={(event) => change(event.target.value as LocaleCode)}
-        className="cursor-pointer rounded-full border border-sand-line bg-transparent px-3 py-2 text-sm font-medium text-ink-soft transition-colors hover:border-ink-faint hover:text-ink"
+        className="cursor-pointer rounded-full border border-ink-faint bg-transparent px-3 py-2 text-sm font-medium text-ink-soft transition-colors hover:border-ink-faint hover:text-ink"
       >
         {READY_LOCALES.map((option) => (
           /*

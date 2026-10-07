@@ -22,11 +22,11 @@ export function StoryCard({ story }: { story: Story }) {
         <p className="mt-1 text-sm leading-relaxed text-ink-faint">{story.context}</p>
       ) : null}
 
-      <p className="mt-5 flex-1 text-[0.9375rem] leading-relaxed text-ink-soft">{story.summary}</p>
+      <p className="mt-5 flex-1 text-[1.0625rem] leading-relaxed text-ink-soft">{story.summary}</p>
 
       <Link
         to={`/stories/${story.slug}`}
-        className="mt-6 text-sm font-semibold text-rust-deep underline-offset-4 hover:underline"
+        className="mt-6 text-sm font-semibold text-rust-deep underline underline-offset-4"
       >
         Read the full account
         <span className="sr-only">{` from ${story.displayName}`}</span>

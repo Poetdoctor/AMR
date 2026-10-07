@@ -43,7 +43,7 @@ export function TextField({
         aria-describedby={hint ? hintId : undefined}
         autoComplete="off"
         onChange={(event) => onChange(event.target.value)}
-        className="mt-2.5 w-full rounded-xl border border-sand-line bg-paper px-4 py-3 text-[0.9375rem] text-ink placeholder:text-ink-faint/70"
+        className="mt-2.5 w-full rounded-xl border border-ink-faint bg-paper px-4 py-3 text-[1.0625rem] text-ink placeholder:text-ink-faint"
       />
     </div>
   )
@@ -85,7 +85,7 @@ export function TextAreaField({
         aria-describedby={hint ? hintId : undefined}
         autoComplete="off"
         onChange={(event) => onChange(event.target.value)}
-        className="mt-2.5 w-full resize-y rounded-xl border border-sand-line bg-paper px-4 py-3 text-[0.9375rem] leading-relaxed text-ink placeholder:text-ink-faint/70"
+        className="mt-2.5 w-full resize-y rounded-xl border border-ink-faint bg-paper px-4 py-3 text-[1.0625rem] leading-relaxed text-ink placeholder:text-ink-faint"
       />
     </div>
   )

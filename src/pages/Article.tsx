@@ -27,7 +27,7 @@ export default function Article() {
         <Container width="wide">
           <Link
             to="/learn"
-            className="text-sm font-semibold text-rust-deep underline-offset-4 hover:underline"
+            className="text-sm font-semibold text-rust-deep underline underline-offset-4"
           >
             <span aria-hidden="true">← </span>All articles
           </Link>
@@ -65,7 +65,7 @@ export default function Article() {
                   <span className="font-display text-lg leading-snug font-bold text-ink">
                     {item.title}
                   </span>
-                  <span className="mt-2 text-[0.9375rem] leading-relaxed text-ink-soft">
+                  <span className="mt-2 text-[1.0625rem] leading-relaxed text-ink-soft">
                     {item.summary}
                   </span>
                 </Link>

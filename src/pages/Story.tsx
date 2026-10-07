@@ -26,7 +26,7 @@ export default function Story() {
         <Container width="wide">
           <Link
             to="/stories"
-            className="text-sm font-semibold text-rust-deep underline-offset-4 hover:underline"
+            className="text-sm font-semibold text-rust-deep underline underline-offset-4"
           >
             <span aria-hidden="true">← </span>All stories
           </Link>
@@ -63,7 +63,7 @@ export default function Story() {
                   <span className="font-display text-lg font-bold text-ink">
                     {item.displayName}
                   </span>
-                  <span className="mt-2 text-[0.9375rem] leading-relaxed text-ink-soft">
+                  <span className="mt-2 text-[1.0625rem] leading-relaxed text-ink-soft">
                     {item.summary}
                   </span>
                 </Link>

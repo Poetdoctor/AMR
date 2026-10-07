@@ -36,7 +36,7 @@ export default function Learn() {
                 <h2 className="mt-3 font-display text-2xl leading-snug font-bold tracking-tight text-ink">
                   {article.title}
                 </h2>
-                <p className="mt-3 flex-1 text-[0.9375rem] leading-relaxed text-ink-soft">
+                <p className="mt-3 flex-1 text-[1.0625rem] leading-relaxed text-ink-soft">
                   {article.summary}
                 </p>
                 <span className="mt-6 flex items-center gap-3 text-sm font-semibold text-rust-deep">

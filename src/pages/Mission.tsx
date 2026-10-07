@@ -85,7 +85,7 @@ export default function Mission() {
                   <h3 className="font-display text-lg leading-snug font-bold text-ink">
                     {item.title}
                   </h3>
-                  <p className="mt-2.5 text-[0.9375rem] leading-relaxed text-ink-soft">
+                  <p className="mt-2.5 text-[1.0625rem] leading-relaxed text-ink-soft">
                     {item.body}
                   </p>
                 </li>
@@ -118,7 +118,7 @@ export default function Mission() {
                 >
                   {t.pages.mission.share}
                 </span>
-                <p className="mt-3 text-sm text-ink-faint">{t.pages.mission.shareSoon}</p>
+                <p className="mt-3 text-sm text-ink-soft">{t.pages.mission.shareSoon}</p>
               </div>
             )
           }
