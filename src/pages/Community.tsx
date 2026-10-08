@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { Link } from '@/components/LocaleLink'
 import { Container } from '@/components/Container'
 import { PageHeader } from '@/components/PageHeader'
 import { PostCard } from '@/components/community/PostCard'
 import { CrisisLine } from '@/components/community/CrisisLine'
-import { PublicNotice } from '@/components/community/PublicNotice'
 import { site } from '@/config/site'
 import { Disclaimer } from '@/components/Disclaimer'
 import { UntranslatedNotice } from '@/components/UntranslatedNotice'
@@ -52,6 +52,17 @@ export default function Community() {
   const [loading, setLoading] = useState(isConfigured)
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
+
+  /*
+   * Topics work like hashtags: choosing one narrows the feed to stories tagged
+   * with it. Kept in the URL so a filtered view can be linked to, and so the
+   * back button undoes it. The tags on each story link here too.
+   */
+  const [params, setParams] = useSearchParams()
+  const activeTag = params.get('tag')
+  const shown = activeTag ? posts.filter((post) => post.tags.includes(activeTag)) : posts
+  const filterBy = (tag: string | null) =>
+    setParams(tag ? { tag } : {}, { preventScrollReset: true })
 
   useEffect(() => {
     const tag = document.createElement('meta')
@@ -190,29 +201,58 @@ export default function Community() {
       <Container width="wide" className="py-12 md:py-16">
         <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,20rem)] lg:gap-12">
           <div className="space-y-8">
-            <PublicNotice />
-
             {community?.intro_body ? (
               <section className="card p-6 md:p-7">
                 <h2 className="display-md text-ink">{community.intro_title}</h2>
                 <p className="prose-amr mt-3">{community.intro_body}</p>
-                {community.topics.length > 0 ? (
-                  <ul className="mt-5 flex list-none flex-wrap gap-2">
-                    {community.topics.map((topic) => (
-                      <li
-                        key={topic}
-                        className="rounded-full bg-sand px-3 py-1.5 text-sm text-ink-soft"
-                      >
-                        {topic}
-                      </li>
-                    ))}
-                  </ul>
-                ) : null}
               </section>
             ) : null}
 
             <section>
               <h2 className="display-md text-ink">{t.pages.community.latest}</h2>
+
+              {community && community.topics.length > 0 ? (
+                <nav aria-label="Filter stories by topic" className="mt-5">
+                  <ul className="flex list-none flex-wrap gap-2">
+                    {community.topics.map((topic) => {
+                      const on = activeTag === topic
+                      return (
+                        <li key={topic}>
+                          <button
+                            type="button"
+                            aria-pressed={on}
+                            onClick={() => filterBy(on ? null : topic)}
+                            className={`rounded-full border px-3 py-1.5 text-sm transition-colors ${
+                              on
+                                ? 'border-forest bg-forest font-semibold text-cream'
+                                : 'border-sand-line bg-paper text-ink-soft hover:border-ink-faint hover:text-ink'
+                            }`}
+                          >
+                            <span aria-hidden="true">#</span>
+                            {topic}
+                          </button>
+                        </li>
+                      )
+                    })}
+                  </ul>
+                </nav>
+              ) : null}
+
+              {/* Said in words, not only by the chip's colour. */}
+              <p aria-live="polite" className="mt-4 text-sm text-ink-soft">
+                {activeTag ? (
+                  <>
+                    Showing stories tagged <strong className="text-ink">#{activeTag}</strong>.{' '}
+                    <button
+                      type="button"
+                      onClick={() => filterBy(null)}
+                      className="font-semibold text-rust-deep underline underline-offset-4"
+                    >
+                      Show all stories
+                    </button>
+                  </>
+                ) : null}
+              </p>
 
               {error ? (
                 <p
@@ -226,6 +266,18 @@ export default function Community() {
               <div className="mt-5 space-y-5">
                 {loading ? <p className="text-sm text-ink-faint">Loading…</p> : null}
 
+                {!loading && posts.length > 0 && shown.length === 0 && activeTag ? (
+                  <div className="card p-7">
+                    <p className="prose-amr">
+                      Nobody has tagged a story #{activeTag} yet. If it fits what happened to you,
+                      yours could be the first.
+                    </p>
+                    <Link to="/community/share" className="btn btn-primary mt-5">
+                      {t.titles.share}
+                    </Link>
+                  </div>
+                ) : null}
+
                 {!loading && posts.length === 0 ? (
                   <div className="card p-7">
                     <p className="prose-amr">{t.pages.community.empty}</p>
@@ -235,7 +287,7 @@ export default function Community() {
                   </div>
                 ) : null}
 
-                {posts.map((post) => (
+                {shown.map((post) => (
                   <PostCard
                     key={post.id}
                     post={post}

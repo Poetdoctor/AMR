@@ -72,11 +72,19 @@ export function PostCard({
         </ContentWarningGate>
       </div>
 
+      {/* Hashtags: each one opens Community filtered to stories carrying it. */}
       {post.tags.length > 0 ? (
-        <ul className="mt-4 flex list-none flex-wrap gap-2">
+        <ul className="mt-4 flex list-none flex-wrap gap-2" aria-label="Topics">
           {post.tags.map((tag) => (
-            <li key={tag} className="rounded-full bg-sand px-2.5 py-1 text-xs text-ink-soft">
-              {tag}
+            <li key={tag}>
+              <Link
+                to={`/community?tag=${encodeURIComponent(tag)}`}
+                className="inline-block rounded-full bg-sand px-2.5 py-1 text-xs text-ink-soft underline-offset-4 hover:text-ink hover:underline"
+                aria-label={`More stories tagged ${tag}`}
+              >
+                <span aria-hidden="true">#</span>
+                {tag}
+              </Link>
             </li>
           ))}
         </ul>

@@ -61,7 +61,9 @@ export default function ShareExperience() {
       try {
         const record = await fetchCommunity()
         setCommunity(record)
-        setTagOptions(await fetchTags(record.id))
+        // The community's topics come first: they are what the feed filters
+        // by, so a story tagged with one can be found from its chip.
+        setTagOptions([...new Set([...record.topics, ...(await fetchTags(record.id))])])
         // Deliberately not creating an identity here. Opening the composer to
         // see what it asks for should not sign anyone into anything — the
         // session is minted on the first keystroke instead, which is the point
@@ -236,9 +238,12 @@ export default function ShareExperience() {
           {tagOptions.length > 0 ? (
             <fieldset>
               <legend className="text-sm font-semibold text-ink">
-                Tags{' '}
+                Topics{' '}
                 <span className="font-normal text-ink-faint">— optional, up to {MAX_TAGS}</span>
               </legend>
+              <p className="mt-1 text-sm text-ink-soft">
+                People browsing Community can find your story by these.
+              </p>
               <ul className="mt-3 flex list-none flex-wrap gap-2">
                 {tagOptions.map((tag) => {
                   const on = tags.includes(tag)
@@ -254,6 +259,7 @@ export default function ShareExperience() {
                             : 'border-sand-line bg-paper text-ink-soft hover:border-ink-faint'
                         }`}
                       >
+                        <span aria-hidden="true">#</span>
                         {tag}
                       </button>
                     </li>
