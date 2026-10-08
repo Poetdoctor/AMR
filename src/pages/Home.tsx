@@ -73,7 +73,7 @@ export default function Home() {
             screen the heading spans the top and the picture takes its own
             column beside the words.
           */}
-          <div className="grid gap-8 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)] lg:grid-rows-[auto_auto_1fr] lg:gap-x-16">
+          <div className="grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)] lg:grid-rows-[auto_auto_1fr] lg:gap-x-16">
             <div className="lg:col-span-2">
               <p className="eyebrow mb-6">{t.home.eyebrow}</p>
               <h1 className="display-xl max-w-4xl text-ink">{t.home.title}</h1>

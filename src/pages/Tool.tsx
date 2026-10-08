@@ -135,7 +135,13 @@ export default function Tool() {
       </Container>
 
       <Container width="wide" className="pb-20 md:pb-28">
-        <div className="grid gap-12 lg:grid-cols-[minmax(0,1fr)_minmax(0,26rem)] lg:gap-14">
+        {/*
+          `grid-cols-1` rather than the implicit column: an implicit track grows
+          to fit its widest unbreakable child, and the "your own question" row
+          (an input beside a button) pushed the whole form past a phone's edge
+          once the type got larger.
+        */}
+        <div className="grid grid-cols-1 gap-12 lg:grid-cols-[minmax(0,1fr)_minmax(0,26rem)] lg:gap-14">
           {/*
             Deliberately not a <form>. Nothing here is ever submitted, and without
             a form element there is no path by which a stray Enter key could put

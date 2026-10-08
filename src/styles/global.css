@@ -146,6 +146,10 @@
       'opsz' 32;
     letter-spacing: -0.02em;
     text-wrap: balance;
+    /* A single long word ("antimicrobiens" at display size) on a 320px phone
+       breaks rather than pushing the page sideways. Only ever applies when a
+       word is wider than the whole line. */
+    overflow-wrap: break-word;
   }
 
   p {
@@ -226,6 +230,8 @@
     font-size: 1.1875rem;
     line-height: 1.75;
     color: var(--color-ink-soft);
+    /* An email address or URL is one unbreakable word otherwise. */
+    overflow-wrap: break-word;
   }
   .prose-amr > * + * {
     margin-top: 1.15em;
